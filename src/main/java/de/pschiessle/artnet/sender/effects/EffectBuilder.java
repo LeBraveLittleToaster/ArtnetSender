@@ -32,10 +32,25 @@ public class EffectBuilder {
         }
     }
 
+    private static Optional<Effect> createStrobeEffect(JsonNode jsonNode){
+        System.out.println("NODE DATA:");
+        System.out.println(jsonNode);
+        try {
+            var ticksOn = jsonNode.get("ticksOn").asInt();
+            var ticksOff = jsonNode.get("ticksOff").asInt();
+            int lightCount = jsonNode.get("ledCount").asInt();
+            return Optional.of(new StrobeEffect(ticksOn, ticksOff, lightCount));
+        }catch (Exception e) {
+            System.out.println("STROBE: Failed to obtain speed, offset and lightCount");
+            return Optional.empty();
+        }
+    }
+
     static Optional<Effect> createEffectFromTypeAndJson(EffectType effectType, JsonNode jsonNode){
         return switch (effectType){
             case PULSE -> createPulseEffect(jsonNode);
             case RUNNING -> createRunningEffect(jsonNode);
+            case STROBE -> createStrobeEffect(jsonNode);
             default -> Optional.empty();
         };
     }

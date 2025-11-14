@@ -4,4 +4,5 @@ public enum EffectType {
     NONE,
     PULSE,
     RUNNING,
+    STROBE
 }
