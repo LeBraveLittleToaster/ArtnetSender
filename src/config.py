@@ -1,4 +1,4 @@
-ARTNET_TARGET_IP = "192.168.178.99"    # Change to your node IP
+ARTNET_TARGET_IP = "localhost"    # Change to your node IP
 ARTNET_TARGET_PORT = 6454
 DEFAULT_UNIVERSE = 0
 DEFAULT_START_ADDRESS = 1

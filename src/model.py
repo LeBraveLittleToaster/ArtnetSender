@@ -1,4 +1,5 @@
 from __future__ import annotations
+from string import Template
 import asyncio
 import concurrent.futures
 import threading
@@ -203,7 +204,7 @@ class ArtNetModel:
 
             def _write():
                 if self._channel is not None:
-                    print("Min: " + str(min_delta) + " | Max: " + str(max_delta))
+                    print(Template("Millis=$m - $f").safe_substitute(m=t_delta, f=frame[:30]))
                     self._channel.add_fade(frame, 0)  # immediate write
 
             try:
