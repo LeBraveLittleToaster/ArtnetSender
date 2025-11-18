@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -60,7 +61,9 @@ public class EffectManager {
      */
     private void sendLoop() {
         if(curEffect != null){
-            artnetClient.sendDMX(curEffect.render(System.currentTimeMillis()));
+            var dmx = curEffect.render(System.currentTimeMillis());
+            System.out.println(Arrays.toString(dmx));
+            artnetClient.sendDMX(dmx);
         }
     }
 
