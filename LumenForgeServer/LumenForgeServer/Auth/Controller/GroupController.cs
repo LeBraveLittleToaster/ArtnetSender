@@ -198,41 +198,22 @@ public class GroupController(GroupService groupService) : ControllerBase
     }
 
     /// <summary>
-    /// Assigns a role to a group.
+    /// Assigns a role to a group after removing all others.
     /// </summary>
     /// <param name="groupGuid">Group guid to update.</param>
-    /// <param name="role">Role to assign.</param>
+    /// <param name="dto">Roles to be assigned</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response when assigned successfully.</returns>
-    [HttpPut("{groupGuid:guid}/roles/{role}")]
+    [HttpPut("{groupGuid:guid}/roles")]
     [Authorize(Policy = nameof(Policy.GroupUpdateRoleRead))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Produces("application/json")]
-    public async Task<IActionResult> AssignRoleToGroup([FromRoute] Guid groupGuid, [FromRoute] Role role, CancellationToken ct)
+    public async Task<IActionResult> AssignGroupRoles([FromRoute] Guid groupGuid, [FromBody] AssignGroupRolesDto dto, CancellationToken ct)
     {
-        await groupService.AssignRoleToGroup(groupGuid, role, ct);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Removes a role from a group.
-    /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
-    /// <param name="role">Role to remove.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>A 204 response when removed successfully.</returns>
-    [HttpDelete("{groupGuid:guid}/roles/{role}")]
-    [Authorize(Policy = nameof(Policy.GroupUpdateRoleRead))]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> RemoveRoleFromGroup([FromRoute] Guid groupGuid, [FromRoute] Role role, CancellationToken ct)
-    {
-        await groupService.RemoveRoleFromGroup(groupGuid, role, ct);
+        await groupService.AssignRolesToGroup(groupGuid, dto.Roles, ct);
         return NoContent();
     }
 }

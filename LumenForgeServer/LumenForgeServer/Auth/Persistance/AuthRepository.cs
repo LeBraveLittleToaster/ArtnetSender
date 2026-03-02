@@ -9,7 +9,7 @@ namespace LumenForgeServer.Auth.Persistance;
 /// <summary>
 /// EF Core-backed repository for auth users, groups, and roles.
 /// </summary>
-public sealed class AuthRepository(AppDbContext _db) : IAuthRepository
+public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _logger) : IAuthRepository
     
 {
     
@@ -256,22 +256,6 @@ public sealed class AuthRepository(AppDbContext _db) : IAuthRepository
             .ToListAsync(ct);
     }
 
-    /// <summary>
-    /// Assigns a role to a group.
-    /// </summary>
-    /// <param name="group">Group receiving the role.</param>
-    /// <param name="role">Role to assign.</param>
-    /// <param name="ct">Cancellation token.</param>
-    public Task AssignRoleToGroupAsync(Group group, Role role, CancellationToken ct)
-    {
-        var groupId = group.Id != 0 ? group.Id : throw new NotFoundException("Group not found");
-        return _db.GroupRoles.AddAsync(new GroupRole
-        {
-            GroupId = groupId,
-            RoleId = role
-        }, ct).AsTask();
-    }
-
     public Task AssignRolesToGroupAsync(Group group, Role[] roles, CancellationToken ct)
     {
         if (group is null) throw new NotFoundException("Group not found");
@@ -283,7 +267,6 @@ public sealed class AuthRepository(AppDbContext _db) : IAuthRepository
             GroupId = groupId,
             RoleId = r
         }).ToList();
-        // Handle duplicates
         return _db.GroupRoles.AddRangeAsync(groupRoles, ct);
     }
 
@@ -293,10 +276,13 @@ public sealed class AuthRepository(AppDbContext _db) : IAuthRepository
     /// <param name="group">Group losing the role.</param>
     /// <param name="role">Role to remove.</param>
     /// <param name="ct">Cancellation token.</param>
-    public Task RemoveRoleFromGroupAsync(Group group, Role role, CancellationToken ct)
+    public async Task RemoveAllRolesFromGroupAsync(Group group, CancellationToken ct)
     {
         var groupId = group.Id != 0 ? group.Id : throw new NotFoundException("Group not found");
-        return RemoveGroupRoleAsync(groupId, role, ct);
+
+        var groupRoles = await _db.GroupRoles.Where(gr => gr.GroupId == groupId).ToListAsync(ct);
+        _db.GroupRoles.RemoveRange(groupRoles);
+        _logger.LogInformation($"Removed {groupRoles.Count} roles from the group {group.Name}");
     }
 
     /// <summary>
@@ -371,19 +357,7 @@ public sealed class AuthRepository(AppDbContext _db) : IAuthRepository
             .AsNoTracking()
             .AnyAsync(gr => gr.GroupId == groupId && gr.RoleId == role, ct);
     }
-
-    private async Task RemoveGroupRoleAsync(long groupId, Role role, CancellationToken ct)
-    {
-        var groupRole = await _db.GroupRoles
-            .SingleOrDefaultAsync(gr => gr.GroupId == groupId && gr.RoleId == role, ct);
-        if (groupRole == null)
-        {
-            throw new NotFoundException($"Role {role} not assigned to group {groupId}.");
-        }
-
-        _db.GroupRoles.Remove(groupRole);
-    }
-
+    
     private async Task RemoveGroupUserAsync(long groupId, long userId, CancellationToken ct)
     {
         var groupUser = await _db.GroupUsers

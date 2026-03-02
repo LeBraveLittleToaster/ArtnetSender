@@ -124,13 +124,6 @@ public interface IAuthRepository
     Task<IReadOnlyList<Role>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct);
     
     /// <summary>
-    /// Assigns a role to a group.
-    /// </summary>
-    /// <param name="group">Group receiving the role.</param>
-    /// <param name="role">Role to assign.</param>
-    /// <param name="ct">Cancellation token.</param>
-    Task AssignRoleToGroupAsync(Group group, Role role, CancellationToken ct);
-    /// <summary>
     /// Assigns multiple roles to a group.
     /// </summary>
     /// <param name="group">Group receiving the role.</param>
@@ -143,7 +136,7 @@ public interface IAuthRepository
     /// <param name="group">Group losing the role.</param>
     /// <param name="role">Role to remove.</param>
     /// <param name="ct">Cancellation token.</param>
-    Task RemoveRoleFromGroupAsync(Group group, Role role, CancellationToken ct);
+    Task RemoveAllRolesFromGroupAsync(Group group, CancellationToken ct);
     
     /// <summary>
     /// Assigns a user to a group.

@@ -131,7 +131,7 @@ public static class DevDbSeeder
             await kcService.DeleteUserFromKeycloakByUsername(dto.Username, CancellationToken.None);
             kcUserId = await kcService.AddUserToKeycloak(dto, CancellationToken.None);
         }
-        await userService.AddUser(kcUserId, CancellationToken.None);
+        await userService.AddUser(kcUserId, dto, CancellationToken.None);
         return kcUserId;
 
     }

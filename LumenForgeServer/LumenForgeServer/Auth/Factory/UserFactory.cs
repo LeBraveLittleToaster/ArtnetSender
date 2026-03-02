@@ -16,12 +16,16 @@ public static class UserFactory
     /// </summary>
     /// <param name="dto">Payload containing the Keycloak subject identifier.</param>
     /// <returns>A new user instance with joined timestamp set.</returns>
-    public static KcUserReference BuildUser(string userKcId)
+    public static KcUserReference BuildUser(string userKcId, string username, string email, string firstname, string lastname)
     {
         return new KcUserReference
         {
             JoinedAt = SystemClock.Instance.GetCurrentInstant(),
-            UserKcId = userKcId
+            UserKcId = userKcId,
+            UsernameMirror =  username,
+            EmailMirror =  email,
+            FirstNameMirror =  firstname,
+            LastNameMirror =  lastname,
         };
     }
 }

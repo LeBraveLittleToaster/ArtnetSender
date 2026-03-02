@@ -58,7 +58,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var userKcId = await kcService.AddUserToKeycloak(addKcUserDto, ct);
         if(userKcId == null) throw new KeycloakException("User Id was not found");
         
-        var user = await userService.AddUser(userKcId, ct);
+        var user = await userService.AddUser(userKcId, addKcUserDto, ct);
         return CreatedAtAction(nameof(GetUser), new { userKcId = user?.UserKcId }, user);
     }
     

@@ -511,7 +511,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <param name="builder">Model builder used to configure entity mappings.</param>
     private static void AddAuthModuleTableDef(ModelBuilder builder)
     {
-        builder.Entity<KcUserReference>().ToTable("users");
+        builder.Entity<KcUserReference>().ToTable("users_kc_reference");
         builder.Entity<Group>().ToTable("groups");
         builder.Entity<GroupRole>().ToTable("group_roles");
         builder.Entity<GroupUser>().ToTable("group_users");

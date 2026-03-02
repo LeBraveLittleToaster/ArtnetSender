@@ -82,7 +82,8 @@ public sealed class AuthFixture : IAsyncLifetime
         var response = await apiHttpClient.PutAsJsonAsync("/api/v1/auth/users", dto);
         response.EnsureSuccessStatusCode();
 
-        var (accessTokenString, accessToken) = await GetKcTokenRequestAsync(_kcAndAppOptions, dto.Username, dto.Password);
+        var (accessTokenString, accessToken) =
+            await GetKcTokenRequestAsync(_kcAndAppOptions, dto.Username, dto.Password);
 
         apiHttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", accessTokenString);
@@ -98,7 +99,8 @@ public sealed class AuthFixture : IAsyncLifetime
         if (response.StatusCode != HttpStatusCode.Created)
             throw new RequestFailedException(response.StatusCode.ToString());
 
-        var (accessTokenString, accessToken) = await GetKcTokenRequestAsync(_kcAndAppOptions, dto.Username, dto.Password);
+        var (accessTokenString, accessToken) =
+            await GetKcTokenRequestAsync(_kcAndAppOptions, dto.Username, dto.Password);
 
         apiHttpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", accessTokenString);
@@ -151,7 +153,8 @@ public sealed class AuthFixture : IAsyncLifetime
         return (accessTokenString, accessToken);
     }
 
-    public async Task<GroupView> CreateGroupAsync(HttpClient adminClient, string? name = null, string? description = null)
+    public async Task<GroupView> CreateGroupAsync(HttpClient adminClient, string? name = null,
+        string? description = null)
     {
         var groupName = name ?? "Test Group " + Guid.NewGuid();
         var groupDesc = description ?? "Test Group Description " + Guid.NewGuid() + " Extended";
@@ -181,11 +184,13 @@ public sealed class AuthFixture : IAsyncLifetime
     {
         var group = await CreateGroupAsync(adminClient, name, description);
 
-        foreach (var role in roles.Distinct())
+
+        var assignResp = await adminClient.PutAsJsonAsync($"/api/v1/auth/groups/{group.Guid}/roles", new AssignGroupRolesDto()
         {
-            var assignResp = await adminClient.PutAsync($"/api/v1/auth/groups/{group.Guid}/roles/{role}", null);
-            assignResp.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        }
+            Roles = roles.Distinct().ToArray()
+        },CancellationToken.None);
+        assignResp.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
 
         return group;
     }

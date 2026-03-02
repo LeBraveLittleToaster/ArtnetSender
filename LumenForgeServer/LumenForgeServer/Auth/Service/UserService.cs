@@ -1,4 +1,5 @@
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Factory;
 using LumenForgeServer.Auth.Persistance;
@@ -45,14 +46,18 @@ public class UserService(IAuthRepository authRepository)
     /// <summary>
     /// Creates a user record from a payload.
     /// </summary>
-    /// <param name="addUserDto">Payload containing the Keycloak subject identifier.</param>
+    /// <param name="lastname"></param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="userKcId">Parameter mirror from keycloak user</param>
+    /// <param name="username">Parameter mirror from keycloak user</param>
+    /// <param name="email">Parameter mirror from keycloak user</param>
+    /// <param name="firstname">Parameter mirror from keycloak user</param>
     /// <returns>The created user.</returns>
     /// <exception cref="ValidationException">Thrown when the payload fails validation.</exception>
     /// <exception cref="Microsoft.EntityFrameworkCore.DbUpdateException">Thrown when persistence fails.</exception>
-    public async Task<KcUserReference?> AddUser(string userKcId, CancellationToken ct)
+    public async Task<KcUserReference?> AddUser(string userKcId, AddKcUserDto dto, CancellationToken ct)
     {
-        var user = UserFactory.BuildUser(userKcId);
+        var user = UserFactory.BuildUser(userKcId, dto.Username, dto.Email, dto.FirstName, dto.LastName);
 
         try
         {

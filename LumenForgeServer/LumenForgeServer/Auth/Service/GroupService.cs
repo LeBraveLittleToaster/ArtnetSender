@@ -190,37 +190,24 @@ public class GroupService(IAuthRepository authRepository)
     }
 
     /// <summary>
-    /// Assigns a role to a group.
+    /// Removes all existing roles and assigns the given roles to the group.
     /// </summary>
     /// <param name="groupGuid">Group guid to update.</param>
-    /// <param name="role">Role to assign.</param>
+    /// <param name="roles">Roles to assign.</param>
     /// <param name="ct">Cancellation token.</param>
-    public async Task AssignRoleToGroup(Guid groupGuid, Role role, CancellationToken ct)
+    public async Task AssignRolesToGroup(Guid groupGuid, Role[] roles, CancellationToken ct)
     {
         var group = await authRepository.GetGroupByGuidAsync(groupGuid, ct)
             ?? throw new NotFoundException("Group not found");
         try
         {
-            await authRepository.AssignRoleToGroupAsync(group, role, ct);
+            await authRepository.RemoveAllRolesFromGroupAsync(group, ct);
+            await authRepository.AssignRolesToGroupAsync(group, roles, ct);
             await authRepository.SaveChangesAsync(ct);
         }
         catch (DbUpdateException e)
         {
             throw new UniqueConstraintException(e.Message, e);
         }
-    }
-
-    /// <summary>
-    /// Removes a role from a group.
-    /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
-    /// <param name="role">Role to remove.</param>
-    /// <param name="ct">Cancellation token.</param>
-    public async Task RemoveRoleFromGroup(Guid groupGuid, Role role, CancellationToken ct)
-    {
-        var group = await authRepository.GetGroupByGuidAsync(groupGuid, ct)
-            ?? throw new NotFoundException("Group not found");
-        await authRepository.RemoveRoleFromGroupAsync(group, role, ct);
-        await authRepository.SaveChangesAsync(ct);
     }
 }
