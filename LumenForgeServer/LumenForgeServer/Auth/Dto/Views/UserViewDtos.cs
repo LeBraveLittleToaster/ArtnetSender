@@ -26,10 +26,10 @@ public record UserView
     [JsonPropertyName("group_users")]
     public List<GroupUser> GroupUsers { get; private set; } = [];
     
-    [JsonPropertyName("username")] public required string Username;
-    [JsonPropertyName("email")] public required string Email;
-    [JsonPropertyName("firstName")] public required string FirstName;
-    [JsonPropertyName("lastName")] public required string LastName;
+    [JsonPropertyName("username")] public required string Username{ get; set; }
+    [JsonPropertyName("email")] public required string Email{ get; set; }
+    [JsonPropertyName("firstName")] public required string FirstName{ get; set; }
+    [JsonPropertyName("lastName")] public required string LastName{ get; set; }
 
     public static UserView FromEntity(KcUserReference tEntity)
     {

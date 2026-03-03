@@ -27,7 +27,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <summary>
     /// Deletes a user by Keycloak subject identifier.
     /// </summary>
-    /// <param name="keycloakId">Keycloak subject identifier to delete.</param>
+    /// <param name="userKcId">Keycloak subject identifier to delete.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task DeleteUserByKcIdAsync(string userKcId, CancellationToken ct)
     {
@@ -58,7 +58,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of users.</returns>
-    public async Task<IReadOnlyList<KcUserReference>> ListUsersAsync(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<KcUserReference> users, long total)> ListUsersAsync(string? search, int limit, int offset, CancellationToken ct)
     {
         var query = _db.Users.AsQueryable();
 
@@ -67,11 +67,12 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             query = query.Where(u => u.UserKcId.Contains(search));
         }
 
-        return await query.AsNoTracking()
+        var users = await query.AsNoTracking()
             .OrderBy(u => u.UserKcId)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
+        return (users, _db.Users.Count());
     }
 
     /// <summary>
@@ -167,7 +168,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
-    public async Task<IReadOnlyList<Group>> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<Group> groups, long total)> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct)
     {
         var query = _db.Groups.AsQueryable();
 
@@ -176,11 +177,12 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             query = query.Where(g => g.Name.Contains(search) || g.Description.Contains(search));
         }
 
-        return await query.AsNoTracking()
+        var groups = await query.AsNoTracking()
             .OrderBy(g => g.Name)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
+        return (groups, _db.Groups.Count());
     }
     
     /// <summary>
@@ -230,14 +232,19 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
-    public async Task<IReadOnlyList<KcUserReference>> GetUsersForGroupAsync(Guid groupGuid, CancellationToken ct)
+    public async Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct)
     {
         var groupId = await GetGroupIdByGuidAsync(groupGuid, ct);
-        return await _db.GroupUsers
+        var users = await _db.GroupUsers
             .AsNoTracking()
             .Where(gu => gu.GroupId == groupId)
             .Select(gu => gu.KcUserReference)
             .ToListAsync(ct);
+        var userPerGroupCount = await _db.GroupUsers
+            .AsNoTracking()
+            .Where(gu => gu.GroupId == groupId)
+            .CountAsync(ct);
+        return (users, userPerGroupCount);
     }
 
     /// <summary>
@@ -274,7 +281,6 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// Removes a role assignment from a group.
     /// </summary>
     /// <param name="group">Group losing the role.</param>
-    /// <param name="role">Role to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task RemoveAllRolesFromGroupAsync(Group group, CancellationToken ct)
     {
@@ -282,7 +288,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
 
         var groupRoles = await _db.GroupRoles.Where(gr => gr.GroupId == groupId).ToListAsync(ct);
         _db.GroupRoles.RemoveRange(groupRoles);
-        _logger.LogInformation($"Removed {groupRoles.Count} roles from the group {group.Name}");
+        _logger.LogInformation("Removed {GroupRolesCount} roles from the group {GroupName}", groupRoles.Count, group.Name);
     }
 
     /// <summary>

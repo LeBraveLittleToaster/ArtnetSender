@@ -37,10 +37,10 @@ public class UserService(IAuthRepository authRepository)
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of users.</returns>
-    public async Task<IReadOnlyList<UserView>> ListUsers(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<UserView> users, long total)> ListUsers(string? search, int limit, int offset, CancellationToken ct)
     {
         var users = await authRepository.ListUsersAsync(search, limit, offset, ct);
-        return users.Select(UserView.FromEntity).ToList();
+        return (users.users.Select(UserView.FromEntity).ToList(), users.total);
     }
 
     /// <summary>

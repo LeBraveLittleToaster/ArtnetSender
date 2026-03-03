@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using LumenForgeServer.Auth.Dto.Command;
+using LumenForgeServer.Auth.Dto.Views;
 
 namespace LumenForgeServer.Auth.Controller;
 
@@ -37,7 +38,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     public async Task<IActionResult> ListGroups([FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var groups = await groupService.ListGroups(query.Search, query.Limit, query.Offset, ct);
-        return Ok(groups);
+        return Ok(new ListViewDto<GroupView>(){list = groups.groups, total = groups.total});
     }
 
     /// <summary>
@@ -151,10 +152,10 @@ public class GroupController(GroupService groupService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
-    public async Task<IActionResult> GetGroupUsers([FromRoute] Guid groupGuid, CancellationToken ct)
+    public async Task<IActionResult> GetGroupUsers([FromRoute] Guid groupGuid,[FromQuery] ListQueryDto query, CancellationToken ct)
     {
-        var users = await groupService.GetUsersForGroup(groupGuid, ct);
-        return Ok(users);
+        var users = await groupService.GetUsersForGroup(groupGuid, query.Limit, query.Offset, ct);
+        return Ok(new ListViewDto<UserView>(){list = users.users, total = users.total});
     }
 
     /// <summary>

@@ -47,7 +47,7 @@ public interface IAuthRepository
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of users.</returns>
-    Task<IReadOnlyList<KcUserReference>> ListUsersAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<KcUserReference> users, long total)> ListUsersAsync(string? search, int limit, int offset, CancellationToken ct);
     /// <summary>
     /// Retrieves all roles assigned to a user via group memberships.
     /// </summary>
@@ -82,7 +82,7 @@ public interface IAuthRepository
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
-    Task<IReadOnlyList<Group>> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<Group> groups, long total)> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct);
     /// <summary>
     /// Resolves the internal group id for a group guid.
     /// </summary>
@@ -114,7 +114,7 @@ public interface IAuthRepository
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
-    Task<IReadOnlyList<KcUserReference>> GetUsersForGroupAsync(Guid groupGuid, CancellationToken ct);
+    Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct);
     /// <summary>
     /// Retrieves roles assigned to a group.
     /// </summary>

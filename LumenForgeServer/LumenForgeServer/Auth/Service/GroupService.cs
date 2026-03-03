@@ -37,10 +37,10 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
-    public async Task<IReadOnlyList<GroupView>> ListGroups(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<GroupView> groups, long total)> ListGroups(string? search, int limit, int offset, CancellationToken ct)
     {
         var groups = await authRepository.ListGroupsAsync(search, limit, offset, ct);
-        return groups.Select(GroupView.FromEntity).ToList();
+        return (groups.groups.Select(GroupView.FromEntity).ToList(), groups.total);
     }
     
     /// <summary>
@@ -152,10 +152,10 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
-    public async Task<IReadOnlyList<UserView>> GetUsersForGroup(Guid groupGuid, CancellationToken ct)
+    public async Task<(IReadOnlyList<UserView> users, long total)> GetUsersForGroup(Guid groupGuid, int limit, int offset, CancellationToken ct)
     {
-        var users = await authRepository.GetUsersForGroupAsync(groupGuid, ct);
-        return users.Select(UserView.FromEntity).ToList();
+        var users = await authRepository.GetUsersForGroupAsync(groupGuid, limit, offset, ct);
+        return (users.users.Select(UserView.FromEntity).ToList(), users.total);
     }
 
     /// <summary>

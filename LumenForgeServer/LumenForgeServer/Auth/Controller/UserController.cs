@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Dto.Command;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common.Exceptions;
 
 namespace LumenForgeServer.Auth.Controller;
@@ -38,7 +39,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     public async Task<IActionResult> ListUsers([FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var users = await userService.ListUsers(query.Search, query.Limit, query.Offset, ct);
-        return Ok(users);
+        return Ok(new ListViewDto<UserView>(){list = users.users, total = users.total});
     }
 
     /// <summary>
@@ -52,7 +53,6 @@ public class UserController(UserService userService, KcService kcService, ILogge
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Produces("application/json")]
-    
     public async Task<IActionResult> RegisterNewUser([FromBody] AddKcUserDto addKcUserDto, CancellationToken ct)
     {
         var userKcId = await kcService.AddUserToKeycloak(addKcUserDto, ct);
