@@ -31,12 +31,12 @@ public class CreateGroupTest(AuthFixture fixture)
 
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var groups = JsonSerializer.Deserialize<List<GroupView>>(
+        var groups = JsonSerializer.Deserialize<ListViewDto<GroupView>>(
             await resp.Content.ReadAsStringAsync(),
             Json.GetJsonSerializerOptions());
 
         groups.Should().NotBeNull();
-        groups.Should().Contain(g => g.Guid == group.Guid);
+        groups.list.Should().Contain(g => g.Guid == group.Guid);
     }
 
     private async Task<GroupView> CreateGroupAsync(HttpClient adminClient, string? name = null, string? description = null)

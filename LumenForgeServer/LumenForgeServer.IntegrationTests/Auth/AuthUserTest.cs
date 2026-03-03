@@ -33,9 +33,9 @@ public class AuthUserTest(AuthFixture fixture)
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var content = await resp.Content.ReadAsStringAsync();
-        var users = JsonSerializer.Deserialize<List<UserView>>(content, Json.GetJsonSerializerOptions());
+        var users = JsonSerializer.Deserialize<ListViewDto<UserView>>(content, Json.GetJsonSerializerOptions());
         users.Should().NotBeNull();
-        users.Should().Contain(u => u.UserKcId == userKcId);
+        users.list.Should().Contain(u => u.UserKcId == userKcId);
     }
 
     [Fact]
