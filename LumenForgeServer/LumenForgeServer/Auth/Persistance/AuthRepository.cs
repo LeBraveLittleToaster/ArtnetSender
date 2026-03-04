@@ -60,19 +60,24 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <returns>List of users.</returns>
     public async Task<(IReadOnlyList<KcUserReference> users, long total)> ListUsersAsync(string? search, int limit, int offset, CancellationToken ct)
     {
-        var query = _db.Users.AsQueryable();
+        IQueryable<KcUserReference> query = _db.Users.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(u => u.UserKcId.Contains(search));
+            query = query.Where(u =>
+                u.UserKcId.ToLower().Contains(search.ToLower()) ||
+                u.UsernameMirror.ToLower().Contains(search.ToLower()));
         }
 
-        var users = await query.AsNoTracking()
+        var total = await query.LongCountAsync(ct);
+
+        var users = await query
             .OrderBy(u => u.UserKcId)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
-        return (users, _db.Users.Count());
+
+        return (users, total);
     }
 
     /// <summary>
@@ -174,15 +179,18 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(g => g.Name.Contains(search) || g.Description.Contains(search));
+            query = query.Where(g => 
+            g.Name.ToLower().Contains(search.ToLower())|| g.Description.ToLower().Contains(search.ToLower()));
         }
+
+        var total = await query.CountAsync();
 
         var groups = await query.AsNoTracking()
             .OrderBy(g => g.Name)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
-        return (groups, _db.Groups.Count());
+        return (groups, total);
     }
     
     /// <summary>
