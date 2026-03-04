@@ -70,8 +70,9 @@ public static class DevDbSeeder
             logger.LogInformation("Creating default admin user...");
             var initialAdminUser = await CreateInitialAdminUser(userService, kcService);
             logger.LogInformation("Assigning admin user to admin group...");
-            await AssignAdminUserToGroup(groupView, initialAdminUser, groupService);            
+            await AssignAdminUserToGroup(groupView, initialAdminUser, groupService);
 
+            await CreateTestUsersAndGroups(25, 7, userService, groupService, kcService);
             
             await vendorService.CreateVendor(new CreateVendorDto { Name = "Some Cool Vendor" }, CancellationToken.None);
 
@@ -104,6 +105,51 @@ public static class DevDbSeeder
             logger.LogError(ex, "Error occurred while resetting and seeding the development database.");
             throw;
         }
+    }
+
+    private static async Task CreateTestUsersAndGroups(int userCount, int groupCount, UserService userService, GroupService groupService, KcService kcService)
+    {
+        var addDefaultGroupDto = new AddGroupDto()
+        {
+            Description = $"Test Default Description of Group {0}",
+            Name = $"Test Default G{0}",
+            Roles = []
+        };
+        var defaultGgroupView = await groupService.AddGroup(addDefaultGroupDto, CancellationToken.None);
+
+        var groups = new List<GroupView>();
+        for(var groupIdx = 1; groupIdx <= groupCount; groupIdx++)
+        {
+            var addGroupDto = new AddGroupDto()
+            {
+                Description = $"Test Description of Group {groupIdx}",
+                Name = $"TestG{groupIdx}",
+                Roles = [.. Enum.GetValues<Role>().Where(e => new Random().Next(2) > 0)]
+            };
+            var groupView = await groupService.AddGroup(addGroupDto, CancellationToken.None);
+            groups.Add(groupView);
+        }
+
+        for(var userIdx = 0; userIdx < userCount; userIdx++)
+        {
+            var addUserDto = new AddKcUserDto()
+            {
+                Email = $"test{userIdx}@test.de",
+                FirstName = $"Ftest{userIdx}",
+                LastName = $"Ltest{userIdx}",
+                Username = $"testuser{userIdx}",
+                Password = $"testuser{userIdx}",
+            };
+            var userKcId = await kcService.AddUserToKeycloak(addUserDto, CancellationToken.None);
+            var userDbRef = await userService.AddUser(userKcId, addUserDto, CancellationToken.None);
+
+            await groupService.AssignUserToGroup(null, userKcId, defaultGgroupView.Guid, CancellationToken.None);
+            foreach(var group in groups.Where(g => new Random().Next(2) > 0).ToArray())
+            {
+                await groupService.AssignUserToGroup(null, userKcId, group.Guid, CancellationToken.None);
+            }
+        }
+        
     }
 
     private static async Task AssignAdminUserToGroup(GroupView groupView, string kcUserId, GroupService groupService)
