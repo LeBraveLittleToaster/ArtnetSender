@@ -23,9 +23,11 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
-    public async Task<GroupView> GetGroupByGuid(Guid guid, CancellationToken ct)
+    public async Task<GroupView> GetGroupByGuid(Guid guid, bool withPermissions, CancellationToken ct)
     {
-        var group = await authRepository.GetGroupByGuidAsync(guid, ct);
+        var group = withPermissions 
+            ? await authRepository.GetGroupByGuidAsync(guid, ct)
+            : await authRepository.GetGroupByGuidWithPermissionsAsync(guid, ct);
         return group == null ? throw new NotFoundException("Group not found") : GroupView.FromEntity(group);
     }
 
@@ -37,9 +39,11 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
-    public async Task<(IReadOnlyList<GroupView> groups, long total)> ListGroups(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<GroupView> groups, long total)> ListGroups(string? search, int limit, int offset, bool withPermissions, CancellationToken ct)
     {
-        var groups = await authRepository.ListGroupsAsync(search, limit, offset, ct);
+        var groups = withPermissions
+            ? await authRepository.ListGroupsAsync(search, limit, offset, ct)
+            : await authRepository.ListGroupsWithPermissionsAsync(search, limit, offset, ct);
         return (groups.groups.Select(GroupView.FromEntity).ToList(), groups.total);
     }
     

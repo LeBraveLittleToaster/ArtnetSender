@@ -140,6 +140,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ToListAsync(ct);
     }
 
+    
+
     /// <summary>
     /// Resolves the internal group id for a group guid.
     /// </summary>
@@ -158,7 +160,19 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             ? throw new NotFoundException($"Group {groupId} not found") 
             : groupId;
     }
-    
+
+    public async Task<Group?> GetGroupByGuidWithPermissionsAsync(Guid groupGuid, CancellationToken ct)
+    {
+        var group = await _db.Groups
+            .Where(g => g.Guid == groupGuid)
+            .Include(g => g.GroupRoles)
+            .ThenInclude(gr => gr.Permission)
+            .SingleOrDefaultAsync(ct);
+
+        return group 
+               ?? throw new NotFoundException($"Group {group} not found");
+    }
+
     /// <summary>
     /// Resolves the group for a group guid.
     /// </summary>
@@ -197,6 +211,36 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         var total = await query.CountAsync();
 
         var groups = await query.AsNoTracking()
+            .OrderBy(g => g.Name)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+        return (groups, total);
+    }
+    
+    /// <summary>
+    /// Lists groups with optional paging and search and permissions included.
+    /// </summary>
+    /// <param name="search">Optional search term.</param>
+    /// <param name="limit">Maximum number of records to return.</param>
+    /// <param name="offset">Number of records to skip.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>List of groups.</returns>
+    public async Task<(IReadOnlyList<Group> groups, long total)> ListGroupsWithPermissionsAsync(string? search, int limit, int offset, CancellationToken ct)
+    {
+        var query = _db.Groups.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(g =>
+                g.Name.Contains(search) ||
+                g.Description.Contains(search));
+        }
+
+        var total = await query.CountAsync(ct);
+
+        var groups = await query.AsNoTracking()
+            .Include(g => g.GroupRoles)
             .OrderBy(g => g.Name)
             .Skip(offset)
             .Take(limit)

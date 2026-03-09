@@ -27,6 +27,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <remarks>
     /// Example query: <c>GET /api/v1/auth/groups?search=ops&amp;limit=20&amp;offset=0</c>
     /// </remarks>
+    /// <param name="include">Includes Permissions if include=Permissions</param>
     /// <param name="query">Paging and search parameters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the group list.</returns>
@@ -35,15 +36,21 @@ public class GroupController(GroupService groupService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Produces("application/json")]
-    public async Task<IActionResult> ListGroups([FromQuery] ListQueryDto query, CancellationToken ct)
+    public async Task<IActionResult> ListGroups([FromQuery] string? include, [FromQuery] ListQueryDto query, CancellationToken ct)
     {
-        var groups = await groupService.ListGroups(query.Search, query.Limit, query.Offset, ct);
+        var includes = include?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(v => Enum.Parse<Includes>(v, true))
+            .ToList();
+        var withPermissions = includes?.Contains(Includes.Permissions) ?? false;
+        var groups = await groupService.ListGroups(query.Search, query.Limit, query.Offset, withPermissions, ct);
         return Ok(new ListViewDto<GroupView>(){list = groups.groups, total = groups.total});
     }
 
     /// <summary>
     /// Retrieves a group by groupGuid.
     /// </summary>
+    /// <param name="include">Include include=permissions</param>
     /// <param name="groupGuid">Stable group Guid</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the group view payload.</returns>
@@ -56,9 +63,14 @@ public class GroupController(GroupService groupService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Authorize(Roles = nameof(Permissions.GroupRead))]
     [Produces("application/json")]
-    public async Task<IActionResult> GetGroup([FromRoute] Guid groupGuid, CancellationToken ct)
+    public async Task<IActionResult> GetGroup([FromQuery] string? include, [FromRoute] Guid groupGuid, CancellationToken ct)
     {
-        var groupView = await groupService.GetGroupByGuid(groupGuid, ct);
+        var includes = include?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(v => Enum.Parse<Includes>(v, true))
+            .ToList();
+        var withPermissions = includes?.Contains(Includes.Permissions) ?? false;
+        var groupView = await groupService.GetGroupByGuid(groupGuid, withPermissions, ct);
         return new JsonResult(groupView);
     }
 
@@ -182,23 +194,6 @@ public class GroupController(GroupService groupService) : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves roles assigned to a group.
-    /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>A 200 response with the role list.</returns>
-    [HttpGet("{groupGuid:guid}/roles")]
-    [Authorize(Policy = nameof(Policy.GroupUpdateReadUser))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetGroupRoles([FromRoute] Guid groupGuid, CancellationToken ct)
-    {
-        var roles = await groupService.GetRolesForGroup(groupGuid, ct);
-        return Ok(roles);
-    }
-
-    /// <summary>
     /// Assigns a role to a group after removing all others.
     /// </summary>
     /// <param name="groupGuid">Group guid to update.</param>
@@ -217,4 +212,9 @@ public class GroupController(GroupService groupService) : ControllerBase
         await groupService.AssignRolesToGroup(groupGuid, dto.Roles, ct);
         return NoContent();
     }
+
+    public enum Includes
+    {
+        Permissions
+    } 
 }

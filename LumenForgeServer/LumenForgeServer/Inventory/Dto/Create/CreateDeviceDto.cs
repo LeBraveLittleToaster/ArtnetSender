@@ -21,13 +21,13 @@ public record CreateDeviceDto
     /// </summary>
     [StringLength(512)]
     [JsonPropertyName("name")]
-    public string? Name { get; set; }
+    public required string? Name { get; set; }
     /// <summary>
     /// Device description or notes.
     /// </summary>
     [StringLength(4000)]
     [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    public required string? Description { get; set; }
     /// <summary>
     /// URL pointing to a photo of the device.
     /// </summary>
@@ -39,7 +39,7 @@ public record CreateDeviceDto
     /// Vendor UUID to associate with the device.
     /// </summary>
     [JsonPropertyName("vendorGuid")]
-    public Guid VendorGuid { get; set; }
+    public required Guid VendorGuid { get; set; }
     /// <summary>
     /// Optional maintenance status UUID; defaults to first available status when omitted.
     /// </summary>

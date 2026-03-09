@@ -1,4 +1,6 @@
 
+using System.Text.Json.Serialization;
+
 namespace LumenForgeServer.Auth.Domain;
 
 /// <summary>
@@ -7,10 +9,9 @@ namespace LumenForgeServer.Auth.Domain;
 /// <remarks>
 /// Values are grouped by domain area and numeric range to keep role families distinct.
 /// </remarks>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum Permissions
 {
-    None = 0,
-
     // =========================
     // Inventory
     // =========================

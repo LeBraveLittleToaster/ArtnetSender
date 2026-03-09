@@ -93,6 +93,7 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
     Task<(IReadOnlyList<Group> groups, long total)> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<Group> groups, long total)> ListGroupsWithPermissionsAsync(string? search, int limit, int offset, CancellationToken ct);
     /// <summary>
     /// Resolves the internal group id for a group guid.
     /// </summary>
@@ -103,6 +104,16 @@ public interface IAuthRepository
     /// Thrown when the group cannot be found.
     /// </exception>
     Task<long> GetGroupIdByGuidAsync(Guid groupGuid, CancellationToken ct);
+    /// <summary>
+    /// Resolves the internal group id for a group guid with permissions included.
+    /// </summary>
+    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The internal group id.</returns>
+    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// Thrown when the group cannot be found.
+    /// </exception>
+    Task<Group?> GetGroupByGuidWithPermissionsAsync(Guid groupGuid, CancellationToken ct);
     /// <summary>
     /// Adds a group to the persistence store.
     /// </summary>
@@ -132,7 +143,6 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
     Task<IReadOnlyList<Permissions>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct);
-    
     /// <summary>
     /// Assigns multiple roles to a group.
     /// </summary>
@@ -189,4 +199,6 @@ public interface IAuthRepository
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     Task SaveChangesAsync(CancellationToken ct);
+
+    
 }

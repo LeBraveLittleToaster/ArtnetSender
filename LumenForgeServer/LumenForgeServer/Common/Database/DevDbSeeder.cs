@@ -5,6 +5,7 @@ using LumenForgeServer.Auth.Service;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Domain;
+using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Service;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using NodaTime;
@@ -49,6 +50,7 @@ public static class DevDbSeeder
 
         var vendorService = scope.ServiceProvider.GetRequiredService<VendorService>();
         var categoryService = scope.ServiceProvider.GetRequiredService<CategoryService>();
+        var deviceService = scope.ServiceProvider.GetRequiredService<DeviceService>();
 
         try
         {
@@ -74,14 +76,17 @@ public static class DevDbSeeder
 
             await CreateTestUsersAndGroups(25, 7, userService, groupService, kcService);
             
-            await vendorService.CreateVendor(new CreateVendorDto { Name = "Some Cool Vendor" }, CancellationToken.None);
+            var vendorView = await vendorService.CreateVendor(new CreateVendorDto { Name = "Some Cool Vendor" }, CancellationToken.None);
 
+            var categories = new List<CategoryView>();
             for (var i = 0; i < 10; i++)
             {
-                await categoryService.CreateCategory(
+                categories.Add(await categoryService.CreateCategory(
                     new CreateCategoryDto { Name = "Some Category " + i, Description = "Description " + i },
-                    CancellationToken.None);
+                    CancellationToken.None));
             }
+
+            await CreateTestDevices(deviceService, categories, vendorView, 50);
 
             if (!db.MaintenanceStatuses.Any())
             {
@@ -105,6 +110,22 @@ public static class DevDbSeeder
             logger.LogError(ex, "Error occurred while resetting and seeding the development database.");
             throw;
         }
+    }
+
+    private static async Task CreateTestDevices(DeviceService deviceService, List<CategoryView> categories, VendorView vendorView, int amount)
+    {
+        await deviceService.CreateDevice(new CreateDeviceDto
+        {
+            VendorGuid = vendorView.Guid,
+            Name = "Test Device",
+            Description = "Test Device Description",
+            SerialNumber = "XXXX-XXXX-XXXX",
+            Stock = new CreateStockDto()
+            {
+                StockCount = 10,
+                StockUnitType = StockUnitType.UNIT
+            }
+        }, CancellationToken.None);
     }
 
     private static async Task CreateTestUsersAndGroups(int userCount, int groupCount, UserService userService, GroupService groupService, KcService kcService)

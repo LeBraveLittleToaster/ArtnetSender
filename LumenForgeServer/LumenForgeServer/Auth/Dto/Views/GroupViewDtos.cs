@@ -45,6 +45,9 @@ public class GroupView
     
     public static GroupView FromEntity(Group tEntity)
     {
+        var permissions = (tEntity.GroupRoles.Count == 0) ? 
+            []
+            : tEntity.GroupRoles.Select(gr => gr.Permission).ToList();
         return new GroupView
         {
             Guid = tEntity.Guid,
@@ -52,20 +55,7 @@ public class GroupView
             Description = tEntity.Description,
             CreatedAt = tEntity.CreatedAt,
             UpdatedAt = tEntity.UpdatedAt,
-            Permissions = []
-        };
-    }
-    
-    public static GroupView FromEntityWithPermissions(Group tEntity, List<GroupPermissions> permissions)
-    {
-        return new GroupView
-        {
-            Guid = tEntity.Guid,
-            Name = tEntity.Name,
-            Description = tEntity.Description,
-            CreatedAt = tEntity.CreatedAt,
-            UpdatedAt = tEntity.UpdatedAt,
-            Permissions = permissions.Select(gp => gp.Permission).ToList(),
+            Permissions = permissions, 
         };
     }
 }

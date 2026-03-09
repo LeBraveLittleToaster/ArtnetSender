@@ -156,9 +156,11 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var roles = await userService.GetRolesForKcId(keycloakId, ct);
         return Ok(roles);
     }
+    
+    public enum GetUserInclude
+    {
+        Groups
+    }
 }
 
-public enum GetUserInclude
-{
-    Groups
-}
+
