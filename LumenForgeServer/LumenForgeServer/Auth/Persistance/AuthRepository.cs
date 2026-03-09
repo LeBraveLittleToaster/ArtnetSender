@@ -57,6 +57,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .Where(u => u.UserKcId == keycloakId)
             .Include(u => u.GroupUsers)
             .ThenInclude(gu => gu.Group)
+            .ThenInclude(g => g.GroupRoles)
             .SingleOrDefaultAsync(ct);
     }
 
@@ -118,7 +119,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .Where(u => u.UserKcId == keycloakId)
             .SelectMany(u => u.GroupUsers)
             .SelectMany(gu => gu.Group.GroupRoles)
-            .Select(gr => gr.PermissionsId)
+            .Select(gr => gr.Permission)
             .Distinct()
             .ToHashSetAsync(ct);
     }
@@ -277,7 +278,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         return await _db.GroupRoles
             .AsNoTracking()
             .Where(gr => gr.GroupId == groupId)
-            .Select(gr => gr.PermissionsId)
+            .Select(gr => gr.Permission)
             .ToListAsync(ct);
     }
 
@@ -290,7 +291,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         var groupRoles = roles.Distinct().Select(r => new GroupPermissions()
         {
             GroupId = groupId,
-            PermissionsId = r
+            Permission = r
         }).ToList();
         return _db.GroupRoles.AddRangeAsync(groupRoles, ct);
     }
@@ -379,7 +380,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         var groupId = group.Id != 0 ? group.Id : throw new NotFoundException("Group not found");
         return _db.GroupRoles
             .AsNoTracking()
-            .AnyAsync(gr => gr.GroupId == groupId && gr.PermissionsId == permissions, ct);
+            .AnyAsync(gr => gr.GroupId == groupId && gr.Permission == permissions, ct);
     }
     
     private async Task RemoveGroupUserAsync(long groupId, long userId, CancellationToken ct)

@@ -12,7 +12,7 @@ public class GroupPermissions
     /// <summary>
     /// Role assigned to the group.
     /// </summary>
-    public Permissions PermissionsId { get; set; }
+    public Permissions Permission { get; set; }
 
     /// <summary>
     /// Navigation to the group.

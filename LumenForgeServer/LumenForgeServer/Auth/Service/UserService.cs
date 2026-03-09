@@ -38,7 +38,7 @@ public class UserService(IAuthRepository authRepository)
         }
 
         var groups = user.GroupUsers
-            .Select(gu => GroupView.FromEntity(gu.Group))
+            .Select(gu => GroupView.FromEntityWithPermissions(gu.Group, gu.Group.GroupRoles))
             .ToList();
 
         return UserView.FromEntityWithGroups(user, groups);

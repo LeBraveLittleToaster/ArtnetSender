@@ -37,6 +37,12 @@ public class GroupView
     [JsonPropertyName("updated_at")]
     public required Instant UpdatedAt { get; set; }
     
+    /// <summary>
+    /// Permissions the group is assigned to
+    /// </summary>
+    [JsonPropertyName("permissions")]
+    public required List<Permissions> Permissions { get; set; }
+    
     public static GroupView FromEntity(Group tEntity)
     {
         return new GroupView
@@ -46,6 +52,20 @@ public class GroupView
             Description = tEntity.Description,
             CreatedAt = tEntity.CreatedAt,
             UpdatedAt = tEntity.UpdatedAt,
+            Permissions = []
+        };
+    }
+    
+    public static GroupView FromEntityWithPermissions(Group tEntity, List<GroupPermissions> permissions)
+    {
+        return new GroupView
+        {
+            Guid = tEntity.Guid,
+            Name = tEntity.Name,
+            Description = tEntity.Description,
+            CreatedAt = tEntity.CreatedAt,
+            UpdatedAt = tEntity.UpdatedAt,
+            Permissions = permissions.Select(gp => gp.Permission).ToList(),
         };
     }
 }

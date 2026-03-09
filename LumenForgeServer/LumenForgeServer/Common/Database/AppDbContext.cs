@@ -545,8 +545,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         builder.Entity<GroupPermissions>(e =>
         {
-            e.HasKey(x => new { x.GroupId, RoleId = x.PermissionsId });
-            e.Property(x => x.PermissionsId).HasConversion<int>();
+            e.HasKey(x => new { x.GroupId, RoleId = x.Permission });
+            e.Property(x => x.Permission).HasConversion<int>();
             
         });
         
