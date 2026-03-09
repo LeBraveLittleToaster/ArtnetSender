@@ -1,16 +1,14 @@
 // CreateGroupTest.cs
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
-using LumenForgeServer.Auth.Dto;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
-using LumenForgeServer.IntegrationTests.Client;
 using LumenForgeServer.IntegrationTests.TestSupport;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LumenForgeServer.IntegrationTests.Auth;
 
@@ -194,7 +192,7 @@ public class CreateGroupTest(AuthFixture fixture)
     {
         var adminBundle = await fixture.GetInitialAdminUserAsync();
 
-        var resp = await adminBundle.AppClient.GetAsync("/api/v1/auth/groups/not-a-guid");
+        var resp = await adminBundle.AppClient.GetAsync("/api/v1/auth/groups/not-a-Guid");
         resp.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 

@@ -1,3 +1,4 @@
+using LumenForgeServer.Common;
 using NodaTime;
 
 namespace LumenForgeServer.Inventory.Domain;
@@ -67,11 +68,18 @@ public class Device
     /// Timestamp when the device record was last updated.
     /// </summary>
     public Instant UpdatedAt { get; set; }
-
     /// <summary>
-    /// Stock entry associated with the device.
+    /// Type of stock this item is measured in (e.g., units, kilograms, liters).
     /// </summary>
-    public Stock Stock { get; set; } = null!;
+    public StockUnitType StockUnitType { get; set; }
+    /// <summary>
+    /// Total amount of this item available
+    /// </summary>
+    public long StockAmount { get; set; }
+    /// <summary>
+    /// StockBindings the device is associated with.
+    /// </summary>
+    public List<StockBinding> StockBindings { get; set; } = new();
     /// <summary>
     /// Parameter entries associated with the device.
     /// </summary>

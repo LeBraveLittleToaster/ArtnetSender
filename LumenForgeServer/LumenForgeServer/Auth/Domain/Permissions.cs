@@ -45,10 +45,10 @@ public enum Permissions
     // =========================
 
     // Backlog (50–59)
-    BacklogCreate = 50,
-    BacklogRead = 51,
-    BacklogUpdate = 52,
-    BacklogDelete = 53,
+    MaintenanceCreate = 50,
+    MaintenanceRead = 51,
+    MaintenanceUpdate = 52,
+    MaintenanceDelete = 53,
 
     // =========================
     // Rentals
@@ -81,18 +81,18 @@ public enum Permissions
     InvoiceStatusRead = 91,
     InvoiceStatusUpdate = 92,
     InvoiceStatusDelete = 93,
-    
+
     // Roles
     RoleRead = 101,
     RoleUpdate = 102,
     RoleDelete = 103,
-    
+
     // Groups
     GroupCreate = 200,
     GroupRead = 201,
     GroupUpdate = 202,
     GroupDelete = 203,
-    
+
     // Users
     UserCreate = 300,
     UserRead = 301,

@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
 using LumenForgeServer.Inventory.Domain;
 using NodaTime;
+using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Inventory.Dto.View;
 
@@ -9,7 +9,7 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record DeviceView
 {
-    [JsonPropertyName("guid")]
+    [JsonPropertyName("Guid")]
     public Guid Guid { get; init; }
 
     [JsonPropertyName("serial_number")]
@@ -39,8 +39,8 @@ public sealed record DeviceView
     [JsonPropertyName("vendor")]
     public required VendorView Vendor { get; init; }
 
-    [JsonPropertyName("stock")]
-    public StockView? Stock { get; init; }
+    [JsonPropertyName("stock_bindings")]
+    public List<StockBindingView> Stock { get; init; }
 
     [JsonPropertyName("parameters")]
     public IReadOnlyList<DeviceParameterView> Parameters { get; init; } = [];
@@ -78,7 +78,6 @@ public sealed record DeviceView
             MaintenanceStatusUuid = device.MaintenanceStatus.Uuid,
             MaintenanceStatusName = device.MaintenanceStatus.Name,
             Vendor = VendorView.FromEntity(device.Vendor),
-            Stock = device.Stock is null ? null : StockView.FromEntity(device.Stock),
             Parameters = parameters,
             Categories = categories,
             CreatedAt = device.CreatedAt,

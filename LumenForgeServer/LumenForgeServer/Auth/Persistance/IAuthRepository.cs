@@ -72,12 +72,12 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
     Task<IReadOnlyList<Group>> GetGroupsForUserAsync(string keycloakId, CancellationToken ct);
-    
-    
+
+
     /// <summary>
-    /// Resolves the group for a group guid.
+    /// Resolves the group for a group Guid.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
@@ -95,9 +95,9 @@ public interface IAuthRepository
     Task<(IReadOnlyList<Group> groups, long total)> ListGroupsAsync(string? search, int limit, int offset, CancellationToken ct);
     Task<(IReadOnlyList<Group> groups, long total)> ListGroupsWithPermissionsAsync(string? search, int limit, int offset, CancellationToken ct);
     /// <summary>
-    /// Resolves the internal group id for a group guid.
+    /// Resolves the internal group id for a group Guid.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
@@ -105,9 +105,9 @@ public interface IAuthRepository
     /// </exception>
     Task<long> GetGroupIdByGuidAsync(Guid groupGuid, CancellationToken ct);
     /// <summary>
-    /// Resolves the internal group id for a group guid with permissions included.
+    /// Resolves the internal group id for a group Guid with permissions included.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
@@ -121,9 +121,9 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     Task AddGroupAsync(Group group, CancellationToken ct);
     /// <summary>
-    /// Deletes a group by guid.
+    /// Deletes a group by Guid.
     /// </summary>
-    /// <param name="guid">Group guid to delete.</param>
+    /// <param name="guid">Group Guid to delete.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
@@ -132,14 +132,14 @@ public interface IAuthRepository
     /// <summary>
     /// Retrieves users assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct);
     /// <summary>
     /// Retrieves roles assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
     Task<IReadOnlyList<Permissions>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct);
@@ -157,13 +157,13 @@ public interface IAuthRepository
     /// <param name="role">Role to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     Task RemoveAllRolesFromGroupAsync(Group group, CancellationToken ct);
-    
+
     /// <summary>
     /// Assigns a user to a group.
     /// </summary>
     /// <param name="assigneeKeycloakId">Optional Keycloak subject identifier for the actor performing the assignment.</param>
     /// <param name="keycloakId">Keycloak subject identifier for the user being assigned.</param>
-    /// <param name="groupGuid">Target group guid.</param>
+    /// <param name="groupGuid">Target group Guid.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
     /// Thrown when the user or group cannot be found.
@@ -176,7 +176,7 @@ public interface IAuthRepository
     /// <param name="kcUserReference">User to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     Task RemoveUserFromGroupAsync(Group group, KcUserReference kcUserReference, CancellationToken ct);
-    
+
     /// <summary>
     /// Checks whether a user is a member of a group.
     /// </summary>
@@ -200,5 +200,5 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     Task SaveChangesAsync(CancellationToken ct);
 
-    
+
 }

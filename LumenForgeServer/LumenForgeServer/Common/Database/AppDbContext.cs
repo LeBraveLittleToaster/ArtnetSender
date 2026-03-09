@@ -32,7 +32,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// Join table linking users to groups.
     /// </summary>
     public DbSet<GroupUser> GroupUsers => Set<GroupUser>();
-    
+
     // Inventory
     /// <summary>
     /// Inventory vendors.
@@ -53,7 +53,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <summary>
     /// Stock entries tied to devices.
     /// </summary>
-    public DbSet<Stock> Stocks => Set<Stock>();
+    public DbSet<StockBinding> StockBindings => Set<StockBinding>();
     /// <summary>
     /// Device parameter entries.
     /// </summary>
@@ -124,7 +124,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
-        
+
         AddAuthModuleTableDef(b);
         AddInventoryModuleTableDef(b);
         AddBillingModuleTableDef(b);
@@ -238,11 +238,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.IssueSummary).HasMaxLength(2000).IsRequired();
             e.Property(x => x.IssueDescription).HasMaxLength(4000);
 
-            e.HasOne(x => x.Stock)
-                .WithMany(s => s.MaintenanceBacklogs)
-                .HasForeignKey(x => x.StockId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             e.HasOne(x => x.RentalItem)
                 .WithMany(ri => ri.MaintenanceBacklogs)
                 .HasForeignKey(x => x.RentalItemId)
@@ -315,7 +310,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Uuid).IsUnique();
 
-            e.Property(x => x.Quantity).HasPrecision(18, 3);
             e.Property(x => x.ConditionNotes).HasMaxLength(4000);
             e.Property(x => x.ApprovedByUserId).HasMaxLength(128);
 
@@ -324,10 +318,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(x => x.RentalId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            e.HasOne(x => x.Stock)
-                .WithMany(s => s.RentalItems)
-                .HasForeignKey(x => x.StockId)
-                .OnDelete(DeleteBehavior.Restrict);
+           
         });
 
         builder.Entity<Checklist>(e =>
@@ -402,7 +393,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         builder.Entity<Category>().ToTable("category");
         builder.Entity<MaintenanceStatus>().ToTable("maintenance_status");
         builder.Entity<Device>().ToTable("device");
-        builder.Entity<Stock>().ToTable("stock");
+        builder.Entity<StockBinding>().ToTable("stock_binding");
         builder.Entity<DeviceParameter>().ToTable("device_parameter");
         builder.Entity<DeviceCategory>().ToTable("device_category");
 
@@ -411,7 +402,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(256).IsRequired();
             e.HasIndex(x => x.Guid).IsUnique();
-            
+
             e.HasIndex(x => x.Name).IsUnique();
         });
 
@@ -457,20 +448,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(x => x.MaintenanceStatusId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasOne(x => x.Stock)
+            e.HasMany(x => x.StockBindings)
                 .WithOne(s => s.Device)
-                .HasForeignKey<Stock>(s => s.DeviceId)
+                .HasForeignKey(s => s.DeviceId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<Stock>(e =>
+        builder.Entity<StockBinding>(e =>
         {
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.Uuid).IsUnique();
-            e.HasIndex(x => x.DeviceId).IsUnique(); // one-to-one
+            e.HasIndex(x => x.Guid).IsUnique();
+            e.HasIndex(x => x.DeviceId);
 
-            e.Property(x => x.StockCount).HasPrecision(18, 3);
-            e.Property(x => x.UnitStockType).HasConversion<string>().HasMaxLength(32).IsRequired();
+            e.Property(x => x.BindingType).IsRequired();
+            e.Property(x => x.Start).IsRequired();
+
+            e.Property(x => x.End).IsRequired();
+
         });
 
         builder.Entity<DeviceParameter>(e =>
@@ -520,19 +514,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.UserKcId).IsUnique();
-            
+
             e.HasMany(x => x.GroupUsers)
                 .WithOne(x => x.KcUserReference)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-        
+
         builder.Entity<Group>(e =>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Guid).IsUnique();
             e.HasIndex(x => x.Name).IsUnique();
-            
+
             e.HasMany(x => x.GroupRoles)
                 .WithOne(x => x.Group)
                 .HasForeignKey(x => x.GroupId)
@@ -547,9 +541,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.HasKey(x => new { x.GroupId, RoleId = x.Permission });
             e.Property(x => x.Permission).HasConversion<int>();
-            
+
         });
-        
+
         builder.Entity<GroupUser>(e =>
         {
             e.HasKey(x => new { x.GroupId, x.UserId });

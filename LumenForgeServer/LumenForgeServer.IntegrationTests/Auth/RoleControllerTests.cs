@@ -1,12 +1,12 @@
 // RoleControllerTests.cs
-using System.Net;
-using System.Text.Json;
 using FluentAssertions;
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
+using System.Net;
+using System.Text.Json;
 
 namespace LumenForgeServer.IntegrationTests.Auth;
 

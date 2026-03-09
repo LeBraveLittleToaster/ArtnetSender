@@ -1,5 +1,4 @@
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Factory;
@@ -17,15 +16,15 @@ public class GroupService(IAuthRepository authRepository)
 {
 
     /// <summary>
-    /// Resolves a group by group guid.
+    /// Resolves a group by group Guid.
     /// </summary>
-    /// <param name="guid">Group guid to look up.</param>
+    /// <param name="guid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
     public async Task<GroupView> GetGroupByGuid(Guid guid, bool withPermissions, CancellationToken ct)
     {
-        var group = withPermissions 
+        var group = withPermissions
             ? await authRepository.GetGroupByGuidAsync(guid, ct)
             : await authRepository.GetGroupByGuidWithPermissionsAsync(guid, ct);
         return group == null ? throw new NotFoundException("Group not found") : GroupView.FromEntity(group);
@@ -46,11 +45,11 @@ public class GroupService(IAuthRepository authRepository)
             : await authRepository.ListGroupsWithPermissionsAsync(search, limit, offset, ct);
         return (groups.groups.Select(GroupView.FromEntity).ToList(), groups.total);
     }
-    
+
     /// <summary>
-    /// Resolves a group id by group guid.
+    /// Resolves a group id by group Guid.
     /// </summary>
-    /// <param name="guid">Group guid to look up.</param>
+    /// <param name="guid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
@@ -83,15 +82,15 @@ public class GroupService(IAuthRepository authRepository)
         {
             throw new UniqueConstraintException(e.Message, e);
         }
-        
-        
+
+
         return GroupView.FromEntity(group);
     }
 
     /// <summary>
     /// Updates a group record.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="dto">Payload containing updated group fields.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The updated group.</returns>
@@ -137,7 +136,7 @@ public class GroupService(IAuthRepository authRepository)
         }
     }
 
-    public async Task AssignUserToGroup(string? assigneeKcId, string userKcId, Guid groupGuid,  CancellationToken ct)
+    public async Task AssignUserToGroup(string? assigneeKcId, string userKcId, Guid groupGuid, CancellationToken ct)
     {
         try
         {
@@ -153,7 +152,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <summary>
     /// Retrieves users assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     public async Task<(IReadOnlyList<UserView> users, long total)> GetUsersForGroup(Guid groupGuid, int limit, int offset, CancellationToken ct)
@@ -165,7 +164,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <summary>
     /// Removes a user from a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="userKcId">Keycloak subject identifier to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task RemoveUserFromGroup(Guid groupGuid, string userKcId, CancellationToken ct)
@@ -185,7 +184,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <summary>
     /// Retrieves roles assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
     public async Task<IReadOnlyList<Permissions>> GetRolesForGroup(Guid groupGuid, CancellationToken ct)
@@ -196,7 +195,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <summary>
     /// Removes all existing roles and assigns the given roles to the group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="roles">Roles to assign.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task AssignRolesToGroup(Guid groupGuid, Permissions[] roles, CancellationToken ct)

@@ -1,6 +1,6 @@
+using LumenForgeServer.Auth.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using LumenForgeServer.Auth.Domain;
 
 namespace LumenForgeServer.Auth.Dto.Command;
 
@@ -25,7 +25,7 @@ public record AddGroupDto
     [RegularExpression(@".*\S.*")]
     [JsonPropertyName("description")]
     public required string Description { get; set; }
-    
+
     /// <summary>
     /// Roles assigned to that group
     /// </summary>

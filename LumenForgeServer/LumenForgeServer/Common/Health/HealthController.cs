@@ -1,4 +1,3 @@
-using LumenForgeServer.Auth.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +24,7 @@ public class HealthController
         };
         return new JsonResult(statusAggregate);
     }
-    
+
     /// <summary>
     /// Health endpoint restricted to users with the REALM_USER role.
     /// </summary>
@@ -41,7 +40,7 @@ public class HealthController
         };
         return new JsonResult(statusAggregate);
     }
-    
+
     /// <summary>
     /// Health endpoint restricted to users with the REALM_WORKER role.
     /// </summary>

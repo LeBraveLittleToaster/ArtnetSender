@@ -176,7 +176,7 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
         return db.Devices
             .Include(d => d.Vendor)
             .Include(d => d.MaintenanceStatus)
-            .Include(d => d.Stock)
+            .Include(d => d.StockBindings)
             .Include(d => d.Parameters)
             .Include(d => d.DeviceCategories)
             .ThenInclude(dc => dc.Category)

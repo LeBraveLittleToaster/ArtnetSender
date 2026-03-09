@@ -1,3 +1,4 @@
+using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.Query;
 using LumenForgeServer.Inventory.Dto.Update;
@@ -5,7 +6,6 @@ using LumenForgeServer.Inventory.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using LumenForgeServer.Auth.Domain;
 
 namespace LumenForgeServer.Inventory.Controller;
 
@@ -39,7 +39,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return Ok(devices);
     }
 
-    [HttpGet("{deviceGuid:guid}")]
+    [HttpGet("{deviceGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.DeviceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -62,7 +62,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return CreatedAtAction(nameof(GetDevice), new { deviceGuid = device.Guid }, device);
     }
 
-    [HttpPatch("{deviceGuid:guid}")]
+    [HttpPatch("{deviceGuid:Guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -74,7 +74,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return Ok(device);
     }
 
-    [HttpDelete("{deviceGuid:guid}")]
+    [HttpDelete("{deviceGuid:Guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
@@ -84,7 +84,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return NoContent();
     }
 
-    [HttpPut("{deviceGuid:guid}/categories")]
+    [HttpPut("{deviceGuid:Guid}/categories")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -95,7 +95,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return Ok(device);
     }
 
-    [HttpPut("{deviceGuid:guid}/parameters")]
+    [HttpPut("{deviceGuid:Guid}/parameters")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -107,7 +107,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return Ok(parameter);
     }
 
-    [HttpDelete("{deviceGuid:guid}/parameters/{parameterKey}")]
+    [HttpDelete("{deviceGuid:Guid}/parameters/{parameterKey}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -122,14 +122,4 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{deviceGuid:guid}/stock")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> UpdateStock([FromRoute] Guid deviceGuid, [FromBody] UpdateStockDto dto, CancellationToken ct)
-    {
-        var stock = await deviceService.UpdateStock(deviceGuid, dto, ct);
-        return Ok(stock);
-    }
 }

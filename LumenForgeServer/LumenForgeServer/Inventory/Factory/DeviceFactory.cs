@@ -33,14 +33,6 @@ public static class DeviceFactory
             Guid = Guid.CreateVersion7(),
             CreatedAt = now,
             UpdatedAt = now,
-            Stock = new Stock
-            {
-                Uuid = Guid.CreateVersion7(),
-                StockCount = dto.Stock.StockCount,
-                UnitStockType = dto.Stock.StockUnitType,
-                CreatedAt = now,
-                UpdatedAt = now
-            },
             Parameters = dto.Parameters.Select(p => new DeviceParameter
             {
                 ParamKey = p.Key,

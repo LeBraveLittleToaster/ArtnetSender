@@ -1,5 +1,4 @@
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto;
 using LumenForgeServer.Auth.Dto.Command;
 using NodaTime;
 
@@ -17,7 +16,7 @@ public static class GroupFactory
         {
             Guid = Guid.CreateVersion7(),
             CreatedAt = dateNow,
-            UpdatedAt =  dateNow,
+            UpdatedAt = dateNow,
             Name = dto.Name,
             Description = dto.Description,
         };

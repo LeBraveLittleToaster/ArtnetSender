@@ -1,7 +1,7 @@
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Inventory.Dto.Create;
-using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Dto.Update;
+using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Factory;
 using LumenForgeServer.Inventory.Persistance;
 using Microsoft.EntityFrameworkCore;

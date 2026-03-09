@@ -38,7 +38,7 @@ public class CategoryController(CategoryService categoryService) : ControllerBas
         return Ok(categories);
     }
 
-    [HttpGet("{categoryGuid:guid}")]
+    [HttpGet("{categoryGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.CategoryRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -61,7 +61,7 @@ public class CategoryController(CategoryService categoryService) : ControllerBas
         return CreatedAtAction(nameof(GetCategory), new { categoryGuid = category.Guid }, category);
     }
 
-    [HttpPatch("{categoryGuid:guid}")]
+    [HttpPatch("{categoryGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.CategoryUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -74,7 +74,7 @@ public class CategoryController(CategoryService categoryService) : ControllerBas
         return Ok(category);
     }
 
-    [HttpDelete("{categoryGuid:guid}")]
+    [HttpDelete("{categoryGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.CategoryDelete))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

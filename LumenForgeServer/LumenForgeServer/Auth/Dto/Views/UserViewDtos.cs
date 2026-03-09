@@ -1,7 +1,6 @@
-using System.Text.Json.Serialization;
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Common.Database;
 using NodaTime;
+using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Auth.Dto.Views;
 
@@ -14,7 +13,7 @@ public record UserView
     /// Timestamp when the user joined the system.
     /// </summary>
     [JsonPropertyName("joined_at")]
-    public required Instant JoinedAt { get; set; } 
+    public required Instant JoinedAt { get; set; }
     /// <summary>
     /// Keycloak subject identifier ("sub") for the user.
     /// </summary>
@@ -25,11 +24,11 @@ public record UserView
     /// </summary>
     [JsonPropertyName("groups")]
     public List<GroupView> Groups { get; private set; } = [];
-    
-    [JsonPropertyName("username")] public required string Username{ get; set; }
-    [JsonPropertyName("email")] public required string Email{ get; set; }
-    [JsonPropertyName("firstName")] public required string FirstName{ get; set; }
-    [JsonPropertyName("lastName")] public required string LastName{ get; set; }
+
+    [JsonPropertyName("username")] public required string Username { get; set; }
+    [JsonPropertyName("email")] public required string Email { get; set; }
+    [JsonPropertyName("firstName")] public required string FirstName { get; set; }
+    [JsonPropertyName("lastName")] public required string LastName { get; set; }
 
     public static UserView FromEntity(KcUserReference tEntity)
     {

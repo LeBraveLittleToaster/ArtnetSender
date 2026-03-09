@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
 using LumenForgeServer.Inventory.Domain;
 using NodaTime;
+using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Inventory.Dto.View;
 
@@ -9,7 +9,7 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record VendorView
 {
-    [JsonPropertyName("guid")]
+    [JsonPropertyName("Guid")]
     public Guid Guid { get; init; }
 
     [JsonPropertyName("name")]

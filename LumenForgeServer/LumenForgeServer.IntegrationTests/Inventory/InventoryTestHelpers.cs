@@ -1,13 +1,12 @@
 // InventoryTestHelpers.cs (UNCHANGED)
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
 using LumenForgeServer.Common;
-using LumenForgeServer.IntegrationTests.Fixtures;
 using LumenForgeServer.IntegrationTests.TestSupport;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.View;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LumenForgeServer.IntegrationTests.Inventory;
 

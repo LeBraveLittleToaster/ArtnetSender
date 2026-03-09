@@ -7,5 +7,5 @@ public record TestUserBundle(JwtSecurityToken JwtSecurityToken, HttpClient AppCl
     public string GetKcUserId()
     {
         return JwtSecurityToken.Subject;
-    } 
+    }
 }

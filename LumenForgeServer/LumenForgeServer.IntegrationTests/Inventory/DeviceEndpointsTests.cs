@@ -1,6 +1,4 @@
 // DeviceEndpointsTests.cs
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
@@ -8,6 +6,8 @@ using LumenForgeServer.IntegrationTests.Fixtures;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.Update;
 using LumenForgeServer.Inventory.Dto.View;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace LumenForgeServer.IntegrationTests.Inventory;
 

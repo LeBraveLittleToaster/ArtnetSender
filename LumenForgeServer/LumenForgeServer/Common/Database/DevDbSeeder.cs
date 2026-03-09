@@ -3,11 +3,10 @@ using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Service;
 using LumenForgeServer.Common.Exceptions;
-using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Domain;
+using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Service;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using NodaTime;
 
 namespace LumenForgeServer.Common.Database;
@@ -75,7 +74,7 @@ public static class DevDbSeeder
             await AssignAdminUserToGroup(groupView, initialAdminUser, groupService);
 
             await CreateTestUsersAndGroups(25, 7, userService, groupService, kcService);
-            
+
             var vendorView = await vendorService.CreateVendor(new CreateVendorDto { Name = "Some Cool Vendor" }, CancellationToken.None);
 
             var categories = new List<CategoryView>();
@@ -120,11 +119,6 @@ public static class DevDbSeeder
             Name = "Test Device",
             Description = "Test Device Description",
             SerialNumber = "XXXX-XXXX-XXXX",
-            Stock = new CreateStockDto()
-            {
-                StockCount = 10,
-                StockUnitType = StockUnitType.UNIT
-            }
         }, CancellationToken.None);
     }
 
@@ -139,7 +133,7 @@ public static class DevDbSeeder
         var defaultGgroupView = await groupService.AddGroup(addDefaultGroupDto, CancellationToken.None);
 
         var groups = new List<GroupView>();
-        for(var groupIdx = 1; groupIdx <= groupCount; groupIdx++)
+        for (var groupIdx = 1; groupIdx <= groupCount; groupIdx++)
         {
             var addGroupDto = new AddGroupDto()
             {
@@ -151,7 +145,7 @@ public static class DevDbSeeder
             groups.Add(groupView);
         }
 
-        for(var userIdx = 0; userIdx < userCount; userIdx++)
+        for (var userIdx = 0; userIdx < userCount; userIdx++)
         {
             var addUserDto = new AddKcUserDto()
             {
@@ -165,17 +159,17 @@ public static class DevDbSeeder
             var userDbRef = await userService.AddUser(userKcId, addUserDto, CancellationToken.None);
 
             await groupService.AssignUserToGroup(null, userKcId, defaultGgroupView.Guid, CancellationToken.None);
-            foreach(var group in groups.Where(g => new Random().Next(2) > 0).ToArray())
+            foreach (var group in groups.Where(g => new Random().Next(2) > 0).ToArray())
             {
                 await groupService.AssignUserToGroup(null, userKcId, group.Guid, CancellationToken.None);
             }
         }
-        
+
     }
 
     private static async Task AssignAdminUserToGroup(GroupView groupView, string kcUserId, GroupService groupService)
     {
-        await groupService.AssignUserToGroup(null, kcUserId, groupView.Guid,  CancellationToken.None);
+        await groupService.AssignUserToGroup(null, kcUserId, groupView.Guid, CancellationToken.None);
     }
 
     private static async Task<string> CreateInitialAdminUser(UserService userService, KcService kcService)
@@ -210,9 +204,9 @@ public static class DevDbSeeder
             Description = DbInitConstants.InitAdminGroupDescription,
             Name = DbInitConstants.InitAdminGroupName,
             Roles = Enum.GetValues<Permissions>()
-        },  CancellationToken.None);
+        }, CancellationToken.None);
         return groupView;
-        
+
     }
 
     private static async Task DeleteAllTestUsers(KcService kcService)
