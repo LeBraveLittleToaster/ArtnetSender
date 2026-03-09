@@ -27,5 +27,5 @@ public record AssignUserToGroupDto
 public record AssignGroupRolesDto
 {
     [JsonPropertyName("roles")]
-    public required Role[] Roles { get; init; }
+    public required Permissions[] Roles { get; init; }
 }

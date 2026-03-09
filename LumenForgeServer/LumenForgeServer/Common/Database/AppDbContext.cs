@@ -27,7 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <summary>
     /// Join table linking groups to roles.
     /// </summary>
-    public DbSet<GroupRole> GroupRoles => Set<GroupRole>();
+    public DbSet<GroupPermissions> GroupRoles => Set<GroupPermissions>();
     /// <summary>
     /// Join table linking users to groups.
     /// </summary>
@@ -513,7 +513,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         builder.Entity<KcUserReference>().ToTable("users_kc_reference");
         builder.Entity<Group>().ToTable("groups");
-        builder.Entity<GroupRole>().ToTable("group_roles");
+        builder.Entity<GroupPermissions>().ToTable("group_roles");
         builder.Entity<GroupUser>().ToTable("group_users");
 
         builder.Entity<KcUserReference>(e =>
@@ -543,10 +543,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<GroupRole>(e =>
+        builder.Entity<GroupPermissions>(e =>
         {
-            e.HasKey(x => new { x.GroupId, x.RoleId });
-            e.Property(x => x.RoleId).HasConversion<int>();
+            e.HasKey(x => new { x.GroupId, RoleId = x.PermissionsId });
+            e.Property(x => x.PermissionsId).HasConversion<int>();
             
         });
         

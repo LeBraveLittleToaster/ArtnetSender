@@ -7,7 +7,7 @@ namespace LumenForgeServer.Auth.Domain;
 /// <remarks>
 /// Values are grouped by domain area and numeric range to keep role families distinct.
 /// </remarks>
-public enum Role
+public enum Permissions
 {
     None = 0,
 

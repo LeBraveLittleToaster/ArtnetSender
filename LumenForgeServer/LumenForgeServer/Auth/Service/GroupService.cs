@@ -184,7 +184,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
-    public async Task<IReadOnlyList<Role>> GetRolesForGroup(Guid groupGuid, CancellationToken ct)
+    public async Task<IReadOnlyList<Permissions>> GetRolesForGroup(Guid groupGuid, CancellationToken ct)
     {
         return await authRepository.GetRolesForGroupAsync(groupGuid, ct);
     }
@@ -195,7 +195,7 @@ public class GroupService(IAuthRepository authRepository)
     /// <param name="groupGuid">Group guid to update.</param>
     /// <param name="roles">Roles to assign.</param>
     /// <param name="ct">Cancellation token.</param>
-    public async Task AssignRolesToGroup(Guid groupGuid, Role[] roles, CancellationToken ct)
+    public async Task AssignRolesToGroup(Guid groupGuid, Permissions[] roles, CancellationToken ct)
     {
         var group = await authRepository.GetGroupByGuidAsync(groupGuid, ct)
             ?? throw new NotFoundException("Group not found");

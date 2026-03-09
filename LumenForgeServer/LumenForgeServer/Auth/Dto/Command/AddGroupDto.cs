@@ -30,5 +30,5 @@ public record AddGroupDto
     /// Roles assigned to that group
     /// </summary>
     [JsonPropertyName("roles")]
-    public required Role[] Roles { get; set; }
+    public required Permissions[] Roles { get; set; }
 }

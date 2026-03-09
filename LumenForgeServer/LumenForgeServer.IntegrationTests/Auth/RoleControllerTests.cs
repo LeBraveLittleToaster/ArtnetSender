@@ -28,7 +28,7 @@ public class RoleControllerTests(AuthFixture fixture)
             Json.GetJsonSerializerOptions());
 
         roles.Should().NotBeNull();
-        roles.Should().Contain(r => r.Name == Role.DeviceRead.ToString());
-        roles.Should().Contain(r => r.Value == (int)Role.DeviceRead);
+        roles.Should().Contain(r => r.Name == Permissions.DeviceRead.ToString());
+        roles.Should().Contain(r => r.Value == (int)Permissions.DeviceRead);
     }
 }

@@ -30,7 +30,7 @@ public class CreateUserTest(AuthFixture fixture)
     public async Task POST_new_user_creates_user()
     {
         var testUser = CreateTestUserDto.CreateTestUser();
-        var userBundle = await fixture.CreateNewUserWithRolesAsync(testUser, [Role.UserRead]);
+        var userBundle = await fixture.CreateNewUserWithRolesAsync(testUser, [Permissions.UserRead]);
         var userKcId = userBundle.GetKcUserId();
 
         var userFromDb = await userBundle.AppClient.GetAsync($"/api/v1/auth/users/{userKcId}");

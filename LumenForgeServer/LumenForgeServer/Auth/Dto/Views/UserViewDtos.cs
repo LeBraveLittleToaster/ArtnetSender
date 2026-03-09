@@ -23,8 +23,8 @@ public record UserView
     /// <summary>
     /// Group memberships for the user.
     /// </summary>
-    [JsonPropertyName("group_users")]
-    public List<GroupUser> GroupUsers { get; private set; } = [];
+    [JsonPropertyName("groups")]
+    public List<GroupView> Groups { get; private set; } = [];
     
     [JsonPropertyName("username")] public required string Username{ get; set; }
     [JsonPropertyName("email")] public required string Email{ get; set; }
@@ -37,7 +37,20 @@ public record UserView
         {
             UserKcId = tEntity.UserKcId,
             JoinedAt = tEntity.JoinedAt,
-            GroupUsers = tEntity.GroupUsers,
+            Groups = [],
+            Username = tEntity.UsernameMirror,
+            Email = tEntity.EmailMirror,
+            FirstName = tEntity.FirstNameMirror,
+            LastName = tEntity.LastNameMirror,
+        };
+    }
+    public static UserView FromEntityWithGroups(KcUserReference tEntity, List<GroupView> tGroups)
+    {
+        return new UserView
+        {
+            UserKcId = tEntity.UserKcId,
+            JoinedAt = tEntity.JoinedAt,
+            Groups = tGroups,
             Username = tEntity.UsernameMirror,
             Email = tEntity.EmailMirror,
             FirstName = tEntity.FirstNameMirror,

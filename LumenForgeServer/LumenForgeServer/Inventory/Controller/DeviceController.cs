@@ -29,7 +29,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with device results.</returns>
     [HttpGet("")]
-    [Authorize(Roles = nameof(Role.DeviceRead))]
+    [Authorize(Roles = nameof(Permissions.DeviceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Produces("application/json")]
@@ -40,7 +40,7 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
     }
 
     [HttpGet("{deviceGuid:guid}")]
-    [Authorize(Roles = nameof(Role.DeviceRead))]
+    [Authorize(Roles = nameof(Permissions.DeviceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]

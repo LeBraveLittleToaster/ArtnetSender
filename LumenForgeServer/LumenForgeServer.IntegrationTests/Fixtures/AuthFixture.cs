@@ -91,7 +91,7 @@ public sealed class AuthFixture : IAsyncLifetime
         return new TestUserBundle(accessToken, apiHttpClient);
     }
 
-    public async Task<TestUserBundle> CreateNewUserWithRolesAsync(CreateTestUserDto dto, Role[] roles)
+    public async Task<TestUserBundle> CreateNewUserWithRolesAsync(CreateTestUserDto dto, Permissions[] roles)
     {
         var apiHttpClient = Factory.CreateClient();
 
@@ -178,7 +178,7 @@ public sealed class AuthFixture : IAsyncLifetime
 
     public async Task<GroupView> CreateGroupWithRolesAsync(
         HttpClient adminClient,
-        IEnumerable<Role> roles,
+        IEnumerable<Permissions> roles,
         string name,
         string description)
     {

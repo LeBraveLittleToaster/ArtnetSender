@@ -34,7 +34,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     [HttpGet("")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Authorize(Roles = nameof(Role.UserRead))]
+    [Authorize(Roles = nameof(Permissions.UserRead))]
     [Produces("application/json")]
     public async Task<IActionResult> ListUsers([FromQuery] ListQueryDto query, CancellationToken ct)
     {
@@ -61,10 +61,11 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var user = await userService.AddUser(userKcId, addKcUserDto, ct);
         return CreatedAtAction(nameof(GetUser), new { userKcId = user?.UserKcId }, UserView.FromEntity(user!));
     }
-    
+
     /// <summary>
     /// Retrieves a user by Keycloak subject identifier.
     /// </summary>
+    /// <param name="include">Includes groupViews with include=groups, groups the user is assigned to.</param>
     /// <param name="userKcId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the user payload.</returns>
@@ -75,14 +76,21 @@ public class UserController(UserService userService, KcService kcService, ILogge
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Authorize(Roles = nameof(Role.UserRead))]
+    [Authorize(Roles = nameof(Permissions.UserRead))]
     [Produces("application/json")]
     public async Task<IActionResult> GetUser(
+        [FromQuery] string? include,
         [FromRoute, Required, MinLength(1), RegularExpression(@".*\S.*")]
         string userKcId,
         CancellationToken ct)
     {
-        var userView = await userService.GetUserByKeycloakId(userKcId, ct);
+        var includes = include?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(v => Enum.Parse<GetUserInclude>(v, true))
+            .ToList();
+        var withGroups = includes?.Contains(GetUserInclude.Groups) ?? false;
+        
+        var userView = await userService.GetUserByKeycloakId(userKcId, withGroups, ct);
         return new JsonResult(userView);
     }
 
@@ -118,7 +126,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     [HttpDelete("{userKcId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Authorize(Roles = nameof(Role.UserDelete))]
+    [Authorize(Roles = nameof(Permissions.UserDelete))]
     [Produces("application/json")]
     public async Task<IActionResult> DeleteUserByKcId(
         [FromRoute, Required, MinLength(1), RegularExpression(@".*\S.*")]
@@ -148,4 +156,9 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var roles = await userService.GetRolesForKcId(keycloakId, ct);
         return Ok(roles);
     }
+}
+
+public enum GetUserInclude
+{
+    Groups
 }

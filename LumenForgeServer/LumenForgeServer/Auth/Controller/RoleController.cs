@@ -18,11 +18,11 @@ public class RoleController : ControllerBase
     /// <returns>A 200 response with the available roles.</returns>
     [HttpGet("")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [Authorize(Roles = nameof(Role.RoleRead))]
+    [Authorize(Roles = nameof(Permissions.RoleRead))]
     [Produces("application/json")]
     public IActionResult GetRoles()
     {
-        var roles = Enum.GetValues<Role>()
+        var roles = Enum.GetValues<Permissions>()
             .Select(RoleViewDto.FromRole)
             .ToArray();
 

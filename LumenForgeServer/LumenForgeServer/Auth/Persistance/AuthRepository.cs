@@ -1,4 +1,5 @@
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +48,15 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     {
         return await _db.Users
             .Where(u => u.UserKcId == keycloakId)
+            .SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<KcUserReference?> TryGetUserByKeycloakIdWithGroupsAsync(string keycloakId, CancellationToken ct)
+    {
+        return await _db.Users
+            .Where(u => u.UserKcId == keycloakId)
+            .Include(u => u.GroupUsers)
+            .ThenInclude(gu => gu.Group)
             .SingleOrDefaultAsync(ct);
     }
 
@@ -102,13 +112,13 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Distinct roles assigned to the user.</returns>
-    public async Task<HashSet<Role>> GetRolesForKcIdAsync(string keycloakId, CancellationToken ct)
+    public async Task<HashSet<Permissions>> GetRolesForKcIdAsync(string keycloakId, CancellationToken ct)
     {
         return await _db.Users
             .Where(u => u.UserKcId == keycloakId)
             .SelectMany(u => u.GroupUsers)
             .SelectMany(gu => gu.Group.GroupRoles)
-            .Select(gr => gr.RoleId)
+            .Select(gr => gr.PermissionsId)
             .Distinct()
             .ToHashSetAsync(ct);
     }
@@ -261,26 +271,26 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
-    public async Task<IReadOnlyList<Role>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct)
+    public async Task<IReadOnlyList<Permissions>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct)
     {
         var groupId = await GetGroupIdByGuidAsync(groupGuid, ct);
         return await _db.GroupRoles
             .AsNoTracking()
             .Where(gr => gr.GroupId == groupId)
-            .Select(gr => gr.RoleId)
+            .Select(gr => gr.PermissionsId)
             .ToListAsync(ct);
     }
 
-    public Task AssignRolesToGroupAsync(Group group, Role[] roles, CancellationToken ct)
+    public Task AssignRolesToGroupAsync(Group group, Permissions[] roles, CancellationToken ct)
     {
         if (group is null) throw new NotFoundException("Group not found");
         if (roles is null) throw new NotFoundException("Roles not found");
         var groupId = group.Id != 0 ? group.Id : throw new NotFoundException("GroupId not found");
 
-        var groupRoles = roles.Distinct().Select(r => new GroupRole()
+        var groupRoles = roles.Distinct().Select(r => new GroupPermissions()
         {
             GroupId = groupId,
-            RoleId = r
+            PermissionsId = r
         }).ToList();
         return _db.GroupRoles.AddRangeAsync(groupRoles, ct);
     }
@@ -361,15 +371,15 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// Checks whether a group has a specific role assigned.
     /// </summary>
     /// <param name="group">Group to check.</param>
-    /// <param name="role">Role to check.</param>
+    /// <param name="permissions">Role to check.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><c>true</c> if the role is assigned; otherwise <c>false</c>.</returns>
-    public Task<bool> HasGroupRoleAsync(Group group, Role role, CancellationToken ct)
+    public Task<bool> HasGroupRoleAsync(Group group, Permissions permissions, CancellationToken ct)
     {
         var groupId = group.Id != 0 ? group.Id : throw new NotFoundException("Group not found");
         return _db.GroupRoles
             .AsNoTracking()
-            .AnyAsync(gr => gr.GroupId == groupId && gr.RoleId == role, ct);
+            .AnyAsync(gr => gr.GroupId == groupId && gr.PermissionsId == permissions, ct);
     }
     
     private async Task RemoveGroupUserAsync(long groupId, long userId, CancellationToken ct)

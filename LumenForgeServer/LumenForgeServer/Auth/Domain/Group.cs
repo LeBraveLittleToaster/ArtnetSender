@@ -41,5 +41,5 @@ public class Group
     /// <summary>
     /// Roles assigned to the group.
     /// </summary>
-    public List<GroupRole> GroupRoles { get; } = [];
+    public List<GroupPermissions> GroupRoles { get; } = [];
 }

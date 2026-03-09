@@ -3,7 +3,7 @@ namespace LumenForgeServer.Auth.Domain;
 /// <summary>
 /// Join entity linking a group to a role.
 /// </summary>
-public class GroupRole
+public class GroupPermissions
 {
     /// <summary>
     /// Internal group identifier.
@@ -12,7 +12,7 @@ public class GroupRole
     /// <summary>
     /// Role assigned to the group.
     /// </summary>
-    public Role RoleId { get; set; }
+    public Permissions PermissionsId { get; set; }
 
     /// <summary>
     /// Navigation to the group.

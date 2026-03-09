@@ -39,6 +39,16 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The user if found; otherwise <c>null</c>.</returns>
     Task<KcUserReference?> TryGetUserByKeycloakIdAsync(string keycloakId, CancellationToken ct);
+
+    /// <summary>
+    /// Attempts to retrieve a user by Keycloak subject identifier including the groups the user assigned to.
+    /// </summary>
+    /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="includeGroups">Groups the user is assigned to</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The user if found; otherwise <c>null</c>.</returns>
+    public Task<KcUserReference?> TryGetUserByKeycloakIdWithGroupsAsync(string keycloakId,
+        CancellationToken ct);
     /// <summary>
     /// Lists users with optional paging and search.
     /// </summary>
@@ -54,7 +64,7 @@ public interface IAuthRepository
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Distinct roles assigned to the user.</returns>
-    Task<HashSet<Role>> GetRolesForKcIdAsync(string keycloakId, CancellationToken ct);
+    Task<HashSet<Permissions>> GetRolesForKcIdAsync(string keycloakId, CancellationToken ct);
     /// <summary>
     /// Retrieves groups assigned to a user.
     /// </summary>
@@ -121,7 +131,7 @@ public interface IAuthRepository
     /// <param name="groupGuid">Group guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
-    Task<IReadOnlyList<Role>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct);
+    Task<IReadOnlyList<Permissions>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct);
     
     /// <summary>
     /// Assigns multiple roles to a group.
@@ -129,7 +139,7 @@ public interface IAuthRepository
     /// <param name="group">Group receiving the role.</param>
     /// <param name="roles">Array of Roles to assign.</param>
     /// <param name="ct">Cancellation token.</param>
-    Task AssignRolesToGroupAsync(Group group, Role[] roles, CancellationToken ct);
+    Task AssignRolesToGroupAsync(Group group, Permissions[] roles, CancellationToken ct);
     /// <summary>
     /// Removes a role assignment from a group.
     /// </summary>
@@ -169,10 +179,10 @@ public interface IAuthRepository
     /// Checks whether a group has a specific role assigned.
     /// </summary>
     /// <param name="group">Group to check.</param>
-    /// <param name="role">Role to check.</param>
+    /// <param name="permissions">Role to check.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><c>true</c> if the role is assigned; otherwise <c>false</c>.</returns>
-    Task<bool> HasGroupRoleAsync(Group group, Role role, CancellationToken ct);
+    Task<bool> HasGroupRoleAsync(Group group, Permissions permissions, CancellationToken ct);
 
     /// <summary>
     /// Persists pending changes to the underlying data store.

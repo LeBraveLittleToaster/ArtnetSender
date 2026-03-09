@@ -13,12 +13,12 @@ public sealed record RoleViewDto
     [JsonPropertyName("value")]
     public required int Value { get; init; }
 
-    public static RoleViewDto FromRole(Role role)
+    public static RoleViewDto FromRole(Permissions permissions)
     {
         return new RoleViewDto
         {
-            Name = role.ToString(),
-            Value = (int)role
+            Name = permissions.ToString(),
+            Value = (int)permissions
         };
     }
 }

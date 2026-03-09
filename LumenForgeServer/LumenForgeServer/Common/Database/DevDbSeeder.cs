@@ -124,7 +124,7 @@ public static class DevDbSeeder
             {
                 Description = $"Test Description of Group {groupIdx}",
                 Name = $"TestG{groupIdx}",
-                Roles = [.. Enum.GetValues<Role>().Where(e => new Random().Next(2) > 0)]
+                Roles = [.. Enum.GetValues<Permissions>().Where(e => new Random().Next(2) > 0)]
             };
             var groupView = await groupService.AddGroup(addGroupDto, CancellationToken.None);
             groups.Add(groupView);
@@ -138,7 +138,7 @@ public static class DevDbSeeder
                 FirstName = $"Ftest{userIdx}",
                 LastName = $"Ltest{userIdx}",
                 Username = $"testuser{userIdx}",
-                Password = $"testuser{userIdx}",
+                Password = $"testuser",
             };
             var userKcId = await kcService.AddUserToKeycloak(addUserDto, CancellationToken.None);
             var userDbRef = await userService.AddUser(userKcId, addUserDto, CancellationToken.None);
@@ -188,7 +188,7 @@ public static class DevDbSeeder
         {
             Description = DbInitConstants.InitAdminGroupDescription,
             Name = DbInitConstants.InitAdminGroupName,
-            Roles = Enum.GetValues<Role>()
+            Roles = Enum.GetValues<Permissions>()
         },  CancellationToken.None);
         return groupView;
         

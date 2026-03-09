@@ -18,15 +18,30 @@ public class UserService(IAuthRepository authRepository)
     /// Retrieves a user by Keycloak subject identifier.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="includeGroups">Groups the user is assigned to</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The user if found.</returns>
     /// <exception cref="NotFoundException">Thrown when the user cannot be found.</exception>
-    public async Task<UserView?> GetUserByKeycloakId(string keycloakId, CancellationToken ct)
+    public async Task<UserView?> GetUserByKeycloakId(string keycloakId, bool includeGroups, CancellationToken ct)
     {
-        var user = await authRepository.TryGetUserByKeycloakIdAsync(keycloakId, ct);
-        return user == null 
-            ? throw new NotFoundException($"User with Keycloak ID {keycloakId} not found.")
-            : UserView.FromEntity(user);
+        var user = includeGroups 
+            ? await authRepository.TryGetUserByKeycloakIdWithGroupsAsync(keycloakId, ct)
+            : await authRepository.TryGetUserByKeycloakIdAsync(keycloakId, ct);
+        if (user == null)
+        {
+            throw new NotFoundException($"User with Keycloak ID {keycloakId} not found.");
+        }
+
+        if (!includeGroups)
+        {
+            return UserView.FromEntity(user);
+        }
+
+        var groups = user.GroupUsers
+            .Select(gu => GroupView.FromEntity(gu.Group))
+            .ToList();
+
+        return UserView.FromEntityWithGroups(user, groups);
     }
 
     /// <summary>
@@ -123,7 +138,7 @@ public class UserService(IAuthRepository authRepository)
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Distinct roles assigned to the user.</returns>
-    public async Task<HashSet<Role>> GetRolesForKcId(string keycloakId, CancellationToken ct)
+    public async Task<HashSet<Permissions>> GetRolesForKcId(string keycloakId, CancellationToken ct)
     {
         return await authRepository.GetRolesForKcIdAsync(keycloakId, ct);
     }

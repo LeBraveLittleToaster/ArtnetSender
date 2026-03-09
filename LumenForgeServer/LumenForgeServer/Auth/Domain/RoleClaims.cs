@@ -6,14 +6,14 @@ namespace LumenForgeServer.Auth.Domain;
 public static class RoleClaims
 {
     public static readonly string[] AllAppRoles =
-        Enum.GetValues<Role>()
-            .Where(r => r != Role.None)
+        Enum.GetValues<Permissions>()
+            .Where(r => r != Permissions.None)
             .Select(r => r.ToString())
             .ToArray();
 
-    public static void AddAppRoles(this ClaimsIdentity identity, IEnumerable<Role> roles)
+    public static void AddAppRoles(this ClaimsIdentity identity, IEnumerable<Permissions> roles)
     {
-        foreach (var role in roles.Where(r => r != Role.None).Distinct())
+        foreach (var role in roles.Where(r => r != Permissions.None).Distinct())
         {
             identity.AddClaim(new Claim(ClaimTypes.Role, role.ToString()));
         }

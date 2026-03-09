@@ -228,13 +228,13 @@ public static class DiRegistration
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy(nameof(Policy.GroupRoleAndUserRead),
-                p => p.RequireRole(nameof(Role.GroupRead), nameof(Role.RoleRead), nameof(Role.UserRead)));
+                p => p.RequireRole(nameof(Permissions.GroupRead), nameof(Permissions.RoleRead), nameof(Permissions.UserRead)));
             options.AddPolicy(nameof(Policy.GroupUpdateReadUser),
-                p => p.RequireRole(nameof(Role.GroupUpdate), nameof(Role.UserRead)));
+                p => p.RequireRole(nameof(Permissions.GroupUpdate), nameof(Permissions.UserRead)));
             options.AddPolicy(nameof(Policy.GroupUpdateRoleRead),
-                p => p.RequireRole(nameof(Role.GroupUpdate), nameof(Role.RoleRead)));
+                p => p.RequireRole(nameof(Permissions.GroupUpdate), nameof(Permissions.RoleRead)));
             options.AddPolicy(nameof(Policy.UserAndRoleRead),
-                p => p.RequireRole(nameof(Role.UserRead), nameof(Role.RoleRead)));
+                p => p.RequireRole(nameof(Permissions.UserRead), nameof(Permissions.RoleRead)));
         });
     }
 }
