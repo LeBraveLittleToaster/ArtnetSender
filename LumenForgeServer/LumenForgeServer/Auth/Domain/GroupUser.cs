@@ -24,7 +24,7 @@ public class GroupUser
     /// Navigation to the user.
     /// </summary>
     public KcUserReference KcUserReference { get; set; } = null!;
-    
+
     /// <summary>
     /// Timestamp when the user joined the group.
     /// </summary>

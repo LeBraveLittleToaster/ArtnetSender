@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
 using LumenForgeServer.Inventory.Domain;
 using NodaTime;
+using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Inventory.Dto.View;
 

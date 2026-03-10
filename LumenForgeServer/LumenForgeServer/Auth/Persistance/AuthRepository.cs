@@ -1,5 +1,4 @@
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +10,9 @@ namespace LumenForgeServer.Auth.Persistance;
 /// EF Core-backed repository for auth users, groups, and roles.
 /// </summary>
 public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _logger) : IAuthRepository
-    
+
 {
-    
+
     /// <summary>
     /// Adds a new user and immediately saves the change.
     /// </summary>
@@ -34,7 +33,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     {
         var user = await _db.Users
             .SingleOrDefaultAsync(u => u.UserKcId == userKcId, ct);
-        if( user == null) throw new NotFoundException($"User with keycloakId {userKcId} not found");
+        if (user == null) throw new NotFoundException($"User with keycloakId {userKcId} not found");
         _db.Users.Remove(user);
     }
 
@@ -140,12 +139,12 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ToListAsync(ct);
     }
 
-    
+
 
     /// <summary>
-    /// Resolves the internal group id for a group guid.
+    /// Resolves the internal group id for a group Guid.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
@@ -156,8 +155,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .Select(g => g.Id)
             .SingleOrDefaultAsync(ct);
 
-        return groupId == 0 
-            ? throw new NotFoundException($"Group {groupId} not found") 
+        return groupId == 0
+            ? throw new NotFoundException($"Group {groupId} not found")
             : groupId;
     }
 
@@ -169,14 +168,14 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ThenInclude(gr => gr.Permission)
             .SingleOrDefaultAsync(ct);
 
-        return group 
+        return group
                ?? throw new NotFoundException($"Group {group} not found");
     }
 
     /// <summary>
-    /// Resolves the group for a group guid.
+    /// Resolves the group for a group Guid.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
@@ -186,7 +185,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .Where(g => g.Guid == groupGuid)
             .SingleOrDefaultAsync(ct);
 
-        return group 
+        return group
                ?? throw new NotFoundException($"Group {group} not found");
     }
 
@@ -204,8 +203,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(g => 
-            g.Name.ToLower().Contains(search.ToLower())|| g.Description.ToLower().Contains(search.ToLower()));
+            query = query.Where(g =>
+            g.Name.ToLower().Contains(search.ToLower()) || g.Description.ToLower().Contains(search.ToLower()));
         }
 
         var total = await query.CountAsync();
@@ -217,7 +216,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ToListAsync(ct);
         return (groups, total);
     }
-    
+
     /// <summary>
     /// Lists groups with optional paging and search and permissions included.
     /// </summary>
@@ -247,7 +246,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ToListAsync(ct);
         return (groups, total);
     }
-    
+
     /// <summary>
     /// Resolves the internal user id for a Keycloak subject identifier.
     /// </summary>
@@ -261,8 +260,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .Where(u => u.UserKcId == keycloakId)
             .Select(u => u.Id)
             .SingleOrDefaultAsync(ct);
-        return userId == 0 
-            ? throw new NotFoundException($"User with keycloakId {keycloakId} not found") 
+        return userId == 0
+            ? throw new NotFoundException($"User with keycloakId {keycloakId} not found")
             : userId;
     }
 
@@ -277,9 +276,9 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     }
 
     /// <summary>
-    /// Deletes a group by guid.
+    /// Deletes a group by Guid.
     /// </summary>
-    /// <param name="guid">Group guid to delete.</param>
+    /// <param name="guid">Group Guid to delete.</param>
     /// <param name="ct">Cancellation token.</param>
     public Task DeleteGroupByGuidAsync(Guid guid, CancellationToken ct)
     {
@@ -292,7 +291,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <summary>
     /// Retrieves users assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     public async Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct)
@@ -313,7 +312,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <summary>
     /// Retrieves roles assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Roles assigned to the group.</returns>
     public async Task<IReadOnlyList<Permissions>> GetRolesForGroupAsync(Guid groupGuid, CancellationToken ct)
@@ -355,16 +354,16 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     }
 
     /// <summary>
-    /// Assigns a user to a group by Keycloak subject identifier and group guid.
+    /// Assigns a user to a group by Keycloak subject identifier and group Guid.
     /// </summary>
     /// <param name="assigneeKeycloakId">Optional Keycloak subject identifier for the actor performing the assignment.</param>
     /// <param name="keycloakId">Keycloak subject identifier for the user being assigned.</param>
-    /// <param name="groupGuid">Target group guid.</param>
+    /// <param name="groupGuid">Target group Guid.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="NotFoundException">Thrown when the user or group cannot be found.</exception>
     public async Task AssignUserToGroupAsync(string? assigneeKeycloakId, string keycloakId, Guid groupGuid, CancellationToken ct)
     {
-        
+
         var userId = await GetUserIdByKeycloakIdAsync(keycloakId, ct);
         var groupId = await GetGroupIdByGuidAsync(groupGuid, ct);
 
@@ -382,7 +381,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             JoinedAt = SystemClock.Instance.GetCurrentInstant()
         }, ct);
     }
-    
+
     /// <summary>
     /// Removes a user from a group.
     /// </summary>
@@ -426,7 +425,7 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .AsNoTracking()
             .AnyAsync(gr => gr.GroupId == groupId && gr.Permission == permissions, ct);
     }
-    
+
     private async Task RemoveGroupUserAsync(long groupId, long userId, CancellationToken ct)
     {
         var groupUser = await _db.GroupUsers

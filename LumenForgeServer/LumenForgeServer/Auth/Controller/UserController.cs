@@ -1,13 +1,12 @@
-using LumenForgeServer.Auth.Dto;
+using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Query;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Service;
+using LumenForgeServer.Common.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto.Command;
-using LumenForgeServer.Auth.Dto.Views;
-using LumenForgeServer.Common.Exceptions;
 
 namespace LumenForgeServer.Auth.Controller;
 
@@ -39,7 +38,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     public async Task<IActionResult> ListUsers([FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var users = await userService.ListUsers(query.Search, query.Limit, query.Offset, ct);
-        return Ok(new ListViewDto<UserView>(){list = users.users, total = users.total});
+        return Ok(new ListViewDto<UserView>() { list = users.users, total = users.total });
     }
 
     /// <summary>
@@ -56,8 +55,8 @@ public class UserController(UserService userService, KcService kcService, ILogge
     public async Task<IActionResult> RegisterNewUser([FromBody] AddKcUserDto addKcUserDto, CancellationToken ct)
     {
         var userKcId = await kcService.AddUserToKeycloak(addKcUserDto, ct);
-        if(userKcId == null) throw new KeycloakException("User Id was not found");
-        
+        if (userKcId == null) throw new KeycloakException("User Id was not found");
+
         var user = await userService.AddUser(userKcId, addKcUserDto, ct);
         return CreatedAtAction(nameof(GetUser), new { userKcId = user?.UserKcId }, UserView.FromEntity(user!));
     }
@@ -89,7 +88,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
             .Select(v => Enum.Parse<GetUserInclude>(v, true))
             .ToList();
         var withGroups = includes?.Contains(GetUserInclude.Groups) ?? false;
-        
+
         var userView = await userService.GetUserByKeycloakId(userKcId, withGroups, ct);
         return new JsonResult(userView);
     }
@@ -100,7 +99,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     /// <param name="userKcId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the group list.</returns>
-    [HttpGet("{userKcId}/groups")] 
+    [HttpGet("{userKcId}/groups")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Authorize(Policy = nameof(Policy.GroupRoleAndUserRead))]
@@ -113,7 +112,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var groups = await userService.GetGroupsForUser(userKcId, ct);
         return Ok(groups);
     }
-    
+
     /// <summary>
     /// Deletes a user by Keycloak subject identifier from the local database. User could be still present in keycloak.
     /// </summary>
@@ -156,7 +155,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
         var roles = await userService.GetRolesForKcId(keycloakId, ct);
         return Ok(roles);
     }
-    
+
     public enum GetUserInclude
     {
         Groups

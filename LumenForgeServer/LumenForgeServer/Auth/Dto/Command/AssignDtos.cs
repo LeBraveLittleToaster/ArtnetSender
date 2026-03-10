@@ -1,6 +1,6 @@
+using LumenForgeServer.Auth.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using LumenForgeServer.Auth.Domain;
 
 namespace LumenForgeServer.Auth.Dto.Command;
 
@@ -13,7 +13,7 @@ public record AssignUserToGroupDto
     /// Optional Keycloak subject identifier for the actor performing the assignment.
     /// </summary>
     [JsonPropertyName("assigneeKcId")]
-    public string? assigneeKcId  { get; init; }
+    public string? assigneeKcId { get; init; }
     /// <summary>
     /// Keycloak subject identifier for the user being assigned.
     /// </summary>
@@ -21,7 +21,7 @@ public record AssignUserToGroupDto
     [MinLength(1)]
     [RegularExpression(@".*\S.*")]
     [JsonPropertyName("userKcId")]
-    public required string userKcId   { get; init; }
+    public required string userKcId { get; init; }
 }
 
 public record AssignGroupRolesDto

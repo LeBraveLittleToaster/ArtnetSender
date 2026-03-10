@@ -1,11 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Text.Json;
 using LumenForgeServer.Auth.Client;
-using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.IntegrationTests.Client;
+using System.Net;
+using System.Text.Json;
 
 namespace LumenForgeServer.Auth.Service;
 

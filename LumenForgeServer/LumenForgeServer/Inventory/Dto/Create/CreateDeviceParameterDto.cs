@@ -23,5 +23,5 @@ public record CreateDeviceParameterDto
     [StringLength(4000, MinimumLength = 1)]
     [RegularExpression(@".*\S.*")]
     [JsonPropertyName("value")]
-    public required string Value { get; set; }    
+    public required string Value { get; set; }
 }

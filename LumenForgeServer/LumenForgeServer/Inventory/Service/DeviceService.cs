@@ -233,46 +233,6 @@ public class DeviceService(IInventoryRepository repository)
         await repository.SaveChangesAsync(ct);
     }
 
-    public async Task<StockView> UpdateStock(Guid deviceGuid, UpdateStockDto dto, CancellationToken ct)
-    {
-        var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
-            ?? throw new NotFoundException("Device not found.");
-
-        var now = SystemClock.Instance.GetCurrentInstant();
-
-        if (device.Stock is null)
-        {
-            device.Stock = new Stock
-            {
-                DeviceId = device.Id,
-                Uuid = Guid.CreateVersion7(),
-                StockCount = dto.StockCount ?? 0,
-                UnitStockType = dto.StockUnitType ?? StockUnitType.UNIT,
-                CreatedAt = now,
-                UpdatedAt = now
-            };
-        }
-        else
-        {
-            if (dto.StockCount is not null)
-            {
-                device.Stock.StockCount = dto.StockCount.Value;
-            }
-
-            if (dto.StockUnitType is not null)
-            {
-                device.Stock.UnitStockType = dto.StockUnitType.Value;
-            }
-
-            device.Stock.UpdatedAt = now;
-        }
-
-        device.UpdatedAt = now;
-
-        await repository.SaveChangesAsync(ct);
-
-        return StockView.FromEntity(device.Stock);
-    }
 
     private async Task<IReadOnlyList<long>> ResolveCategoryIds(IReadOnlyCollection<Guid> categoryGuids, CancellationToken ct)
     {

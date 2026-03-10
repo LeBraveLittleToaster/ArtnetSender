@@ -1,4 +1,3 @@
-using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Rentals.Domain;
 using NodaTime;
 
@@ -11,9 +10,6 @@ public class MaintenanceBacklog
 {
     public long Id { get; set; }
     public Guid Uuid { get; set; }
-
-    public long StockId { get; set; }
-    public Stock Stock { get; set; } = null!;
 
     public long? RentalItemId { get; set; }
     public RentalItem? RentalItem { get; set; }

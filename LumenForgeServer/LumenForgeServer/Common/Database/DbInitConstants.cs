@@ -1,5 +1,3 @@
-using LumenForgeServer.Auth.Dto.Command;
-
 namespace LumenForgeServer.Common.Database;
 
 public class DbInitConstants

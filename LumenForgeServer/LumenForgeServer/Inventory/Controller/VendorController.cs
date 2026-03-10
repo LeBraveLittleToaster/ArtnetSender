@@ -38,7 +38,7 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return Ok(vendors);
     }
 
-    [HttpGet("{vendorGuid:guid}")]
+    [HttpGet("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -61,7 +61,7 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return CreatedAtAction(nameof(GetVendor), new { vendorGuid = vendor.Guid }, vendor);
     }
 
-    [HttpPatch("{vendorGuid:guid}")]
+    [HttpPatch("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -74,7 +74,7 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return Ok(vendor);
     }
 
-    [HttpDelete("{vendorGuid:guid}")]
+    [HttpDelete("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorDelete))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

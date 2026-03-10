@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
 using LumenForgeServer.Auth.Domain;
 using NodaTime;
+using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Auth.Dto.Views;
 
@@ -12,7 +12,7 @@ public class GroupView
     /// <summary>
     /// External identifier used for API interactions.
     /// </summary>
-    [JsonPropertyName("guid")]
+    [JsonPropertyName("Guid")]
     public Guid Guid { get; set; }
 
     /// <summary>
@@ -36,16 +36,16 @@ public class GroupView
     /// </summary>
     [JsonPropertyName("updated_at")]
     public required Instant UpdatedAt { get; set; }
-    
+
     /// <summary>
     /// Permissions the group is assigned to
     /// </summary>
     [JsonPropertyName("permissions")]
     public required List<Permissions> Permissions { get; set; }
-    
+
     public static GroupView FromEntity(Group tEntity)
     {
-        var permissions = (tEntity.GroupRoles.Count == 0) ? 
+        var permissions = (tEntity.GroupRoles.Count == 0) ?
             []
             : tEntity.GroupRoles.Select(gr => gr.Permission).ToList();
         return new GroupView
@@ -55,7 +55,7 @@ public class GroupView
             Description = tEntity.Description,
             CreatedAt = tEntity.CreatedAt,
             UpdatedAt = tEntity.UpdatedAt,
-            Permissions = permissions, 
+            Permissions = permissions,
         };
     }
 }

@@ -1,7 +1,4 @@
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto;
-using LumenForgeServer.Inventory.Domain;
-using LumenForgeServer.Inventory.Dto.View;
 using NodaTime;
 
 namespace LumenForgeServer.Auth.Factory;
@@ -22,10 +19,10 @@ public static class UserFactory
         {
             JoinedAt = SystemClock.Instance.GetCurrentInstant(),
             UserKcId = userKcId,
-            UsernameMirror =  username,
-            EmailMirror =  email,
-            FirstNameMirror =  firstname,
-            LastNameMirror =  lastname,
+            UsernameMirror = username,
+            EmailMirror = email,
+            FirstNameMirror = firstname,
+            LastNameMirror = lastname,
         };
     }
 }

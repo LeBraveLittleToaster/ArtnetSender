@@ -18,5 +18,5 @@ public class GroupPermissions
     /// Navigation to the group.
     /// </summary>
     public Group Group { get; set; } = null!;
-    
+
 }

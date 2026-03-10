@@ -13,9 +13,9 @@ public class KcAndAppClientOptions
     public string KcClientId { get; init; }
 
     public string KcRealm { get; init; }
-    
+
     public string KcBaseUrl { get; init; }
-    
+
     public string AppBaseUrl { get; init; }
     public string KcTestClientId
     { get; init; }
@@ -34,12 +34,12 @@ public class KcAndAppClientOptions
             KcBaseUrl = Environment.GetEnvironmentVariable("KC_BASEURL") ?? "http://localhost:8080",
             KcRealm = Environment.GetEnvironmentVariable("KC_REALM") ?? "lumenforge-realm",
             KcClientId = Environment.GetEnvironmentVariable("KC_CLIENTID") ?? "admin-cli",
-            KcTestClientId =  Environment.GetEnvironmentVariable("KC_TESTCLIENTID") ?? "lumenforge-test",
-            
+            KcTestClientId = Environment.GetEnvironmentVariable("KC_TESTCLIENTID") ?? "lumenforge-test",
+
             KcAdminRealm = Environment.GetEnvironmentVariable("KC_ADMIN_REALM") ?? "master",
             KcAdminUser = Environment.GetEnvironmentVariable("KC_ADMIN_USER") ?? "admin",
             KcAdminPass = Environment.GetEnvironmentVariable("KC_ADMIN_PASS") ?? "adminpassword"
-            
+
         };
     }
 }

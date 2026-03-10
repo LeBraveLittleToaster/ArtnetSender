@@ -1,12 +1,11 @@
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto;
+using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Query;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
-using LumenForgeServer.Auth.Dto.Command;
-using LumenForgeServer.Auth.Dto.Views;
 
 namespace LumenForgeServer.Auth.Controller;
 
@@ -44,7 +43,7 @@ public class GroupController(GroupService groupService) : ControllerBase
             .ToList();
         var withPermissions = includes?.Contains(Includes.Permissions) ?? false;
         var groups = await groupService.ListGroups(query.Search, query.Limit, query.Offset, withPermissions, ct);
-        return Ok(new ListViewDto<GroupView>(){list = groups.groups, total = groups.total});
+        return Ok(new ListViewDto<GroupView>() { list = groups.groups, total = groups.total });
     }
 
     /// <summary>
@@ -57,7 +56,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
     /// </exception>
-    [HttpGet("{groupGuid:guid}")]
+    [HttpGet("{groupGuid:Guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -97,11 +96,11 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <summary>
     /// Updates a group record.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="dto">Payload containing updated group fields.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the updated group payload.</returns>
-    [HttpPatch("{groupGuid:guid}")]
+    [HttpPatch("{groupGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.GroupUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -120,7 +119,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <param name="groupGuid">Path var containing the group Guid.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response with when deleted succesfully.</returns>
-    [HttpDelete("{groupGuid:guid}")]
+    [HttpDelete("{groupGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.GroupDelete))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -140,7 +139,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <param name="groupGuid">Group Guid the user is assigned to</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with when assigned successfully.</returns>
-    [HttpPut("{groupGuid:guid}/users")]
+    [HttpPut("{groupGuid:Guid}/users")]
     [Authorize(Roles = nameof(Permissions.GroupUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -149,35 +148,35 @@ public class GroupController(GroupService groupService) : ControllerBase
     public async Task<IActionResult> AssignUserToGroup([FromBody] AssignUserToGroupDto dto, [FromRoute] Guid groupGuid, CancellationToken ct)
     {
         await groupService.AssignUserToGroup(dto.assigneeKcId, dto.userKcId, groupGuid, ct);
-        
+
         return Ok();
     }
 
     /// <summary>
     /// Retrieves users assigned to a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to look up.</param>
+    /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the user list.</returns>
-    [HttpGet("{groupGuid:guid}/users")]
+    [HttpGet("{groupGuid:Guid}/users")]
     [Authorize(Policy = nameof(Policy.GroupRoleAndUserRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
-    public async Task<IActionResult> GetGroupUsers([FromRoute] Guid groupGuid,[FromQuery] ListQueryDto query, CancellationToken ct)
+    public async Task<IActionResult> GetGroupUsers([FromRoute] Guid groupGuid, [FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var users = await groupService.GetUsersForGroup(groupGuid, query.Limit, query.Offset, ct);
-        return Ok(new ListViewDto<UserView>(){list = users.users, total = users.total});
+        return Ok(new ListViewDto<UserView>() { list = users.users, total = users.total });
     }
 
     /// <summary>
     /// Removes a user from a group.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="userKcId">Keycloak subject identifier to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response when removed successfully.</returns>
-    [HttpDelete("{groupGuid:guid}/users/{userKcId}")]
+    [HttpDelete("{groupGuid:Guid}/users/{userKcId}")]
     [Authorize(Policy = nameof(Policy.GroupUpdateReadUser))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -196,11 +195,11 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <summary>
     /// Assigns a role to a group after removing all others.
     /// </summary>
-    /// <param name="groupGuid">Group guid to update.</param>
+    /// <param name="groupGuid">Group Guid to update.</param>
     /// <param name="dto">Roles to be assigned</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response when assigned successfully.</returns>
-    [HttpPut("{groupGuid:guid}/roles")]
+    [HttpPut("{groupGuid:Guid}/roles")]
     [Authorize(Policy = nameof(Policy.GroupUpdateRoleRead))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -216,5 +215,5 @@ public class GroupController(GroupService groupService) : ControllerBase
     public enum Includes
     {
         Permissions
-    } 
+    }
 }

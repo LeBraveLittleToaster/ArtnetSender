@@ -4,7 +4,6 @@ using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Factory;
 using LumenForgeServer.Auth.Persistance;
 using LumenForgeServer.Common.Exceptions;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumenForgeServer.Auth.Service;
@@ -24,7 +23,7 @@ public class UserService(IAuthRepository authRepository)
     /// <exception cref="NotFoundException">Thrown when the user cannot be found.</exception>
     public async Task<UserView?> GetUserByKeycloakId(string keycloakId, bool includeGroups, CancellationToken ct)
     {
-        var user = includeGroups 
+        var user = includeGroups
             ? await authRepository.TryGetUserByKeycloakIdWithGroupsAsync(keycloakId, ct)
             : await authRepository.TryGetUserByKeycloakIdAsync(keycloakId, ct);
         if (user == null)

@@ -1,17 +1,15 @@
 // AuthUserTest.cs
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
 using FluentAssertions;
 using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Dto;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
-using LumenForgeServer.IntegrationTests.Client;
 using LumenForgeServer.IntegrationTests.TestSupport;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LumenForgeServer.IntegrationTests.Auth;
 
@@ -132,7 +130,7 @@ public class AuthUserTest(AuthFixture fixture)
 
         var returnedGroups = groups.EnumerateArray().Select(g => new
         {
-            Guid = g.GetProperty("guid").GetGuid(),
+            Guid = g.GetProperty("Guid").GetGuid(),
             Name = g.GetProperty("name").GetString()
         });
 

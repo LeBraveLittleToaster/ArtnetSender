@@ -1,4 +1,3 @@
-using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Maintenance.Domain;
 using NodaTime;
 
@@ -16,9 +15,6 @@ public class RentalItem
     public Rental Rental { get; set; } = null!;
 
     public long StockId { get; set; }
-    public Stock Stock { get; set; } = null!;
-
-    public decimal Quantity { get; set; } // > 0
 
     public bool IsApproved { get; set; }
     public Instant? ApprovedAt { get; set; }

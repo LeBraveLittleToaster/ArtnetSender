@@ -29,7 +29,7 @@ namespace LumenForgeServer.Common.Exceptions
             {
                 return false;
             }
-            
+
             httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
             httpContext.Response.ContentType = "application/problem+json";
 

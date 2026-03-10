@@ -1,6 +1,6 @@
-using System.Text.Json;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
+using System.Text.Json;
 
 namespace LumenForgeServer.Common;
 
@@ -15,5 +15,5 @@ public static class Json
         options.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         return options;
     }
-    
+
 }

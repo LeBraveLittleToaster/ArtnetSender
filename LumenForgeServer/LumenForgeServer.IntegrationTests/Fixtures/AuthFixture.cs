@@ -1,8 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Azure;
 using FluentAssertions;
 using LumenForgeServer.Auth.Client;
@@ -16,6 +11,11 @@ using LumenForgeServer.IntegrationTests.Client;
 using LumenForgeServer.IntegrationTests.TestSupport;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LumenForgeServer.IntegrationTests.Fixtures;
 
@@ -188,7 +188,7 @@ public sealed class AuthFixture : IAsyncLifetime
         var assignResp = await adminClient.PutAsJsonAsync($"/api/v1/auth/groups/{group.Guid}/roles", new AssignGroupRolesDto()
         {
             Roles = roles.Distinct().ToArray()
-        },CancellationToken.None);
+        }, CancellationToken.None);
         assignResp.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
 
