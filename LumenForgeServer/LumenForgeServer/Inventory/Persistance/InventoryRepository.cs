@@ -146,6 +146,12 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
         return Task.CompletedTask;
     }
 
+    public Task<long?> TryGetDeviceIdByGuidAsync(Guid deviceGuid, CancellationToken ct)
+        => db.Devices
+            .Where(d => d.Guid == deviceGuid)
+            .Select(d => (long?)d.Id)
+            .SingleOrDefaultAsync(ct);
+
     public async Task ReplaceDeviceCategoriesAsync(long deviceId, IReadOnlyCollection<long> categoryIds, CancellationToken ct)
     {
         var existing = await db.DeviceCategories

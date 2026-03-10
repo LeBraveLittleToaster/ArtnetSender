@@ -29,6 +29,7 @@ public interface IInventoryRepository
     Task<IReadOnlyList<Device>> ListDevicesAsync(string? search, int limit, int offset, CancellationToken ct);
     Task DeleteDeviceAsync(Device device, CancellationToken ct);
     Task ReplaceDeviceCategoriesAsync(long deviceId, IReadOnlyCollection<long> categoryIds, CancellationToken ct);
+    Task<long?> TryGetDeviceIdByGuidAsync(Guid deviceGuid, CancellationToken ct);
 
     Task AddStockBindingAsync(StockBinding stockBinding, CancellationToken ct);
     Task AddStockBindingsAsync(IReadOnlyCollection<StockBinding> stockBindings, CancellationToken ct);

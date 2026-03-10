@@ -8,6 +8,8 @@ using LumenForgeServer.Common.Database;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Inventory.Persistance;
 using LumenForgeServer.Inventory.Service;
+using LumenForgeServer.Maintenance.Persistence;
+using LumenForgeServer.Maintenance.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -53,6 +55,7 @@ public static class DiRegistration
     {
         builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+        builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
     }
 
     /// <summary>
@@ -67,6 +70,8 @@ public static class DiRegistration
         builder.Services.AddScoped<VendorService>();
         builder.Services.AddScoped<DeviceService>();
         builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<MaintenanceService>();
+        builder.Services.AddScoped<MaintenanceStatusService>();
     }
 
     /// <summary>

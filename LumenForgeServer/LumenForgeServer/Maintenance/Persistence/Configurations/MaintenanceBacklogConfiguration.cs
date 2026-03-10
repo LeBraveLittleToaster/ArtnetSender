@@ -30,6 +30,11 @@ public sealed class MaintenanceBacklogConfiguration : IEntityTypeConfiguration<M
             .HasForeignKey(x => x.ChecklistItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(x => x.Device)
+            .WithMany()
+            .HasForeignKey(x => x.DeviceId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(x => x.MaintenanceBacklogStatus)
             .WithMany(s => s.MaintenanceBacklogs)
             .HasForeignKey(x => x.MaintenanceBacklogStatusId)
