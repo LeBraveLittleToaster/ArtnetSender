@@ -2,8 +2,11 @@ using FluentAssertions;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
 using LumenForgeServer.IntegrationTests.Inventory;
+using LumenForgeServer.Inventory.Domain;
+using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Maintenance.Dto.Command;
 using LumenForgeServer.Maintenance.Dto.View;
+using NodaTime;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -69,6 +72,11 @@ public class MaintenanceBacklogEndpointsTests(AuthFixture fixture)
         view.DeviceUuid.Should().Be(device.Guid);
         view.ResolvedAt.Should().BeNull();
         view.ReportedAt.Should().NotBe(default);
+
+        var deviceResponse = await admin.AppClient.GetAsync($"/api/v1/inventory/devices/{device.Guid}");
+        deviceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var deviceView = await InventoryTestHelpers.DeserializeResponseAsync<DeviceView>(deviceResponse);
+        deviceView.StockBindings.Should().Contain(sb => sb.BindingType == BindingType.MAINTENANCE);
     }
 
     [Fact]
@@ -443,6 +451,13 @@ public class MaintenanceBacklogEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var view = await MaintenanceTestHelpers.DeserializeAsync<MaintenanceBacklogView>(response);
         view.ResolvedAt.Should().NotBeNull();
+
+        var deviceResponse = await admin.AppClient.GetAsync($"/api/v1/inventory/devices/{device.Guid}");
+        deviceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var deviceView = await InventoryTestHelpers.DeserializeResponseAsync<DeviceView>(deviceResponse);
+        deviceView.StockBindings
+            .Where(sb => sb.BindingType == BindingType.MAINTENANCE)
+            .Should().OnlyContain(sb => sb.End <= view.ResolvedAt!.Value);
     }
 
     [Fact]
@@ -465,6 +480,13 @@ public class MaintenanceBacklogEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var view = await MaintenanceTestHelpers.DeserializeAsync<MaintenanceBacklogView>(response);
         view.ResolvedAt.Should().BeNull();
+
+        var deviceResponse = await admin.AppClient.GetAsync($"/api/v1/inventory/devices/{device.Guid}");
+        deviceResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var deviceView = await InventoryTestHelpers.DeserializeResponseAsync<DeviceView>(deviceResponse);
+        deviceView.StockBindings.Should().Contain(sb =>
+            sb.BindingType == BindingType.MAINTENANCE &&
+            sb.End > SystemClock.Instance.GetCurrentInstant());
     }
 
     [Fact]

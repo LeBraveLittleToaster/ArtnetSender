@@ -1,4 +1,5 @@
 using LumenForgeServer.Common.Exceptions;
+using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Inventory.Persistance;
 using LumenForgeServer.Maintenance.Domain;
 using LumenForgeServer.Maintenance.Dto.Command;
@@ -14,6 +15,8 @@ namespace LumenForgeServer.Maintenance.Service;
 /// </summary>
 public class MaintenanceService(IMaintenanceRepository repository, IInventoryRepository inventoryRepository)
 {
+    private static readonly Duration DefaultMaintenanceBindingWindow = Duration.FromDays(3650);
+
     public async Task<MaintenanceBacklogView> CreateBacklog(CreateMaintenanceBacklogDto dto, CancellationToken ct)
     {
         if (dto.DeviceUuid is null && dto.RentalItemUuid is null)
@@ -52,6 +55,12 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         };
 
         await repository.AddBacklogAsync(backlog, ct);
+
+        if (deviceId.HasValue)
+        {
+            await EnsureMaintenanceBindingExists(deviceId.Value, now, ct);
+        }
+
         await repository.SaveChangesAsync(ct);
 
         var persisted = await repository.GetBacklogByUuidAsync(backlog.Uuid, ct)
@@ -110,16 +119,26 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
             backlog.QuantityAffected = dto.QuantityAffected.Value;
         }
 
+        var now = SystemClock.Instance.GetCurrentInstant();
+
         if (dto.Resolve == true && backlog.ResolvedAt is null)
         {
-            backlog.ResolvedAt = SystemClock.Instance.GetCurrentInstant();
+            backlog.ResolvedAt = now;
+            if (backlog.DeviceId.HasValue)
+            {
+                await CloseActiveMaintenanceBindings(backlog.DeviceId.Value, now, ct);
+            }
         }
         else if (dto.Resolve == false)
         {
             backlog.ResolvedAt = null;
+            if (backlog.DeviceId.HasValue)
+            {
+                await EnsureMaintenanceBindingExists(backlog.DeviceId.Value, now, ct);
+            }
         }
 
-        backlog.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+        backlog.UpdatedAt = now;
         await repository.SaveChangesAsync(ct);
 
         var updated = await repository.GetBacklogByUuidAsync(uuid, ct)
@@ -135,5 +154,44 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
 
         await repository.DeleteBacklogAsync(backlog, ct);
         await repository.SaveChangesAsync(ct);
+    }
+
+    private async Task EnsureMaintenanceBindingExists(long deviceId, Instant start, CancellationToken ct)
+    {
+        var end = start + DefaultMaintenanceBindingWindow;
+        var hasActiveMaintenanceBinding = await inventoryRepository.HasConflictingBindingsAsync(
+            deviceId,
+            start,
+            end,
+            BindingType.MAINTENANCE,
+            ct);
+
+        if (hasActiveMaintenanceBinding)
+        {
+            return;
+        }
+
+        await inventoryRepository.AddStockBindingAsync(new StockBinding
+        {
+            Guid = Guid.NewGuid(),
+            DeviceId = deviceId,
+            BindingType = BindingType.MAINTENANCE,
+            CreatedAt = start,
+            Start = start,
+            End = end,
+        }, ct);
+    }
+
+    private async Task CloseActiveMaintenanceBindings(long deviceId, Instant resolvedAt, CancellationToken ct)
+    {
+        var bindings = await inventoryRepository.GetStockBindingsByDeviceIdAsync(deviceId, ct);
+
+        foreach (var binding in bindings.Where(b =>
+                     b.BindingType == BindingType.MAINTENANCE &&
+                     b.Start < resolvedAt &&
+                     b.End > resolvedAt))
+        {
+            binding.End = resolvedAt;
+        }
     }
 }
