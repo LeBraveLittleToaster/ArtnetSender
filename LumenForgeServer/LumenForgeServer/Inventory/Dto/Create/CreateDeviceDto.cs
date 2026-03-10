@@ -58,16 +58,16 @@ public record CreateDeviceDto
     [JsonPropertyName("purchaseDate")]
     public DateOnly PurchaseDate { get; set; }
     /// <summary>
-    /// Unit type used to interpret the stock count.
+    /// Unit type used to interpret the stock amount.
     /// </summary>
     [JsonPropertyName("stockUnitType")]
     public StockUnitType StockUnitType { get; set; }
     /// <summary>
     /// Quantity available in stock.
     /// </summary>
-    [Range(typeof(decimal), "0", "79228162514264337593543950335")]
-    [JsonPropertyName("stockCount")]
-    public decimal StockCount { get; set; }
+    [Range(0, long.MaxValue)]
+    [JsonPropertyName("stockAmount")]
+    public long StockAmount { get; set; }
     /// <summary>
     /// Device parameter key/value pairs.
     /// </summary>

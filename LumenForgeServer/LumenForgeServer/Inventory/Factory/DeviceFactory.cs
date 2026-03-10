@@ -30,6 +30,8 @@ public static class DeviceFactory
             MaintenanceStatusId = maintenanceStatusId,
             PurchasePrice = dto.PurchasePrice,
             PurchaseDate = dto.PurchaseDate,
+            StockUnitType = dto.StockUnitType,
+            StockAmount = dto.StockAmount,
             Guid = Guid.CreateVersion7(),
             CreatedAt = now,
             UpdatedAt = now,

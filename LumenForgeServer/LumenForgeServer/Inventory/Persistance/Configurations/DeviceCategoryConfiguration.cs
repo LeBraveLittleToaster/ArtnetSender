@@ -2,7 +2,7 @@ using LumenForgeServer.Inventory.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LumenForgeServer.Inventory.Persistence.Configurations;
+namespace LumenForgeServer.Inventory.Persistance.Configurations;
 
 /// <summary>
 /// Entity configuration for <see cref="DeviceCategory"/>.

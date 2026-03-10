@@ -53,7 +53,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <summary>
     /// Stock entries tied to devices.
     /// </summary>
-    public DbSet<Stock> Stocks => Set<Stock>();
+    public DbSet<StockBinding> StockBindings => Set<StockBinding>();
     /// <summary>
     /// Device parameter entries.
     /// </summary>

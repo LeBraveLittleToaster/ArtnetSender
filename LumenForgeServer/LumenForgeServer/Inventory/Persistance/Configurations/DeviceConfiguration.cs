@@ -2,7 +2,7 @@ using LumenForgeServer.Inventory.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LumenForgeServer.Inventory.Persistence.Configurations;
+namespace LumenForgeServer.Inventory.Persistance.Configurations;
 
 /// <summary>
 /// Entity configuration for <see cref="Device"/>.
@@ -34,10 +34,10 @@ public sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
             .WithMany(ms => ms.Devices)
             .HasForeignKey(x => x.MaintenanceStatusId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Stock)
+        
+        builder.HasMany(x => x.StockBindings)
             .WithOne(s => s.Device)
-            .HasForeignKey<Stock>(s => s.DeviceId)
+            .HasForeignKey(s => s.DeviceId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

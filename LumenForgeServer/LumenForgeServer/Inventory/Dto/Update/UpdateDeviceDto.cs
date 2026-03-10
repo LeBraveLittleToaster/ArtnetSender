@@ -1,3 +1,4 @@
+using LumenForgeServer.Common;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -64,6 +65,19 @@ public sealed class UpdateDeviceDto : IValidatableObject
     public DateOnly? PurchaseDate { get; init; }
 
     /// <summary>
+    /// Updated stock unit type.
+    /// </summary>
+    [JsonPropertyName("stockUnitType")]
+    public StockUnitType? StockUnitType { get; init; }
+
+    /// <summary>
+    /// Updated stock amount.
+    /// </summary>
+    [Range(0, long.MaxValue)]
+    [JsonPropertyName("stockAmount")]
+    public long? StockAmount { get; init; }
+
+    /// <summary>
     /// Ensures at least one field is provided.
     /// </summary>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -75,7 +89,9 @@ public sealed class UpdateDeviceDto : IValidatableObject
             VendorGuid is null &&
             MaintenanceStatusUuid is null &&
             PurchasePrice is null &&
-            PurchaseDate is null)
+            PurchaseDate is null &&
+            StockUnitType is null &&
+            StockAmount is null)
         {
             yield return new ValidationResult(
                 "At least one updatable field must be provided.",
@@ -88,7 +104,9 @@ public sealed class UpdateDeviceDto : IValidatableObject
                     nameof(VendorGuid),
                     nameof(MaintenanceStatusUuid),
                     nameof(PurchasePrice),
-                    nameof(PurchaseDate)
+                    nameof(PurchaseDate),
+                    nameof(StockUnitType),
+                    nameof(StockAmount)
                 });
         }
     }

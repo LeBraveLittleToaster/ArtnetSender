@@ -44,8 +44,9 @@ public class DeviceEndpointsTests(AuthFixture fixture)
         device.Guid.Should().NotBe(Guid.Empty);
         device.Vendor.Guid.Should().Be(vendor.Guid);
         device.Categories.Select(c => c.Guid).Should().Contain([categoryA.Guid, categoryB.Guid]);
-        device.Stock.Should().NotBeNull();
-        device.Stock!.StockCount.Should().Be(5);
+        device.StockAmount.Should().Be(5);
+        device.StockUnitType.Should().Be(StockUnitType.UNIT);
+        device.StockBindings.Should().BeEmpty();
         device.Parameters.Should().Contain(p => p.Key == "manual_url");
 
         var getResponse = await admin.AppClient.GetAsync($"/api/v1/inventory/devices/{device.Guid}");
@@ -65,11 +66,8 @@ public class DeviceEndpointsTests(AuthFixture fixture)
             VendorGuid = Guid.NewGuid(),
             PurchasePrice = 500m,
             PurchaseDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            Stock = new CreateStockDto
-            {
-                StockCount = 2,
-                StockUnitType = StockUnitType.UNIT
-            },
+            StockAmount = 2,
+            StockUnitType = StockUnitType.UNIT,
             Parameters = [],
             CategoryGuids = []
         });
@@ -91,11 +89,8 @@ public class DeviceEndpointsTests(AuthFixture fixture)
             VendorGuid = vendor.Guid,
             PurchasePrice = 500m,
             PurchaseDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            Stock = new CreateStockDto
-            {
-                StockCount = 2,
-                StockUnitType = StockUnitType.UNIT
-            },
+            StockAmount = 2,
+            StockUnitType = StockUnitType.UNIT,
             Parameters = [],
             CategoryGuids = [Guid.NewGuid()]
         });
@@ -117,11 +112,8 @@ public class DeviceEndpointsTests(AuthFixture fixture)
             VendorGuid = vendor.Guid,
             PurchasePrice = 100,
             PurchaseDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            Stock = new CreateStockDto
-            {
-                StockCount = -1,
-                StockUnitType = StockUnitType.UNIT
-            },
+            StockAmount = -1,
+            StockUnitType = StockUnitType.UNIT,
             Parameters = [],
             CategoryGuids = []
         });
@@ -292,27 +284,27 @@ public class DeviceEndpointsTests(AuthFixture fixture)
     }
 
     [Fact]
-    public async Task PATCH_device_stock_updates_fields_and_rejects_negative_count()
+    public async Task PATCH_device_updates_stock_fields_and_rejects_negative_stock_amount()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
         var vendor = await InventoryTestHelpers.CreateVendorAsync(admin);
         var device = await InventoryTestHelpers.CreateDeviceAsync(admin, vendor.Guid);
 
-        var updateResponse = await admin.AppClient.PatchAsJsonAsync($"/api/v1/inventory/devices/{device.Guid}/stock", new UpdateStockDto
+        var updateResponse = await admin.AppClient.PatchAsJsonAsync($"/api/v1/inventory/devices/{device.Guid}", new UpdateDeviceDto
         {
-            StockCount = 42,
+            StockAmount = 42,
             StockUnitType = StockUnitType.KG
         });
 
         updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var updatedStock = await InventoryTestHelpers.DeserializeResponseAsync<StockView>(updateResponse);
-        updatedStock.StockCount.Should().Be(42);
-        updatedStock.StockUnitType.Should().Be(StockUnitType.KG);
+        var updatedDevice = await InventoryTestHelpers.DeserializeResponseAsync<DeviceView>(updateResponse);
+        updatedDevice.StockAmount.Should().Be(42);
+        updatedDevice.StockUnitType.Should().Be(StockUnitType.KG);
 
-        var invalidResponse = await admin.AppClient.PatchAsJsonAsync($"/api/v1/inventory/devices/{device.Guid}/stock", new UpdateStockDto
+        var invalidResponse = await admin.AppClient.PatchAsJsonAsync($"/api/v1/inventory/devices/{device.Guid}", new UpdateDeviceDto
         {
-            StockCount = -5
+            StockAmount = -5
         });
 
         invalidResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);

@@ -1,7 +1,6 @@
 using LumenForgeServer.Auth.Client;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Common.Exceptions;
-using LumenForgeServer.IntegrationTests.Client;
 using System.Net;
 using System.Text.Json;
 

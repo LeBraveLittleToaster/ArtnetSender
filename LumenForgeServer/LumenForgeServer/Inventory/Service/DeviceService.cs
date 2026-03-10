@@ -113,6 +113,16 @@ public class DeviceService(IInventoryRepository repository)
             device.PurchaseDate = dto.PurchaseDate.Value;
         }
 
+        if (dto.StockUnitType is not null)
+        {
+            device.StockUnitType = dto.StockUnitType.Value;
+        }
+
+        if (dto.StockAmount is not null)
+        {
+            device.StockAmount = dto.StockAmount.Value;
+        }
+
         device.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
 
         try

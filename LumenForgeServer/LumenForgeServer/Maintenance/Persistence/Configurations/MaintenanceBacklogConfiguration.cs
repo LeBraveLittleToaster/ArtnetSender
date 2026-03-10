@@ -20,11 +20,6 @@ public sealed class MaintenanceBacklogConfiguration : IEntityTypeConfiguration<M
         builder.Property(x => x.IssueSummary).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.IssueDescription).HasMaxLength(4000);
 
-        builder.HasOne(x => x.Stock)
-            .WithMany(s => s.MaintenanceBacklogs)
-            .HasForeignKey(x => x.StockId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(x => x.RentalItem)
             .WithMany(ri => ri.MaintenanceBacklogs)
             .HasForeignKey(x => x.RentalItemId)

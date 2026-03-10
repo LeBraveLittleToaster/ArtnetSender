@@ -1,3 +1,4 @@
+using LumenForgeServer.Common;
 using LumenForgeServer.Inventory.Domain;
 using NodaTime;
 using System.Text.Json.Serialization;
@@ -30,6 +31,12 @@ public sealed record DeviceView
     [JsonPropertyName("purchase_date")]
     public DateOnly PurchaseDate { get; init; }
 
+    [JsonPropertyName("stock_unit_type")]
+    public StockUnitType StockUnitType { get; init; }
+
+    [JsonPropertyName("stock_amount")]
+    public long StockAmount { get; init; }
+
     [JsonPropertyName("maintenance_status_uuid")]
     public Guid MaintenanceStatusUuid { get; init; }
 
@@ -40,7 +47,7 @@ public sealed record DeviceView
     public required VendorView Vendor { get; init; }
 
     [JsonPropertyName("stock_bindings")]
-    public List<StockBindingView> Stock { get; init; }
+    public IReadOnlyList<StockBindingView> StockBindings { get; init; } = [];
 
     [JsonPropertyName("parameters")]
     public IReadOnlyList<DeviceParameterView> Parameters { get; init; } = [];
@@ -66,6 +73,11 @@ public sealed record DeviceView
             .OrderBy(p => p.Key)
             .ToArray();
 
+        var stockBindings = device.StockBindings
+            .Select(StockBindingView.FromEntity)
+            .OrderBy(sb => sb.Start)
+            .ToArray();
+
         return new DeviceView
         {
             Guid = device.Guid,
@@ -75,9 +87,12 @@ public sealed record DeviceView
             PhotoUrl = device.PhotoUrl,
             PurchasePrice = device.PurchasePrice,
             PurchaseDate = device.PurchaseDate,
+            StockUnitType = device.StockUnitType,
+            StockAmount = device.StockAmount,
             MaintenanceStatusUuid = device.MaintenanceStatus.Uuid,
             MaintenanceStatusName = device.MaintenanceStatus.Name,
             Vendor = VendorView.FromEntity(device.Vendor),
+            StockBindings = stockBindings,
             Parameters = parameters,
             Categories = categories,
             CreatedAt = device.CreatedAt,

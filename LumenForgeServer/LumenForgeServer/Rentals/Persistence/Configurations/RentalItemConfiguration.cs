@@ -15,8 +15,7 @@ public sealed class RentalItemConfiguration : IEntityTypeConfiguration<RentalIte
 
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.Uuid).IsUnique();
-
-        builder.Property(x => x.Quantity).HasPrecision(18, 3);
+        
         builder.Property(x => x.ConditionNotes).HasMaxLength(4000);
         builder.Property(x => x.ApprovedByUserId).HasMaxLength(128);
 
@@ -24,10 +23,6 @@ public sealed class RentalItemConfiguration : IEntityTypeConfiguration<RentalIte
             .WithMany(r => r.Items)
             .HasForeignKey(x => x.RentalId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne(x => x.Stock)
-            .WithMany(s => s.RentalItems)
-            .HasForeignKey(x => x.StockId)
-            .OnDelete(DeleteBehavior.Restrict);
+        
     }
 }

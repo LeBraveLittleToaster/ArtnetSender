@@ -55,11 +55,8 @@ internal static class InventoryTestHelpers
             VendorGuid = vendorGuid,
             PurchasePrice = 1234.56m,
             PurchaseDate = DateOnly.FromDateTime(DateTime.UtcNow.Date),
-            Stock = new CreateStockDto
-            {
-                StockCount = 5,
-                StockUnitType = StockUnitType.UNIT
-            },
+            StockAmount = 5,
+            StockUnitType = StockUnitType.UNIT,
             Parameters =
             [
                 new CreateDeviceParameterDto

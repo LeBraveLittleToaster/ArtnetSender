@@ -14,8 +14,6 @@ public class RentalItem
     public long RentalId { get; set; }
     public Rental Rental { get; set; } = null!;
 
-    public long StockId { get; set; }
-
     public bool IsApproved { get; set; }
     public Instant? ApprovedAt { get; set; }
 

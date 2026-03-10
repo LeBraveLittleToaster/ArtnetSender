@@ -1,4 +1,4 @@
-﻿namespace LumenForgeServer.IntegrationTests.Client;
+﻿namespace LumenForgeServer.Auth.Client;
 
 /// <summary>
 /// Configuration settings used by Keycloak-aware integration test clients.
