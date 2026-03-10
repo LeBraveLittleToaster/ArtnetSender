@@ -2,7 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Domain.Session;
-using LumenForgeServer.Auth.Persistance;
+using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Auth.Service;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Common.Exceptions;

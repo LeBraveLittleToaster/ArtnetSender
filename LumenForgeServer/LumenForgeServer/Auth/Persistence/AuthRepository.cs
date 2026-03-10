@@ -4,7 +4,7 @@ using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
-namespace LumenForgeServer.Auth.Persistance;
+namespace LumenForgeServer.Auth.Persistence;
 
 /// <summary>
 /// EF Core-backed repository for auth users, groups, and roles.

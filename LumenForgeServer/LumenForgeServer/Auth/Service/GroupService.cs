@@ -2,7 +2,7 @@ using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Dto.Command;
 using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Auth.Factory;
-using LumenForgeServer.Auth.Persistance;
+using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;

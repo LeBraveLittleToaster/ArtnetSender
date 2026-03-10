@@ -33,6 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Auth\Persistance\" />
     <Folder Include="Inventory\Controller\" />
     <Folder Include="Inventory\Dto\Delete\" />
     <Folder Include="Inventory\Dto\Update\" />

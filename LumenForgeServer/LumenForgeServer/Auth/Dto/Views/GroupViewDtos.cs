@@ -12,7 +12,7 @@ public class GroupView
     /// <summary>
     /// External identifier used for API interactions.
     /// </summary>
-    [JsonPropertyName("Guid")]
+    [JsonPropertyName("guid")]
     public Guid Guid { get; set; }
 
     /// <summary>

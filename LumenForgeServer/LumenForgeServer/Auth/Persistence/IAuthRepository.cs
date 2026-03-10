@@ -1,6 +1,6 @@
 using LumenForgeServer.Auth.Domain;
 
-namespace LumenForgeServer.Auth.Persistance;
+namespace LumenForgeServer.Auth.Persistence;
 
 /// <summary>
 /// Persistence contract for auth users, groups, and roles.
@@ -13,7 +13,7 @@ public interface IAuthRepository
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal user id.</returns>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the user cannot be found.
     /// </exception>
     Task<long> GetUserIdByKeycloakIdAsync(string keycloakId, CancellationToken ct);
@@ -28,7 +28,7 @@ public interface IAuthRepository
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to delete.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the user cannot be found.
     /// </exception>
     Task DeleteUserByKcIdAsync(string userKcId, CancellationToken ct);
@@ -80,7 +80,7 @@ public interface IAuthRepository
     /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
     /// </exception>
     Task<Group?> GetGroupByGuidAsync(Guid groupGuid, CancellationToken ct);
@@ -100,7 +100,7 @@ public interface IAuthRepository
     /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
     /// </exception>
     Task<long> GetGroupIdByGuidAsync(Guid groupGuid, CancellationToken ct);
@@ -110,7 +110,7 @@ public interface IAuthRepository
     /// <param name="groupGuid">Group Guid to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The internal group id.</returns>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
     /// </exception>
     Task<Group?> GetGroupByGuidWithPermissionsAsync(Guid groupGuid, CancellationToken ct);
@@ -125,7 +125,7 @@ public interface IAuthRepository
     /// </summary>
     /// <param name="guid">Group Guid to delete.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the group cannot be found.
     /// </exception>
     Task DeleteGroupByGuidAsync(Guid guid, CancellationToken ct);
@@ -165,7 +165,7 @@ public interface IAuthRepository
     /// <param name="keycloakId">Keycloak subject identifier for the user being assigned.</param>
     /// <param name="groupGuid">Target group Guid.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
+    /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the user or group cannot be found.
     /// </exception>
     Task AssignUserToGroupAsync(string? assigneeKeycloakId, string keycloakId, Guid groupGuid, CancellationToken ct);
