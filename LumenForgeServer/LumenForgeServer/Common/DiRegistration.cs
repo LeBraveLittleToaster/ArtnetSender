@@ -13,8 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using NodaTime;
-using NuGet.Packaging;
 
 namespace LumenForgeServer.Common;
 
@@ -31,7 +29,9 @@ public static class DiRegistration
     {
         builder.Services.AddDbContext<AppDbContext>(opt =>
         {
-            opt.UseNpgsql(builder.Configuration.GetConnectionString("DB_NAME"), o => o.UseNodaTime());
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("DB_NAME"), 
+                    o => o.UseNodaTime())
+                .UseSnakeCaseNamingConvention();
         });
     }
 
@@ -228,7 +228,8 @@ public static class DiRegistration
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy(nameof(Policy.GroupRoleAndUserRead),
-                p => p.RequireRole(nameof(Permissions.GroupRead), nameof(Permissions.RoleRead), nameof(Permissions.UserRead)));
+                p => p.RequireRole(nameof(Permissions.GroupRead), nameof(Permissions.RoleRead),
+                    nameof(Permissions.UserRead)));
             options.AddPolicy(nameof(Policy.GroupUpdateReadUser),
                 p => p.RequireRole(nameof(Permissions.GroupUpdate), nameof(Permissions.UserRead)));
             options.AddPolicy(nameof(Policy.GroupUpdateRoleRead),
