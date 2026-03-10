@@ -171,6 +171,49 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
     public Task SaveChangesAsync(CancellationToken ct)
         => db.SaveChangesAsync(ct);
 
+    public Task AddStockBindingAsync(StockBinding stockBinding, CancellationToken ct)
+        => db.StockBindings.AddAsync(stockBinding, ct).AsTask();
+
+    public Task AddStockBindingsAsync(IReadOnlyCollection<StockBinding> stockBindings, CancellationToken ct)
+        => db.StockBindings.AddRangeAsync(stockBindings, ct);
+
+    public Task<StockBinding?> GetStockBindingByGuidAsync(Guid bindingGuid, CancellationToken ct)
+        => db.StockBindings.Include(sb => sb.Device).SingleOrDefaultAsync(sb => sb.Guid == bindingGuid, ct);
+
+    public Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceGuidAsync(Guid deviceGuid, CancellationToken ct)
+    {
+        return db.StockBindings
+            .Include(sb => sb.Device)
+            .Where(sb => sb.Device.Guid == deviceGuid)
+            .OrderBy(sb => sb.Start)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<StockBinding>)t.Result, ct);
+    }
+
+    public Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceIdAsync(long deviceId, CancellationToken ct)
+    {
+        return db.StockBindings
+            .Where(sb => sb.DeviceId == deviceId)
+            .OrderBy(sb => sb.Start)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<StockBinding>)t.Result, ct);
+    }
+
+    public Task DeleteStockBindingAsync(StockBinding stockBinding, CancellationToken ct)
+    {
+        db.StockBindings.Remove(stockBinding);
+        return Task.CompletedTask;
+    }
+
+    public async Task<bool> HasConflictingBindingsAsync(long deviceId, NodaTime.Instant start, NodaTime.Instant end, BindingType bindingType, CancellationToken ct)
+    {
+        return await db.StockBindings.AnyAsync(sb =>
+            sb.DeviceId == deviceId &&
+            sb.BindingType == bindingType &&
+            sb.Start < end &&
+            sb.End > start, ct);
+    }
+
     private IQueryable<Device> BuildDeviceGraphQuery()
     {
         return db.Devices

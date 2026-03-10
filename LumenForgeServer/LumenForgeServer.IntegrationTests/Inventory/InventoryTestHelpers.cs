@@ -2,6 +2,7 @@
 using FluentAssertions;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.TestSupport;
+using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.View;
 using System.Net;
@@ -70,6 +71,25 @@ internal static class InventoryTestHelpers
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         return await DeserializeResponseAsync<DeviceView>(response);
+    }
+
+    public static async Task<StockBindingView> CreateStockBindingAsync(
+        TestUserBundle userBundle,
+        Guid deviceGuid,
+        BindingType bindingType,
+        NodaTime.Instant start,
+        NodaTime.Instant end)
+    {
+        var response = await userBundle.AppClient.PutAsJsonAsync($"/api/v1/inventory/devices/{deviceGuid}/stock-bindings",
+            new CreateStockBindingDto
+            {
+                BindingType = bindingType,
+                Start = start.ToString(),
+                End = end.ToString()
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await DeserializeResponseAsync<StockBindingView>(response);
     }
 
     public static async Task<T> DeserializeResponseAsync<T>(HttpResponseMessage response)

@@ -30,5 +30,13 @@ public interface IInventoryRepository
     Task DeleteDeviceAsync(Device device, CancellationToken ct);
     Task ReplaceDeviceCategoriesAsync(long deviceId, IReadOnlyCollection<long> categoryIds, CancellationToken ct);
 
+    Task AddStockBindingAsync(StockBinding stockBinding, CancellationToken ct);
+    Task AddStockBindingsAsync(IReadOnlyCollection<StockBinding> stockBindings, CancellationToken ct);
+    Task<StockBinding?> GetStockBindingByGuidAsync(Guid bindingGuid, CancellationToken ct);
+    Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceGuidAsync(Guid deviceGuid, CancellationToken ct);
+    Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceIdAsync(long deviceId, CancellationToken ct);
+    Task DeleteStockBindingAsync(StockBinding stockBinding, CancellationToken ct);
+    Task<bool> HasConflictingBindingsAsync(long deviceId, NodaTime.Instant start, NodaTime.Instant end, BindingType bindingType, CancellationToken ct);
+
     Task SaveChangesAsync(CancellationToken ct);
 }
