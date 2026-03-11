@@ -1,12 +1,13 @@
+using LumenForgeServer.Maintenance.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Maintenance.Dto.Query;
 
 /// <summary>
-/// Paging and search parameters for maintenance list endpoints.
+/// Query parameters for listing maintenance jobs.
 /// </summary>
-public sealed record MaintenanceQueryDto
+public sealed record MaintenanceJobQueryDto
 {
     [Range(1, 200)]
     [JsonPropertyName("limit")]
@@ -20,15 +21,9 @@ public sealed record MaintenanceQueryDto
     [JsonPropertyName("search")]
     public string? Search { get; init; }
 
-    /// <summary>
-    /// Optional filter by status UUID.
-    /// </summary>
-    [JsonPropertyName("status_uuid")]
-    public Guid? StatusUuid { get; init; }
+    [JsonPropertyName("status")]
+    public MaintenanceStatus? Status { get; init; }
 
-    /// <summary>
-    /// When true, only returns unresolved entries.
-    /// </summary>
     [JsonPropertyName("unresolved_only")]
     public bool UnresolvedOnly { get; init; } = false;
 }

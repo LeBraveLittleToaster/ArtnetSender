@@ -26,5 +26,4 @@ public class RentalItem
     public Instant UpdatedAt { get; set; }
 
     public List<ChecklistItem> ChecklistItems { get; set; } = new();
-    public List<MaintenanceBacklog> MaintenanceBacklogs { get; set; } = new();
 }

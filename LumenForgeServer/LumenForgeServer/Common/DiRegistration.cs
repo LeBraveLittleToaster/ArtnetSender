@@ -71,7 +71,6 @@ public static class DiRegistration
         builder.Services.AddScoped<DeviceService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<MaintenanceService>();
-        builder.Services.AddScoped<MaintenanceStatusService>();
     }
 
     /// <summary>

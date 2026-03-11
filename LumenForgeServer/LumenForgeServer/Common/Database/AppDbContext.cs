@@ -45,7 +45,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <summary>
     /// Maintenance status entries for devices.
     /// </summary>
-    public DbSet<MaintenanceStatus> MaintenanceStatuses => Set<MaintenanceStatus>();
+    public DbSet<Inventory.Domain.MaintenanceStatus> MaintenanceStatuses => base.Set<Inventory.Domain.MaintenanceStatus>();
     /// <summary>
     /// Inventory devices.
     /// </summary>
@@ -83,13 +83,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Maintenance
     /// <summary>
-    /// Maintenance backlog status lookup table.
+    /// Maintenance jobs.
     /// </summary>
-    public DbSet<MaintenanceBacklogStatus> MaintenanceBacklogStatuses => Set<MaintenanceBacklogStatus>();
+    public DbSet<MaintenanceJob> MaintenanceJobs => Set<MaintenanceJob>();
     /// <summary>
-    /// Maintenance backlog entries.
+    /// Maintenance tasks.
     /// </summary>
-    public DbSet<MaintenanceBacklog> MaintenanceBacklogs => Set<MaintenanceBacklog>();
+    public DbSet<MaintenanceTask> MaintenanceTasks => Set<MaintenanceTask>();
+    /// <summary>
+    /// Maintenance log entries.
+    /// </summary>
+    public DbSet<MaintenanceLogEntry> MaintenanceLogEntries => Set<MaintenanceLogEntry>();
 
     // Rentals
     /// <summary>

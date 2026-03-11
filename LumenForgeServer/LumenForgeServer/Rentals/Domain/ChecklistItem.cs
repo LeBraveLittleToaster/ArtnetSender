@@ -27,6 +27,4 @@ public class ChecklistItem
 
     public Instant CreatedAt { get; set; }
     public Instant UpdatedAt { get; set; }
-
-    public List<MaintenanceBacklog> MaintenanceBacklogs { get; set; } = new();
 }

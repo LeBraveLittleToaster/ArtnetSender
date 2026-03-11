@@ -1,167 +1,204 @@
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Maintenance.Dto.Command;
 using LumenForgeServer.Maintenance.Dto.Query;
-using LumenForgeServer.Maintenance.Dto.View;
 using LumenForgeServer.Maintenance.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LumenForgeServer.Maintenance.Controller;
 
 /// <summary>
-/// HTTP API for the maintenance module.
+/// HTTP API for maintenance jobs, tasks, and task logs.
 /// </summary>
-/// <remarks>
-/// Routes are under <c>api/v1/maintenance</c> and require authenticated access.
-/// </remarks>
 [Route("api/v1/maintenance")]
 [ApiController]
 [Authorize]
-public class MaintenanceController(
-    MaintenanceService maintenanceService,
-    MaintenanceStatusService statusService) : ControllerBase
+public class MaintenanceController(MaintenanceService maintenanceService) : ControllerBase
 {
-    // ── Backlog statuses ─────────────────────────────────────────────────────
-
-    /// <summary>Lists all maintenance backlog statuses.</summary>
-    [HttpGet("statuses")]
+    [HttpGet("jobs")]
     [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Produces("application/json")]
-    public async Task<IActionResult> ListStatuses([FromQuery] MaintenanceQueryDto query, CancellationToken ct)
+    public async Task<IActionResult> ListJobs([FromQuery] MaintenanceJobQueryDto query, [FromQuery] string? include, CancellationToken ct)
     {
-        var statuses = await statusService.ListStatuses(query.Search, query.Limit, query.Offset, ct);
-        return Ok(statuses);
-    }
-
-    /// <summary>Returns a single maintenance status by UUID.</summary>
-    [HttpGet("statuses/{uuid:Guid}")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetStatus([FromRoute] Guid uuid, CancellationToken ct)
-    {
-        var status = await statusService.GetStatus(uuid, ct);
-        return Ok(status);
-    }
-
-    /// <summary>Creates a new maintenance backlog status.</summary>
-    [HttpPut("statuses")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceCreate))]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Produces("application/json")]
-    public async Task<IActionResult> CreateStatus([FromBody] CreateMaintenanceStatusDto dto, CancellationToken ct)
-    {
-        var status = await statusService.CreateStatus(dto, ct);
-        return CreatedAtAction(nameof(GetStatus), new { uuid = status.Uuid }, status);
-    }
-
-    /// <summary>Partially updates a maintenance backlog status.</summary>
-    [HttpPatch("statuses/{uuid:Guid}")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Produces("application/json")]
-    public async Task<IActionResult> UpdateStatus([FromRoute] Guid uuid, [FromBody] UpdateMaintenanceStatusDto dto, CancellationToken ct)
-    {
-        var status = await statusService.UpdateStatus(uuid, dto, ct);
-        return Ok(status);
-    }
-
-    /// <summary>Deletes a maintenance backlog status. Fails if any backlogs reference it.</summary>
-    [HttpDelete("statuses/{uuid:Guid}")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceDelete))]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Produces("application/json")]
-    public async Task<IActionResult> DeleteStatus([FromRoute] Guid uuid, CancellationToken ct)
-    {
-        await statusService.DeleteStatus(uuid, ct);
-        return NoContent();
-    }
-
-    // ── Backlog entries ───────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Lists maintenance backlog entries with optional paging, search, status filter and resolved filter.
-    /// </summary>
-    [HttpGet("backlogs")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Produces("application/json")]
-    public async Task<IActionResult> ListBacklogs([FromQuery] MaintenanceQueryDto query, CancellationToken ct)
-    {
-        var (items, total) = await maintenanceService.ListBacklogs(query, ct);
+        var includeFlags = ParseJobIncludes(include);
+        var (items, total) = await maintenanceService.ListJobs(query, includeFlags, ct);
         return Ok(new { list = items, total });
     }
 
-    /// <summary>Returns a single backlog entry by UUID.</summary>
-    [HttpGet("backlogs/{uuid:Guid}")]
+    [HttpGet("jobs/{jobGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetBacklog([FromRoute] Guid uuid, CancellationToken ct)
+    public async Task<IActionResult> GetJob([FromRoute] Guid jobGuid, [FromQuery] string? include, CancellationToken ct)
     {
-        var backlog = await maintenanceService.GetBacklog(uuid, ct);
-        return Ok(backlog);
+        var includeFlags = ParseJobIncludes(include);
+        var job = await maintenanceService.GetJob(jobGuid, includeFlags, ct);
+        return Ok(job);
     }
 
-    /// <summary>Returns all backlog entries linked to a specific device.</summary>
-    [HttpGet("devices/{deviceUuid:Guid}/backlogs")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetBacklogsByDevice([FromRoute] Guid deviceUuid, CancellationToken ct)
-    {
-        var items = await maintenanceService.GetBacklogsByDevice(deviceUuid, ct);
-        return Ok(items);
-    }
-
-    /// <summary>Creates a new maintenance backlog entry.</summary>
-    [HttpPut("backlogs")]
+    [HttpPut("jobs")]
     [Authorize(Roles = nameof(Permissions.MaintenanceCreate))]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> CreateBacklog([FromBody] CreateMaintenanceBacklogDto dto, CancellationToken ct)
+    public async Task<IActionResult> CreateJob([FromBody] CreateMaintenanceJobDto dto, CancellationToken ct)
     {
-        var backlog = await maintenanceService.CreateBacklog(dto, ct);
-        return CreatedAtAction(nameof(GetBacklog), new { uuid = backlog.Uuid }, backlog);
+        var createdByUserKcId = User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.Identity?.Name
+            ?? "unknown-user";
+
+        var job = await maintenanceService.CreateJob(dto, createdByUserKcId, ct);
+        return CreatedAtAction(nameof(GetJob), new { jobGuid = job.Guid }, job);
     }
 
-    /// <summary>Partially updates a backlog entry, including resolving it.</summary>
-    [HttpPatch("backlogs/{uuid:Guid}")]
+    [HttpPatch("jobs/{jobGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> UpdateBacklog([FromRoute] Guid uuid, [FromBody] UpdateMaintenanceBacklogDto dto, CancellationToken ct)
+    public async Task<IActionResult> UpdateJob([FromRoute] Guid jobGuid, [FromBody] UpdateMaintenanceJobDto dto, CancellationToken ct)
     {
-        var backlog = await maintenanceService.UpdateBacklog(uuid, dto, ct);
-        return Ok(backlog);
+        var job = await maintenanceService.UpdateJob(jobGuid, dto, ct);
+        return Ok(job);
     }
 
-    /// <summary>Deletes a backlog entry.</summary>
-    [HttpDelete("backlogs/{uuid:Guid}")]
+    [HttpDelete("jobs/{jobGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.MaintenanceDelete))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> DeleteBacklog([FromRoute] Guid uuid, CancellationToken ct)
+    public async Task<IActionResult> DeleteJob([FromRoute] Guid jobGuid, CancellationToken ct)
     {
-        await maintenanceService.DeleteBacklog(uuid, ct);
+        await maintenanceService.DeleteJob(jobGuid, ct);
         return NoContent();
+    }
+
+    [HttpGet("jobs/{jobGuid:Guid}/tasks")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListTasks(
+        [FromRoute] Guid jobGuid,
+        [FromQuery] MaintenanceTaskQueryDto query,
+        [FromQuery] string? include,
+        CancellationToken ct)
+    {
+        var includeFlags = ParseTaskIncludes(include);
+        var (tasks, total) = await maintenanceService.ListTasks(jobGuid, query.Limit, query.Offset, includeFlags, ct);
+        return Ok(new { list = tasks, total });
+    }
+
+    [HttpPost("jobs/{jobGuid:Guid}/tasks")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceCreate))]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateTask([FromRoute] Guid jobGuid, [FromBody] CreateMaintenanceTaskDto dto, CancellationToken ct)
+    {
+        var task = await maintenanceService.CreateTask(jobGuid, dto, ct);
+        return CreatedAtAction(nameof(ListTasks), new { jobGuid }, task);
+    }
+
+    [HttpPatch("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateTask([FromRoute] Guid jobGuid, [FromRoute] Guid taskGuid, [FromBody] UpdateMaintenanceTaskDto dto, CancellationToken ct)
+    {
+        var task = await maintenanceService.UpdateTask(jobGuid, taskGuid, dto, ct);
+        return Ok(task);
+    }
+
+    [HttpDelete("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceDelete))]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTask([FromRoute] Guid jobGuid, [FromRoute] Guid taskGuid, CancellationToken ct)
+    {
+        await maintenanceService.DeleteTask(jobGuid, taskGuid, ct);
+        return NoContent();
+    }
+
+    [HttpGet("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListTaskLogs([FromRoute] Guid jobGuid, [FromRoute] Guid taskGuid, CancellationToken ct)
+    {
+        var logs = await maintenanceService.ListTaskLogs(jobGuid, taskGuid, ct);
+        return Ok(logs);
+    }
+
+    [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateTaskLog(
+        [FromRoute] Guid jobGuid,
+        [FromRoute] Guid taskGuid,
+        [FromBody] CreateMaintenanceLogEntryDto dto,
+        CancellationToken ct)
+    {
+        var log = await maintenanceService.AddTaskLog(jobGuid, taskGuid, dto, ct);
+        return CreatedAtAction(nameof(ListTaskLogs), new { jobGuid, taskGuid }, log);
+    }
+
+    private static MaintenanceJobInclude ParseJobIncludes(string? include)
+    {
+        if (string.IsNullOrWhiteSpace(include))
+        {
+            return MaintenanceJobInclude.None;
+        }
+
+        MaintenanceJobInclude flags = MaintenanceJobInclude.None;
+        var values = include.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var value in values)
+        {
+            if (!Enum.TryParse<MaintenanceJobInclude>(value, true, out var parsed))
+            {
+                throw new ValidationException(
+                    $"Invalid include value '{value}'.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["include"] = [$"Unsupported job include '{value}'. Allowed values: {string.Join(", ", Enum.GetNames<MaintenanceJobInclude>())}"]
+                    });
+            }
+
+            flags |= parsed;
+        }
+
+        return flags;
+    }
+
+    private static MaintenanceTaskInclude ParseTaskIncludes(string? include)
+    {
+        if (string.IsNullOrWhiteSpace(include))
+        {
+            return MaintenanceTaskInclude.None;
+        }
+
+        MaintenanceTaskInclude flags = MaintenanceTaskInclude.None;
+        var values = include.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var value in values)
+        {
+            if (!Enum.TryParse<MaintenanceTaskInclude>(value, true, out var parsed))
+            {
+                throw new ValidationException(
+                    $"Invalid include value '{value}'.",
+                    new Dictionary<string, string[]>
+                    {
+                        ["include"] = [$"Unsupported task include '{value}'. Allowed values: {string.Join(", ", Enum.GetNames<MaintenanceTaskInclude>())}"]
+                    });
+            }
+
+            flags |= parsed;
+        }
+
+        return flags;
     }
 }
