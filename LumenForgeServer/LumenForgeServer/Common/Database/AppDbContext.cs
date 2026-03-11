@@ -117,6 +117,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// </summary>
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
     /// <summary>
+    /// Damage reports for individual rental line items.
+    /// </summary>
+    public DbSet<RentalItemDamageReport> RentalItemDamageReports => Set<RentalItemDamageReport>();
+    /// <summary>
+    /// Audit log events for rentals.
+    /// </summary>
+    public DbSet<RentalEvent> RentalEvents => Set<RentalEvent>();
+    /// <summary>
+    /// Rental extension requests.
+    /// </summary>
+    public DbSet<RentalExtension> RentalExtensions => Set<RentalExtension>();
+    /// <summary>
     /// Rental report records.
     /// </summary>
     public DbSet<RentalReport> RentalReports => Set<RentalReport>();

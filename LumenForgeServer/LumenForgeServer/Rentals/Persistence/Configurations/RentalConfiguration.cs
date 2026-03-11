@@ -1,3 +1,4 @@
+using LumenForgeServer.Common;
 using LumenForgeServer.Rentals.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,6 +28,11 @@ public sealed class RentalConfiguration : IEntityTypeConfiguration<Rental>
 
         builder.Property(x => x.RequestTitle).HasMaxLength(512);
         builder.Property(x => x.RequestDescription).HasMaxLength(4000);
+        builder.Property(x => x.EventName).HasMaxLength(512);
+        builder.Property(x => x.CustomerNotes).HasMaxLength(4000);
+        builder.Property(x => x.DeliveryAddress).HasMaxLength(1000);
+
+        builder.Property(x => x.Priority).HasConversion<string>().HasMaxLength(16).IsRequired();
 
         builder.HasOne(x => x.RentalStatus)
             .WithMany(s => s.Rentals)

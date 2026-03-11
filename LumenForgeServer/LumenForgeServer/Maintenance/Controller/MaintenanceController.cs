@@ -123,29 +123,47 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
         return NoContent();
     }
 
-    [HttpGet("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
+    /// <summary>
+    /// Adds a QR-scanned device to a maintenance job's affected devices.
+    /// Idempotent — scanning the same device more than once is safe.
+    /// </summary>
+    /// <remarks>
+    /// Expected mobile flow: scan device QR → POST here → binding is created → job view is refreshed.
+    /// </remarks>
+    [HttpPost("jobs/{jobGuid:Guid}/devices/scan")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ListTaskLogs([FromRoute] Guid jobGuid, [FromRoute] Guid taskGuid, CancellationToken ct)
-    {
-        var logs = await maintenanceService.ListTaskLogs(jobGuid, taskGuid, ct);
-        return Ok(logs);
-    }
-
-    [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
-    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> CreateTaskLog(
+    [Produces("application/json")]
+    public async Task<IActionResult> ScanDeviceForJob(
         [FromRoute] Guid jobGuid,
-        [FromRoute] Guid taskGuid,
-        [FromBody] CreateMaintenanceLogEntryDto dto,
+        [FromBody] ScanDeviceDto dto,
         CancellationToken ct)
     {
-        var log = await maintenanceService.AddTaskLog(jobGuid, taskGuid, dto, ct);
-        return CreatedAtAction(nameof(ListTaskLogs), new { jobGuid, taskGuid }, log);
+        var job = await maintenanceService.ScanDeviceForJob(jobGuid, dto.DeviceGuid, ct);
+        return Ok(job);
+    }
+
+    /// <summary>
+    /// Adds a QR-scanned device to a maintenance task's affected devices.
+    /// Idempotent — scanning the same device more than once is safe.
+    /// </summary>
+    /// <remarks>
+    /// Expected mobile flow: scan device QR → POST here → task view is refreshed.
+    /// </remarks>
+    [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/devices/scan")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ScanDeviceForTask(
+        [FromRoute] Guid jobGuid,
+        [FromRoute] Guid taskGuid,
+        [FromBody] ScanDeviceDto dto,
+        CancellationToken ct)
+    {
+        var task = await maintenanceService.ScanDeviceForTask(jobGuid, taskGuid, dto.DeviceGuid, ct);
+        return Ok(task);
     }
 
     private static MaintenanceJobInclude ParseJobIncludes(string? include)

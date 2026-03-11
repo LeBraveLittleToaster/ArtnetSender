@@ -1,8 +1,7 @@
 using LumenForgeServer.Common.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace LumenForgeServer.IntegrationTests.Fixtures;
-
-using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Fixture for creating database contexts against the integration-test database.
@@ -20,6 +19,7 @@ public class AppDbFixture
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(ConnectionString, o => o.UseNodaTime())
+            .UseSnakeCaseNamingConvention()
             .Options;
 
         return new AppDbContext(options);

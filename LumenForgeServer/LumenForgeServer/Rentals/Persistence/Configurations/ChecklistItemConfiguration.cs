@@ -16,6 +16,7 @@ public sealed class ChecklistItemConfiguration : IEntityTypeConfiguration<Checkl
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.Uuid).IsUnique();
 
+        builder.Property(x => x.IsChecked).IsRequired();
         builder.Property(x => x.QuantityChecked).HasPrecision(18, 3);
         builder.Property(x => x.DamagedQuantity).HasPrecision(18, 3);
 

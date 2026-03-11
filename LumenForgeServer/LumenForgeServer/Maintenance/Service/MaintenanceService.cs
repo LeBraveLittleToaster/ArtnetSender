@@ -159,6 +159,66 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         await repository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Adds a QR-scanned device to a maintenance job's affected devices and ensures a
+    /// maintenance stock binding exists for it. Idempotent — scanning the same device twice
+    /// is safe and returns the unchanged view.
+    /// </summary>
+    public async Task<MaintenanceJobView> ScanDeviceForJob(Guid jobGuid, Guid deviceGuid, CancellationToken ct)
+    {
+        var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.Devices | MaintenanceJobInclude.Tasks, ct)
+            ?? throw new NotFoundException($"Maintenance job '{jobGuid}' not found.");
+
+        if (!job.AffectedDevices.Any(d => d.Guid == deviceGuid))
+        {
+            var device = await inventoryRepository.GetDeviceByGuidAsync(deviceGuid, ct)
+                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
+
+            var now = SystemClock.Instance.GetCurrentInstant();
+            job.AffectedDevices.Add(device);
+            job.UpdatedAt = now;
+
+            await EnsureMaintenanceBindingsExist([device], now, ct);
+            await repository.SaveChangesAsync(ct);
+        }
+
+        var updated = await repository.GetJobByGuidAsync(
+                jobGuid,
+                MaintenanceJobInclude.Devices | MaintenanceJobInclude.Tasks | MaintenanceJobInclude.Logs | MaintenanceJobInclude.RelatedJobs | MaintenanceJobInclude.RelatedRental,
+                ct)
+            ?? throw new NotFoundException("Maintenance job not found after scan.");
+
+        return MaintenanceJobView.FromEntity(updated);
+    }
+
+    /// <summary>
+    /// Adds a QR-scanned device to a maintenance task's affected devices.
+    /// Idempotent — scanning the same device twice returns the unchanged view.
+    /// </summary>
+    public async Task<MaintenanceTaskView> ScanDeviceForTask(Guid jobGuid, Guid taskGuid, Guid deviceGuid, CancellationToken ct)
+    {
+        var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.Devices, ct)
+            ?? throw new NotFoundException($"Maintenance task '{taskGuid}' not found.");
+
+        if (task.MaintenanceJob.Guid != jobGuid)
+            throw new NotFoundException($"Task '{taskGuid}' is not part of job '{jobGuid}'.");
+
+        if (!task.AffectedDevices.Any(d => d.Guid == deviceGuid))
+        {
+            var device = await inventoryRepository.GetDeviceByGuidAsync(deviceGuid, ct)
+                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
+
+            task.AffectedDevices.Add(device);
+            task.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
+            await repository.SaveChangesAsync(ct);
+        }
+
+        var updated = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.Devices | MaintenanceTaskInclude.Logs, ct)
+            ?? throw new NotFoundException("Maintenance task not found after scan.");
+
+        return MaintenanceTaskView.FromEntity(updated);
+    }
+
     public Task<(IReadOnlyList<MaintenanceTaskView> items, long total)> ListTasks(Guid jobGuid, int limit, int offset, CancellationToken ct)
         => ListTasks(jobGuid, limit, offset, MaintenanceTaskInclude.None, ct);
 

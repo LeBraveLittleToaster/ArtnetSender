@@ -1,4 +1,5 @@
 using LumenForgeServer.Billing.Domain;
+using LumenForgeServer.Common;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;
@@ -19,7 +20,17 @@ public class Rental
 
     public string? RequestTitle { get; set; }
     public string? RequestDescription { get; set; }
+    public string? EventName { get; set; }
+    public string? CustomerNotes { get; set; }
+    public string? DeliveryAddress { get; set; }
+
+    public RentalPriority Priority { get; set; } = RentalPriority.NORMAL;
+
     public Instant? RequestedAt { get; set; }
+
+    // Planned vs actual pickup and return
+    public Instant? PlannedPickupAt { get; set; }
+    public Instant? PlannedReturnAt { get; set; }
 
     public Instant CreatedAt { get; set; }
     public Instant? PickupAt { get; set; }
@@ -45,6 +56,8 @@ public class Rental
     public List<RentalItem> Items { get; set; } = new();
     public List<Checklist> Checklists { get; set; } = new();
     public List<Invoice> Invoices { get; set; } = new();
+    public List<RentalEvent> Events { get; set; } = new();
+    public List<RentalExtension> Extensions { get; set; } = new();
 
     public RentalReport RentalReport { get; set; } = null!;
 }
