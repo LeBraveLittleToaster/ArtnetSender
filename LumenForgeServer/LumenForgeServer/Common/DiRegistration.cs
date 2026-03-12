@@ -59,6 +59,7 @@ public static class DiRegistration
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
         builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+        builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
     }
 
     /// <summary>
@@ -76,6 +77,7 @@ public static class DiRegistration
         builder.Services.AddScoped<MaintenanceService>();
         builder.Services.AddScoped<RentalService>();
         builder.Services.AddScoped<ChecklistService>();
+        builder.Services.AddScoped<QuestionService>();
     }
 
     /// <summary>

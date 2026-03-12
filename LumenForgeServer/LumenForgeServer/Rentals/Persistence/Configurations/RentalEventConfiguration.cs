@@ -30,6 +30,11 @@ public sealed class RentalEventConfiguration : IEntityTypeConfiguration<RentalEv
             .HasForeignKey(x => x.RentalItemId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasMany(x => x.Answers)
+            .WithOne(a => a.RentalEvent)
+            .HasForeignKey(a => a.RentalEventId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(x => new { x.RentalId, x.OccurredAt });
     }
 }

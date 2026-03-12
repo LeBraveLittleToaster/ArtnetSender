@@ -166,6 +166,36 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
         return Ok(task);
     }
 
+    [HttpGet("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ListTaskLogs(
+        [FromRoute] Guid jobGuid,
+        [FromRoute] Guid taskGuid,
+        CancellationToken ct)
+    {
+        var logs = await maintenanceService.ListTaskLogs(jobGuid, taskGuid, ct);
+        return Ok(logs);
+    }
+
+    [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]
+    [Authorize(Roles = nameof(Permissions.MaintenanceCreate))]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> AddTaskLog(
+        [FromRoute] Guid jobGuid,
+        [FromRoute] Guid taskGuid,
+        [FromBody] CreateMaintenanceLogEntryDto dto,
+        CancellationToken ct)
+    {
+        var log = await maintenanceService.AddTaskLog(jobGuid, taskGuid, dto, ct);
+        return CreatedAtAction(nameof(ListTaskLogs), new { jobGuid, taskGuid }, log);
+    }
+
     private static MaintenanceJobInclude ParseJobIncludes(string? include)
     {
         if (string.IsNullOrWhiteSpace(include))

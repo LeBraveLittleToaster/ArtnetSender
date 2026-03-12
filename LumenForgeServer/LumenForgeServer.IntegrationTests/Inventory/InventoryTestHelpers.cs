@@ -88,7 +88,13 @@ internal static class InventoryTestHelpers
                 End = end.ToString()
             });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(
+                $"Failed to create stock binding: {response.StatusCode}. Response: {body}");
+        }
+
         return await DeserializeResponseAsync<StockBindingView>(response);
     }
 

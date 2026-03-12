@@ -132,6 +132,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// Rental report records.
     /// </summary>
     public DbSet<RentalReport> RentalReports => Set<RentalReport>();
+    /// <summary>
+    /// Survey questions for rental feedback.
+    /// </summary>
+    public DbSet<Question> Questions => Set<Question>();
+    /// <summary>
+    /// Survey answers submitted by users.
+    /// </summary>
+    public DbSet<Answer> Answers => Set<Answer>();
 
     /// <summary>
     /// Configures the entity schema for all modules.

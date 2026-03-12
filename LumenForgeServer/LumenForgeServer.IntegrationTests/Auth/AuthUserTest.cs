@@ -130,9 +130,9 @@ public class AuthUserTest(AuthFixture fixture)
 
         var returnedGroups = groups.EnumerateArray().Select(g => new
         {
-            Guid = g.GetProperty("Guid").GetGuid(),
+            Guid = g.GetProperty("guid").GetGuid(),
             Name = g.GetProperty("name").GetString()
-        });
+        }).ToList();
 
         returnedGroups.Select(g => g.Guid).Should().BeEquivalentTo([groupA.Guid, groupB.Guid]);
         returnedGroups.Select(g => g.Name).Should().BeEquivalentTo([groupA.Name, groupB.Name]);

@@ -165,7 +165,6 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         var group = await _db.Groups
             .Where(g => g.Guid == groupGuid)
             .Include(g => g.GroupRoles)
-            .ThenInclude(gr => gr.Permission)
             .SingleOrDefaultAsync(ct);
 
         return group

@@ -25,8 +25,8 @@ public class GroupService(IAuthRepository authRepository)
     public async Task<GroupView> GetGroupByGuid(Guid guid, bool withPermissions, CancellationToken ct)
     {
         var group = withPermissions
-            ? await authRepository.GetGroupByGuidAsync(guid, ct)
-            : await authRepository.GetGroupByGuidWithPermissionsAsync(guid, ct);
+            ? await authRepository.GetGroupByGuidWithPermissionsAsync(guid, ct)
+            : await authRepository.GetGroupByGuidAsync(guid, ct);
         return group == null ? throw new NotFoundException("Group not found") : GroupView.FromEntity(group);
     }
 

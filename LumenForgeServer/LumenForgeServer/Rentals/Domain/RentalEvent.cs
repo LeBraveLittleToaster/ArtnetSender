@@ -26,4 +26,7 @@ public class RentalEvent
     public Instant OccurredAt { get; set; }
 
     public Instant CreatedAt { get; set; }
+
+    // Navigation to answers provided in response to this event
+    public List<Answer> Answers { get; set; } = [];
 }

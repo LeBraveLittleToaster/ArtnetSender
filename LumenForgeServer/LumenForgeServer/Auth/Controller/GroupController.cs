@@ -212,6 +212,40 @@ public class GroupController(GroupService groupService) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Retrieves roles assigned to a group.
+    /// </summary>
+    /// <param name="groupGuid">Group Guid to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 200 response with the role list.</returns>
+    [HttpGet("{groupGuid:Guid}/roles")]
+    [Authorize(Policy = nameof(Policy.GroupRoleAndUserRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetGroupRoles([FromRoute] Guid groupGuid, CancellationToken ct)
+    {
+        var roles = await groupService.GetRolesForGroup(groupGuid, ct);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// Removes all roles assigned to a group.
+    /// </summary>
+    /// <param name="groupGuid">Group Guid to update.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 204 response when deleted successfully.</returns>
+    [HttpDelete("{groupGuid:Guid}/roles")]
+    [Authorize(Policy = nameof(Policy.GroupUpdateRoleRead))]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> DeleteGroupRoles([FromRoute] Guid groupGuid, CancellationToken ct)
+    {
+        await groupService.AssignRolesToGroup(groupGuid, [], ct);
+        return NoContent();
+    }
+
     public enum Includes
     {
         Permissions
