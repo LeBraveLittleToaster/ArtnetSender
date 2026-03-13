@@ -9,12 +9,12 @@ public interface IInventoryRepository
 {
     Task AddCategoryAsync(Category category, CancellationToken ct);
     Task<Category?> GetCategoryByGuidAsync(Guid categoryGuid, CancellationToken ct);
-    Task<IReadOnlyList<Category>> ListCategoriesAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<Category> categories, long total)> ListCategoriesAsync(string? search, int limit, int offset, CancellationToken ct);
     Task DeleteCategoryAsync(Category category, CancellationToken ct);
 
     Task AddVendorAsync(Vendor vendor, CancellationToken ct);
     Task<Vendor?> GetVendorByGuidAsync(Guid vendorGuid, CancellationToken ct);
-    Task<IReadOnlyList<Vendor>> ListVendorsAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<Vendor> vendors, long total)> ListVendorsAsync(string? search, int limit, int offset, CancellationToken ct);
     Task DeleteVendorAsync(Vendor vendor, CancellationToken ct);
     Task<long?> TryGetVendorIdByGuidAsync(Guid vendorGuid, CancellationToken ct);
 

@@ -40,13 +40,7 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
                 ?? throw new NotFoundException($"Rental '{dto.RelatedRentalUuid}' not found.");
         }
 
-        var affectedDevices = new List<InventoryDevice>();
-        foreach (var deviceGuid in dto.DeviceGuids.Distinct())
-        {
-            var device = await inventoryRepository.GetDeviceByGuidAsync(deviceGuid, ct)
-                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
-            affectedDevices.Add(device);
-        }
+        var affectedDevices = await ResolveDevices(dto.DeviceGuids, ct);
 
         var now = SystemClock.Instance.GetCurrentInstant();
         var job = new MaintenanceJob
@@ -64,9 +58,19 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
             ResolvedAt = null,
         };
 
+        foreach (var initialTaskDto in dto.Tasks)
+        {
+            job.Tasks.Add(await BuildTask(job, initialTaskDto, now, ct));
+        }
+
         await repository.AddJobAsync(job, ct);
         await EnsureMaintenanceBindingsExist(job.AffectedDevices, now, ct);
         await repository.SaveChangesAsync(ct);
+
+        if (job.Tasks.Count > 0)
+        {
+            await SyncJobResolution(job.Guid, ct);
+        }
 
         var persisted = await repository.GetJobByGuidAsync(
                 job.Guid,
@@ -241,27 +245,8 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.None, ct)
             ?? throw new NotFoundException($"Maintenance job '{jobGuid}' not found.");
 
-        var affectedDevices = new List<InventoryDevice>();
-        foreach (var deviceGuid in dto.AffectedDeviceGuids.Distinct())
-        {
-            var device = await inventoryRepository.GetDeviceByGuidAsync(deviceGuid, ct)
-                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
-            affectedDevices.Add(device);
-        }
-
         var now = SystemClock.Instance.GetCurrentInstant();
-        var task = new MaintenanceTask
-        {
-            Guid = Guid.NewGuid(),
-            MaintenanceJobId = job.Id,
-            Description = dto.Description.Trim(),
-            Status = dto.Status,
-            AssignedToUserKcId = string.IsNullOrWhiteSpace(dto.AssignedToUserKcId) ? null : dto.AssignedToUserKcId.Trim(),
-            AffectedDevices = affectedDevices,
-            CreatedAt = now,
-            UpdatedAt = now,
-            ResolvedAt = IsTerminalStatus(dto.Status) ? now : null,
-        };
+        var task = await BuildTask(job, dto, now, ct);
 
         await repository.AddTaskAsync(task, ct);
         await repository.SaveChangesAsync(ct);
@@ -416,6 +401,35 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
 
     private static bool IsTerminalStatus(MaintenanceStatus status)
         => status is MaintenanceStatus.Resolved or MaintenanceStatus.NotResolvable or MaintenanceStatus.NoMaintenanceNeeded;
+
+    private async Task<List<InventoryDevice>> ResolveDevices(IEnumerable<Guid> deviceGuids, CancellationToken ct)
+    {
+        var affectedDevices = new List<InventoryDevice>();
+        foreach (var deviceGuid in deviceGuids.Distinct())
+        {
+            var device = await inventoryRepository.GetDeviceByGuidAsync(deviceGuid, ct)
+                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
+            affectedDevices.Add(device);
+        }
+
+        return affectedDevices;
+    }
+
+    private async Task<MaintenanceTask> BuildTask(MaintenanceJob job, CreateMaintenanceTaskDto dto, Instant now, CancellationToken ct)
+    {
+        return new MaintenanceTask
+        {
+            Guid = Guid.NewGuid(),
+            MaintenanceJob = job,
+            Description = dto.Description.Trim(),
+            Status = dto.Status,
+            AssignedToUserKcId = string.IsNullOrWhiteSpace(dto.AssignedToUserKcId) ? null : dto.AssignedToUserKcId.Trim(),
+            AffectedDevices = await ResolveDevices(dto.AffectedDeviceGuids, ct),
+            CreatedAt = now,
+            UpdatedAt = now,
+            ResolvedAt = IsTerminalStatus(dto.Status) ? now : null,
+        };
+    }
 
     private async Task EnsureMaintenanceBindingsExist(IEnumerable<InventoryDevice> devices, Instant start, CancellationToken ct)
     {

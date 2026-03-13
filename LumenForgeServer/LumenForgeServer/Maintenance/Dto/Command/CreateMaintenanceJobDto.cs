@@ -30,4 +30,7 @@ public sealed record CreateMaintenanceJobDto
 
     [JsonPropertyName("related_job_guids")]
     public IReadOnlyList<Guid> RelatedJobGuids { get; init; } = [];
+
+    [JsonPropertyName("tasks")]
+    public IReadOnlyList<CreateMaintenanceTaskDto> Tasks { get; init; } = [];
 }

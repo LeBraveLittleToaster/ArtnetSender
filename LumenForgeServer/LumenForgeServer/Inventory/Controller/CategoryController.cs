@@ -1,7 +1,9 @@
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.Query;
 using LumenForgeServer.Inventory.Dto.Update;
+using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +37,7 @@ public class CategoryController(CategoryService categoryService) : ControllerBas
     public async Task<IActionResult> ListCategories([FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var categories = await categoryService.ListCategories(query.Search, query.Limit, query.Offset, ct);
-        return Ok(categories);
+        return Ok(new ListViewDto<CategoryView> { list = categories.categories, total = categories.total });
     }
 
     [HttpGet("{categoryGuid:Guid}")]

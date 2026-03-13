@@ -39,10 +39,10 @@ public class VendorService(IInventoryRepository repository)
         return VendorView.FromEntity(vendor);
     }
 
-    public async Task<IReadOnlyList<VendorView>> ListVendors(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<VendorView> vendors, long total)> ListVendors(string? search, int limit, int offset, CancellationToken ct)
     {
         var vendors = await repository.ListVendorsAsync(search, limit, offset, ct);
-        return vendors.Select(VendorView.FromEntity).ToList();
+        return (vendors.vendors.Select(VendorView.FromEntity).ToList(), vendors.total);
     }
 
     public async Task<VendorView> UpdateVendor(Guid vendorGuid, UpdateVendorDto dto, CancellationToken ct)

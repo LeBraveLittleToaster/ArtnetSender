@@ -145,7 +145,8 @@ public sealed class MaintenanceRepository(AppDbContext db) : IMaintenanceReposit
 
         if (include.HasFlag(MaintenanceJobInclude.Tasks) || include.HasFlag(MaintenanceJobInclude.Logs))
         {
-            query = query.Include(j => j.Tasks);
+            query = query.Include(j => j.Tasks)
+                .ThenInclude(t => t.AffectedDevices);
 
             if (include.HasFlag(MaintenanceJobInclude.Logs))
             {

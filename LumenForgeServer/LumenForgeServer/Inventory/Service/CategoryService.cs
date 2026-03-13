@@ -39,10 +39,10 @@ public class CategoryService(IInventoryRepository repository)
         return CategoryView.FromEntity(category);
     }
 
-    public async Task<IReadOnlyList<CategoryView>> ListCategories(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<CategoryView> categories, long total)> ListCategories(string? search, int limit, int offset, CancellationToken ct)
     {
         var categories = await repository.ListCategoriesAsync(search, limit, offset, ct);
-        return categories.Select(CategoryView.FromEntity).ToList();
+        return (categories.categories.Select(CategoryView.FromEntity).ToList(), categories.total);
     }
 
     public async Task<CategoryView> UpdateCategory(Guid categoryGuid, UpdateCategoryDto dto, CancellationToken ct)

@@ -1,7 +1,9 @@
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.Query;
 using LumenForgeServer.Inventory.Dto.Update;
+using LumenForgeServer.Inventory.Dto.View;
 using LumenForgeServer.Inventory.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +37,7 @@ public class VendorController(VendorService vendorService) : ControllerBase
     public async Task<IActionResult> ListVendors([FromQuery] ListQueryDto query, CancellationToken ct)
     {
         var vendors = await vendorService.ListVendors(query.Search, query.Limit, query.Offset, ct);
-        return Ok(vendors);
+        return Ok(new ListViewDto<VendorView> { list = vendors.vendors, total = vendors.total });
     }
 
     [HttpGet("{vendorGuid:Guid}")]

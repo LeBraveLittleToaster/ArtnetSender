@@ -15,7 +15,7 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
     public Task<Category?> GetCategoryByGuidAsync(Guid categoryGuid, CancellationToken ct)
         => db.Categories.SingleOrDefaultAsync(c => c.Guid == categoryGuid, ct);
 
-    public async Task<IReadOnlyList<Category>> ListCategoriesAsync(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<Category> categories, long total)> ListCategoriesAsync(string? search, int limit, int offset, CancellationToken ct)
     {
         var query = db.Categories.AsQueryable();
 
@@ -26,12 +26,16 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
                 (c.Description != null && c.Description.Contains(search)));
         }
 
-        return await query
+        var total = await query.LongCountAsync(ct);
+
+        var categories = await query
             .AsNoTracking()
             .OrderBy(c => c.Name)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
+
+        return (categories, total);
     }
 
     public Task DeleteCategoryAsync(Category category, CancellationToken ct)
@@ -46,7 +50,7 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
     public Task<Vendor?> GetVendorByGuidAsync(Guid vendorGuid, CancellationToken ct)
         => db.Vendors.SingleOrDefaultAsync(v => v.Guid == vendorGuid, ct);
 
-    public async Task<IReadOnlyList<Vendor>> ListVendorsAsync(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<Vendor> vendors, long total)> ListVendorsAsync(string? search, int limit, int offset, CancellationToken ct)
     {
         var query = db.Vendors.AsQueryable();
 
@@ -55,12 +59,16 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
             query = query.Where(v => v.Name.Contains(search));
         }
 
-        return await query
+        var total = await query.LongCountAsync(ct);
+
+        var vendors = await query
             .AsNoTracking()
             .OrderBy(v => v.Name)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
+
+        return (vendors, total);
     }
 
     public Task DeleteVendorAsync(Vendor vendor, CancellationToken ct)

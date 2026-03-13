@@ -10,7 +10,7 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record DeviceView
 {
-    [JsonPropertyName("Guid")]
+    [JsonPropertyName("guid")]
     public Guid Guid { get; init; }
 
     [JsonPropertyName("serial_number")]
