@@ -9,7 +9,7 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record CategoryView
 {
-    [JsonPropertyName("Guid")]
+    [JsonPropertyName("guid")]
     public Guid Guid { get; init; }
 
     [JsonPropertyName("name")]
