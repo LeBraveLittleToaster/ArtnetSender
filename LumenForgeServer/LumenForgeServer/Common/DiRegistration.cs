@@ -4,6 +4,8 @@ using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Domain.Session;
 using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Auth.Service;
+using LumenForgeServer.Catalogue.Persistence;
+using LumenForgeServer.Catalogue.Service;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Inventory.Persistance;
@@ -58,6 +60,7 @@ public static class DiRegistration
         builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
+        builder.Services.AddScoped<ICatalogueRepository, CatalogueRepository>();
         builder.Services.AddScoped<IRentalRepository, RentalRepository>();
         builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
     }
@@ -70,6 +73,7 @@ public static class DiRegistration
     {
         builder.Services.AddSingleton<KcService>();
         builder.Services.AddScoped<GroupService>();
+        builder.Services.AddScoped<CatalogueService>();
         builder.Services.AddScoped<CategoryService>();
         builder.Services.AddScoped<VendorService>();
         builder.Services.AddScoped<DeviceService>();

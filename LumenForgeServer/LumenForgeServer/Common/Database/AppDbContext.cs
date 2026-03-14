@@ -1,5 +1,6 @@
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Billing.Domain;
+using LumenForgeServer.Catalogue.Domain;
 using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Maintenance.Domain;
 using LumenForgeServer.Rentals.Domain;
@@ -11,7 +12,7 @@ namespace LumenForgeServer.Common.Database;
 /// EF Core DbContext that maps all application modules to database tables.
 /// </summary>
 /// <remarks>
-/// This context owns schema configuration for auth, inventory, billing, maintenance, and rentals.
+/// This context owns schema configuration for auth, catalogue, inventory, billing, maintenance, and rentals.
 /// </remarks>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
@@ -32,6 +33,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// Join table linking users to groups.
     /// </summary>
     public DbSet<GroupUser> GroupUsers => Set<GroupUser>();
+
+    // Catalogue
+    /// <summary>
+    /// Public catalogue items linked to rentable devices.
+    /// </summary>
+    public DbSet<CatalogueItem> CatalogueItems => Set<CatalogueItem>();
 
     // Inventory
     /// <summary>

@@ -1,4 +1,3 @@
-
 using System.Text.Json.Serialization;
 
 namespace LumenForgeServer.Auth.Domain;
@@ -81,6 +80,12 @@ public enum Permissions
     InvoiceStatusRead = 91,
     InvoiceStatusUpdate = 92,
     InvoiceStatusDelete = 93,
+
+    // Catalogue (110–119)
+    CatalogueCreate = 110,
+    CatalogueRead = 111,
+    CatalogueUpdate = 112,
+    CatalogueDelete = 113,
 
     // Roles
     RoleRead = 101,

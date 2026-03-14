@@ -1,5 +1,6 @@
-// InventoryTestHelpers.cs (UNCHANGED)
 using FluentAssertions;
+using LumenForgeServer.Catalogue.Dto.Command;
+using LumenForgeServer.Catalogue.Dto.View;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.TestSupport;
 using LumenForgeServer.Inventory.Domain;
@@ -96,6 +97,26 @@ internal static class InventoryTestHelpers
         }
 
         return await DeserializeResponseAsync<StockBindingView>(response);
+    }
+
+    public static async Task<CatalogueItemView> CreateCatalogueItemAsync(
+        TestUserBundle userBundle,
+        Guid deviceGuid,
+        bool isPublished = true,
+        string? name = null)
+    {
+        var response = await userBundle.AppClient.PutAsJsonAsync("/api/v1/catalogue/items", new CreateCatalogueItemDto
+        {
+            DeviceGuid = deviceGuid,
+            Name = name ?? $"Catalogue Item {Guid.NewGuid()}",
+            Description = "Catalogue description " + Guid.NewGuid(),
+            PhotoUrl = "https://example.com/catalogue.jpg",
+            IsPublished = isPublished,
+            SortOrder = 0
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await DeserializeResponseAsync<CatalogueItemView>(response);
     }
 
     public static async Task<T> DeserializeResponseAsync<T>(HttpResponseMessage response)
