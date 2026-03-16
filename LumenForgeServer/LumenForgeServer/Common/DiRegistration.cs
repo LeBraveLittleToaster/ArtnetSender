@@ -223,7 +223,7 @@ public static class DiRegistration
                         }
 
                         identity.AddClaims(appRoleNames.Select(x => new Claim(ClaimTypes.Role, x)));
-                        Console.WriteLine("DEBUG LINE");
+                        Console.WriteLine($"Added app roles [{string.Join(", ", appRoleNames)}] to user {keycloakUserId} (cache hit: {appRoleNames != null})");
                     }
                 };
                 options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
