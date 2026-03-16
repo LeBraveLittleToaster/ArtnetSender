@@ -12,7 +12,9 @@ namespace LumenForgeServer.Catalogue.Service;
 /// <summary>
 /// Application service for catalogue operations.
 /// </summary>
-public class CatalogueService(ICatalogueRepository repository, IInventoryRepository inventoryRepository)
+public class CatalogueService(
+    ICatalogueRepository repository,
+    IInventoryRepository inventoryRepository)
 {
     public async Task<CatalogueItemView> CreateItem(CreateCatalogueItemDto dto, CancellationToken ct)
     {

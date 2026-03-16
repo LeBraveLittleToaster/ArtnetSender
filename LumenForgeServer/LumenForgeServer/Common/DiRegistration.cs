@@ -19,6 +19,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using LumenForgeServer.Common.Database.Seeding;
+using LumenForgeServer.Common.Database.Seeding.Seeders;
 
 namespace LumenForgeServer.Common;
 
@@ -82,6 +84,20 @@ public static class DiRegistration
         builder.Services.AddScoped<RentalService>();
         builder.Services.AddScoped<ChecklistService>();
         builder.Services.AddScoped<QuestionService>();
+    }
+
+    /// <summary>
+    /// Registers the data seeder pipeline.
+    /// </summary>
+    public static void RegisterSeeders(WebApplicationBuilder builder)
+    {
+        builder.Services.AddScoped<DataSeederOrchestrator>();
+        builder.Services.AddScoped<IDataSeeder, MaintenanceStatusSeeder>();
+        builder.Services.AddScoped<IDataSeeder, VendorCategorySeeder>();
+        builder.Services.AddScoped<IDataSeeder, DeviceSeeder>();
+        builder.Services.AddScoped<IDataSeeder, CatalogueSeeder>();
+        builder.Services.AddScoped<IDataSeeder, QuestionSeeder>();
+        builder.Services.AddScoped<IDataSeeder, UserGroupSeeder>();
     }
 
     /// <summary>

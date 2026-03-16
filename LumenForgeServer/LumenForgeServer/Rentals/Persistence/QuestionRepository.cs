@@ -47,6 +47,14 @@ public sealed class QuestionRepository(AppDbContext db) : IQuestionRepository
         return (items, total);
     }
 
+    public async Task<IReadOnlyList<Question>> GetRandomActiveQuestionsAsync(int count, CancellationToken ct)
+        => await db.Questions
+            .AsNoTracking()
+            .Where(q => q.IsActive)
+            .OrderBy(q => EF.Functions.Random())
+            .Take(count)
+            .ToListAsync(ct);
+
     public Task AddQuestionAsync(Question question, CancellationToken ct)
         => db.Questions.AddAsync(question, ct).AsTask();
 

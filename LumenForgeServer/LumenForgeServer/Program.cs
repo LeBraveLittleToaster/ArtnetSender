@@ -1,5 +1,5 @@
 using LumenForgeServer.Common;
-using LumenForgeServer.Common.Database;
+using LumenForgeServer.Common.Database.Seeding;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 
@@ -29,6 +29,7 @@ DiRegistration.RegisterServices(builder);
 DiRegistration.RegisterSwagger(builder, keycloakAuthority, keycloakClientId);
 
 DiRegistration.RegisterExceptionHandler(builder);
+DiRegistration.RegisterSeeders(builder);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -44,7 +45,11 @@ app.UseCors();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    await DevDbSeeder.DeleteAndSeedDbAsync(app.Services);
+
+    using var scope = app.Services.CreateScope();
+    var orchestrator = scope.ServiceProvider.GetRequiredService<DataSeederOrchestrator>();
+    await orchestrator.RunAsync(SeedEnvironment.Dev, CancellationToken.None);
+
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {

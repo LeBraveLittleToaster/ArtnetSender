@@ -100,6 +100,20 @@ public class QuestionController(QuestionService questionService) : ControllerBas
         return NoContent();
     }
 
+    [HttpPost("questions/recommend")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Produces("application/json")]
+    public async Task<IActionResult> RecommendQuestions(
+        [FromBody] EventContextDto dto,
+        CancellationToken ct)
+    {
+        var questions = await questionService.GetQuestionsForEventAsync(dto, ct);
+        return Ok(questions);
+    }
+
     // =========================================================================
     // Answers — Submission and retrieval
     // =========================================================================

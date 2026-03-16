@@ -13,6 +13,8 @@ namespace LumenForgeServer.Rentals.Service;
 /// </summary>
 public class QuestionService(IQuestionRepository repository)
 {
+    private const int RandomQuestionCount = 10;
+
     /// <summary>
     /// Returns all active survey questions ordered by display order.
     /// Public endpoint — no authentication required.
@@ -161,6 +163,19 @@ public class QuestionService(IQuestionRepository repository)
 
         await repository.DeleteAnswerAsync(answer, ct);
         await repository.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Returns a list of survey questions relevant to the provided event context.
+    /// Currently selects <see cref="RandomQuestionCount"/> active questions at random;
+    /// a proper recommender model will replace this in a future iteration.
+    /// </summary>
+    public async Task<IReadOnlyList<QuestionView>> GetQuestionsForEventAsync(
+        EventContextDto dto,
+        CancellationToken ct)
+    {
+        var questions = await repository.GetRandomActiveQuestionsAsync(RandomQuestionCount, ct);
+        return questions.Select(q => QuestionView.FromEntity(q)).ToList();
     }
 
     private static bool IsValidResponse(string response) =>

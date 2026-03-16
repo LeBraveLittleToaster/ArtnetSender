@@ -23,6 +23,11 @@ public interface IQuestionRepository
         int offset,
         CancellationToken ct);
 
+    /// <summary>
+    /// Returns <paramref name="count"/> active questions in a random order.
+    /// </summary>
+    Task<IReadOnlyList<Question>> GetRandomActiveQuestionsAsync(int count, CancellationToken ct);
+
     Task AddQuestionAsync(Question question, CancellationToken ct);
     Task DeleteQuestionAsync(Question question, CancellationToken ct);
 

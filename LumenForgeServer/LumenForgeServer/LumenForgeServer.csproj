@@ -40,4 +40,8 @@
     <_ContentIncludedByDefault Remove="keycloak\realms\lumenforge-realm.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Common\Database\Seeding\Data\*.csv" />
+  </ItemGroup>
+
 </Project>

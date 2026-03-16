@@ -17,17 +17,13 @@ namespace LumenForgeServer.Catalogue.Controller;
 public class CatalogueController(CatalogueService catalogueService) : ControllerBase
 {
     [HttpGet("")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [Produces("application/json")]
     public async Task<IActionResult> ListItems([FromQuery] CatalogueQueryDto query, CancellationToken ct)
     {
-        if (!query.PublishedOnly && !CanReadUnpublished())
-        {
-            return ChallengeOrForbid();
-        }
 
         var items = await catalogueService.ListItems(query.Search, query.Limit, query.Offset, query.PublishedOnly, ct);
         return Ok(new ListViewDto<CatalogueItemView> { list = items.items, total = items.total });
@@ -42,10 +38,6 @@ public class CatalogueController(CatalogueService catalogueService) : Controller
     [Produces("application/json")]
     public async Task<IActionResult> GetItem([FromRoute] Guid itemGuid, [FromQuery(Name = "include_unpublished")] bool includeUnpublished, CancellationToken ct)
     {
-        if (includeUnpublished && !CanReadUnpublished())
-        {
-            return ChallengeOrForbid();
-        }
 
         var item = await catalogueService.GetItem(itemGuid, includeUnpublished, ct);
         return Ok(item);
@@ -87,10 +79,4 @@ public class CatalogueController(CatalogueService catalogueService) : Controller
         await catalogueService.DeleteItem(itemGuid, ct);
         return NoContent();
     }
-
-    private bool CanReadUnpublished()
-        => User.Identity?.IsAuthenticated == true && User.IsInRole(nameof(Permissions.CatalogueRead));
-
-    private IActionResult ChallengeOrForbid()
-        => User.Identity?.IsAuthenticated == true ? Forbid() : Unauthorized();
 }
