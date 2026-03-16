@@ -75,7 +75,7 @@ public class UserController(UserService userService, KcService kcService, ILogge
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [Authorize(Roles = nameof(Permissions.UserRead))]
+    [Authorize(Policy = nameof(Policy.UserReadOrOwnProfile))]
     [Produces("application/json")]
     public async Task<IActionResult> GetUser(
         [FromQuery] string? include,

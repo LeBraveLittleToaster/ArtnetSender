@@ -152,6 +152,49 @@ public class AuthUserTest(AuthFixture fixture)
         getResp.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public async Task GET_user_allows_own_profile_without_userread_role()
+    {
+        var userBundle = await CreateNewUserAsync(fixture);
+        var ownKcId = userBundle.GetKcUserId();
+
+        var resp = await userBundle.AppClient.GetAsync($"/api/v1/auth/users/{ownKcId}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var content = await resp.Content.ReadAsStringAsync();
+        var userView = JsonSerializer.Deserialize<UserView>(content, Json.GetJsonSerializerOptions());
+        userView.Should().NotBeNull();
+        userView!.UserKcId.Should().Be(ownKcId);
+    }
+
+    [Fact]
+    public async Task GET_user_without_userread_cannot_read_foreign_profile()
+    {
+        var userA = await CreateNewUserAsync(fixture);
+        var userB = await CreateNewUserAsync(fixture);
+
+        var foreignKcId = userB.GetKcUserId();
+        var resp = await userA.AppClient.GetAsync($"/api/v1/auth/users/{foreignKcId}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task GET_user_with_userread_role_can_read_foreign_profile()
+    {
+        var reader = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.UserRead]);
+
+        var foreign = await CreateNewUserAsync(fixture);
+        var foreignKcId = foreign.GetKcUserId();
+
+        var resp = await reader.AppClient.GetAsync($"/api/v1/auth/users/{foreignKcId}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     private static Task<TestUserBundle> CreateNewUserAsync(AuthFixture fixture)
     {
         var dto = CreateTestUserDto.CreateTestUser();

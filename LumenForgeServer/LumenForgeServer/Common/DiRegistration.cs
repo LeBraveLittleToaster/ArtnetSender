@@ -15,12 +15,14 @@ using LumenForgeServer.Maintenance.Service;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.Rentals.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using LumenForgeServer.Common.Database.Seeding;
 using LumenForgeServer.Common.Database.Seeding.Seeders;
+using Microsoft.AspNetCore.Routing;
 
 namespace LumenForgeServer.Common;
 
@@ -267,6 +269,25 @@ public static class DiRegistration
                 p => p.RequireRole(nameof(Permissions.GroupUpdate), nameof(Permissions.RoleRead)));
             options.AddPolicy(nameof(Policy.UserAndRoleRead),
                 p => p.RequireRole(nameof(Permissions.UserRead), nameof(Permissions.RoleRead)));
+            options.AddPolicy(nameof(Policy.UserReadOrOwnProfile), p => p.RequireAssertion(ctx =>
+                ctx.User.IsInRole(nameof(Permissions.UserRead)) || IsOwnProfileAccess(ctx)));
         });
+    }
+
+    private static bool IsOwnProfileAccess(AuthorizationHandlerContext ctx)
+    {
+        if (ctx.Resource is not HttpContext httpContext)
+            return false;
+
+        var routeUserId = httpContext.GetRouteValue("userKcId")?.ToString()
+                          ?? httpContext.GetRouteValue("keycloakId")?.ToString();
+        if (string.IsNullOrWhiteSpace(routeUserId))
+            return false;
+
+        var callerUserId = ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? ctx.User.FindFirstValue("sub");
+
+        return !string.IsNullOrWhiteSpace(callerUserId)
+               && string.Equals(routeUserId, callerUserId, StringComparison.Ordinal);
     }
 }

@@ -5,5 +5,6 @@ public enum Policy
     GroupRoleAndUserRead,
     GroupUpdateReadUser,
     GroupUpdateRoleRead,
-    UserAndRoleRead
+    UserAndRoleRead,
+    UserReadOrOwnProfile
 }
