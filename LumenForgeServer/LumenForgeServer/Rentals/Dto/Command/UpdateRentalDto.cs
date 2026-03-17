@@ -1,4 +1,5 @@
 using LumenForgeServer.Common;
+using LumenForgeServer.Rentals.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -9,8 +10,8 @@ namespace LumenForgeServer.Rentals.Dto.Command;
 /// </summary>
 public sealed record UpdateRentalDto
 {
-    [JsonPropertyName("rental_status_guid")]
-    public Guid? RentalStatusGuid { get; init; }
+    [JsonPropertyName("rental_status")]
+    public RentalStatus? RentalStatus { get; init; }
 
     [StringLength(512)]
     [JsonPropertyName("request_title")]

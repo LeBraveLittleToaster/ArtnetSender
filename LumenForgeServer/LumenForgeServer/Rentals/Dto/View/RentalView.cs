@@ -13,11 +13,8 @@ public sealed record RentalView
     [JsonPropertyName("uuid")]
     public Guid Uuid { get; init; }
 
-    [JsonPropertyName("rental_status_uuid")]
-    public Guid RentalStatusUuid { get; init; }
-
-    [JsonPropertyName("rental_status_name")]
-    public required string RentalStatusName { get; init; }
+    [JsonPropertyName("rental_status")]
+    public RentalStatus RentalStatus { get; init; }
 
     [JsonPropertyName("customer_user_id")]
     public required string CustomerUserId { get; init; }
@@ -91,8 +88,7 @@ public sealed record RentalView
     public static RentalView FromEntity(Rental e) => new()
     {
         Uuid = e.Uuid,
-        RentalStatusUuid = e.RentalStatus.Uuid,
-        RentalStatusName = e.RentalStatus.Name,
+        RentalStatus = e.RentalStatus,
         CustomerUserId = e.CustomerUserId,
         RequestTitle = e.Request.Title,
         RequestDescription = e.Request.Description,

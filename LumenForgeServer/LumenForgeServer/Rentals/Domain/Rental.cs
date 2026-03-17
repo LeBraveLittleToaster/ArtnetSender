@@ -11,8 +11,7 @@ public class Rental
     public long Id { get; set; }
     public Guid Uuid { get; set; }
 
-    public long RentalStatusId { get; set; }
-    public RentalStatus RentalStatus { get; set; } = null!;
+    public RentalStatus RentalStatus { get; set; } = RentalStatus.Requested;
 
     // Keycloak user id
     public string CustomerUserId { get; set; } = null!;

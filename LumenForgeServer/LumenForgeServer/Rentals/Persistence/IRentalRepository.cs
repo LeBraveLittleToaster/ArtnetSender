@@ -13,7 +13,6 @@ public interface IRentalRepository
 {
     Task AddRentalAsync(Rental rental, CancellationToken ct);
     Task<Rental?> GetRentalByGuidAsync(Guid rentalGuid, RentalInclude include, CancellationToken ct);
-    Task<long?> TryGetRentalStatusIdByGuidAsync(Guid statusGuid, CancellationToken ct);
 
     Task<(IReadOnlyList<Rental> items, long total)> ListRentalsAsync(
         string? search,

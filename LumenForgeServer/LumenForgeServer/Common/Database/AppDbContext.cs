@@ -104,10 +104,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     // Rentals
     /// <summary>
-    /// Rental status lookup table.
-    /// </summary>
-    public DbSet<RentalStatus> RentalStatuses => Set<RentalStatus>();
-    /// <summary>
     /// Rental records.
     /// </summary>
     public DbSet<Rental> Rentals => Set<Rental>();

@@ -22,42 +22,36 @@ internal static class RentalTestHelpers
 {
     private static readonly AppDbFixture DbFixture = new();
 
-    /// <summary>
-    /// Returns the UUID of an existing RentalStatus, inserting a default one if the table is empty.
-    /// Idempotent — safe to call from multiple tests in the same session.
-    /// </summary>
-    public static async Task<Guid> EnsureRentalStatusAsync()
+    public static Task<RentalStatus> EnsureRentalStatusByNameAsync(string name)
     {
-        await using var db = DbFixture.CreateDbContext();
-        var existing = await db.RentalStatuses.FirstOrDefaultAsync();
-        if (existing is not null) return existing.Uuid;
-
-        var now = SystemClock.Instance.GetCurrentInstant();
-        var status = new RentalStatus
+        return Task.FromResult(name.Trim() switch
         {
-            Uuid = Guid.CreateVersion7(),
-            Name = "Available",
-            Description = "Ready for rental",
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-
-        db.RentalStatuses.Add(status);
-        await db.SaveChangesAsync();
-        return status.Uuid;
+            "Requested" => RentalStatus.Requested,
+            "Approved" => RentalStatus.Approved,
+            "Rejected" => RentalStatus.Rejected,
+            "PickedUp" => RentalStatus.PickedUp,
+            "Returned" => RentalStatus.Returned,
+            "Completed" => RentalStatus.Completed,
+            "Cancelled" => RentalStatus.Cancelled,
+            "Scrapped" => RentalStatus.Scrapped,
+            _ => throw new ArgumentOutOfRangeException(nameof(name), $"Unsupported rental status '{name}'.")
+        });
     }
+
+    public static Task<RentalStatus> EnsureRentalStatusAsync()
+        => Task.FromResult(RentalStatus.Requested);
 
     /// <summary>
     /// Creates a rental via the API and returns the response view.
     /// </summary>
     public static async Task<RentalView> CreateRentalAsync(
         TestUserBundle user,
-        Guid rentalStatusGuid,
+        RentalStatus rentalStatus,
         string? title = null)
     {
         var response = await user.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatusGuid = rentalStatusGuid,
+            RentalStatus = rentalStatus,
             RequestTitle = title ?? $"Rental-{Guid.NewGuid():N}",
             EventName = "Integration test event",
             Priority = RentalPriority.NORMAL,
@@ -73,9 +67,9 @@ internal static class RentalTestHelpers
     /// </summary>
     public static async Task<(RentalView Rental, Guid RentalItemUuid)> SeedRentalWithApprovedItemAsync(
         TestUserBundle user,
-        Guid rentalStatusGuid)
+        RentalStatus rentalStatus)
     {
-        var rental = await CreateRentalAsync(user, rentalStatusGuid);
+        var rental = await CreateRentalAsync(user, rentalStatus);
 
         await using var db = DbFixture.CreateDbContext();
         var rentalEntity = await db.Rentals.SingleAsync(r => r.Uuid == rental.Uuid);
@@ -133,10 +127,10 @@ internal static class RentalTestHelpers
     public static async Task<(RentalView Rental, Guid RentalItemUuid, Guid DeviceGuid)>
         SeedRentalWithApprovedItemAndDeviceAsync(
             TestUserBundle user,
-            Guid rentalStatusGuid,
+            RentalStatus rentalStatus,
             Guid vendorGuid)
     {
-        var rental = await CreateRentalAsync(user, rentalStatusGuid);
+        var rental = await CreateRentalAsync(user, rentalStatus);
         var device = await InventoryTestHelpers.CreateDeviceAsync(user, vendorGuid);
 
         // Create a RENTAL_REQUEST stock binding that covers the next 7 days

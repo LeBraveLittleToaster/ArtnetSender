@@ -84,7 +84,12 @@ public class RentalController(RentalService rentalService, ChecklistService chec
         [FromBody] UpdateRentalDto dto,
         CancellationToken ct)
     {
-        var rental = await rentalService.UpdateRental(rentalGuid, dto, ct);
+        var actorUserId = User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.Identity?.Name
+            ?? "unknown-user";
+
+        var rental = await rentalService.UpdateRental(rentalGuid, dto, actorUserId, ct);
         return Ok(rental);
     }
 
@@ -117,10 +122,6 @@ public class RentalController(RentalService rentalService, ChecklistService chec
         var (items, total) = await rentalService.ListConflicts(query, ct);
         return Ok(new { list = items, total });
     }
-
-    // =========================================================================
-    // Checklists
-    // =========================================================================
 
     /// <summary>
     /// Lists all checklists for a rental ordered by generation time.
@@ -255,6 +256,57 @@ public class RentalController(RentalService rentalService, ChecklistService chec
     {
         var item = await checklistService.ScanDeviceOnChecklist(rentalGuid, checklistGuid, deviceGuid, ct);
         return Ok(item);
+    }
+
+    /// <summary>
+    /// Lists all available rental status types.
+    /// </summary>
+    [HttpGet("statuses")]
+    [Authorize(Roles = nameof(Permissions.RentalStatusRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ListRentalStatuses(CancellationToken ct)
+    {
+        var statuses = await rentalService.ListRentalStatuses(ct);
+        return Ok(new { list = statuses, total = statuses.Count });
+    }
+
+    /// <summary>
+    /// Returns the current and allowed status transitions for a rental.
+    /// </summary>
+    [HttpGet("{rentalGuid:Guid}/transitions")]
+    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ListAllowedTransitions([FromRoute] Guid rentalGuid, CancellationToken ct)
+    {
+        var (current, allowed) = await rentalService.ListAllowedTransitions(rentalGuid, ct);
+        return Ok(new { current, allowed });
+    }
+
+    /// <summary>
+    /// Transitions the rental to a different status.
+    /// Only allowed statuses can be transitioned to.
+    /// </summary>
+    [HttpPost("{rentalGuid:Guid}/transitions")]
+    [Authorize(Roles = nameof(Permissions.RentalUpdate))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> TransitionRentalStatus(
+        [FromRoute] Guid rentalGuid,
+        [FromBody] TransitionRentalStatusDto dto,
+        CancellationToken ct)
+    {
+        var actorUserId = User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.Identity?.Name
+            ?? "unknown-user";
+
+        var rental = await rentalService.TransitionRentalStatus(rentalGuid, dto.TargetStatus, actorUserId, ct);
+        return Ok(rental);
     }
 
     private static RentalInclude ParseIncludes(string? include)

@@ -20,6 +20,11 @@ public sealed class RentalConfiguration : IEntityTypeConfiguration<Rental>
         builder.Property(x => x.CustomerUserId).HasMaxLength(128).IsRequired();
         builder.HasIndex(x => x.CustomerUserId);
 
+        builder.Property(x => x.RentalStatus)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+
         builder.OwnsOne(x => x.Request, r =>
         {
             r.Property(x => x.Title).HasColumnName("RequestTitle").HasMaxLength(512);
@@ -54,11 +59,6 @@ public sealed class RentalConfiguration : IEntityTypeConfiguration<Rental>
             s.Property(x => x.ScrappedAt).HasColumnName("ScrappedAt");
             s.Property(x => x.ScrappedByUserId).HasColumnName("ScrappedByUserId").HasMaxLength(128);
         });
-
-        builder.HasOne(x => x.RentalStatus)
-            .WithMany(s => s.Rentals)
-            .HasForeignKey(x => x.RentalStatusId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.RentalReport)
             .WithOne(rr => rr.Rental)

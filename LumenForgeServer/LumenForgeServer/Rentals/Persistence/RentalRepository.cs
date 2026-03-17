@@ -19,12 +19,6 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
     public Task<Rental?> GetRentalByGuidAsync(Guid rentalGuid, RentalInclude include, CancellationToken ct)
         => BuildRentalQuery(include).SingleOrDefaultAsync(r => r.Uuid == rentalGuid, ct);
 
-    public Task<long?> TryGetRentalStatusIdByGuidAsync(Guid statusGuid, CancellationToken ct)
-        => db.RentalStatuses
-            .Where(rs => rs.Uuid == statusGuid)
-            .Select(rs => (long?)rs.Id)
-            .SingleOrDefaultAsync(ct);
-
     public async Task<(IReadOnlyList<Rental> items, long total)> ListRentalsAsync(
         string? search,
         string? customerUserId,
@@ -159,10 +153,7 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
 
     private IQueryable<Rental> BuildRentalQuery(RentalInclude include)
     {
-        // RentalStatus is always loaded — RentalView.FromEntity requires it
-        var query = db.Rentals
-            .Include(r => r.RentalStatus)
-            .AsQueryable();
+        var query = db.Rentals.AsQueryable();
 
         if (include.HasFlag(RentalInclude.Items))
         {

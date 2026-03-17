@@ -4,6 +4,7 @@ using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
 using LumenForgeServer.IntegrationTests.Inventory;
 using LumenForgeServer.Inventory.Domain;
+using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Dto.View;
 using NodaTime;
@@ -35,11 +36,11 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task PUT_rental_creates_and_returns_rental()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
 
         var response = await admin.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatusGuid = statusGuid,
+            RentalStatus = status,
             RequestTitle = "Camera kit for concert",
             EventName = "Summer Concert 2025",
             Priority = RentalPriority.HIGH,
@@ -50,7 +51,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var rental = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
         rental.Uuid.Should().NotBe(Guid.Empty);
-        rental.RentalStatusUuid.Should().Be(statusGuid);
+        rental.RentalStatus.Should().Be(status);
         rental.RequestTitle.Should().Be("Camera kit for concert");
         rental.EventName.Should().Be("Summer Concert 2025");
         rental.PlannedPickupAt.Should().NotBeNull();
@@ -58,28 +59,29 @@ public class RentalEndpointsTests(AuthFixture fixture)
     }
 
     [Fact]
-    public async Task PUT_rental_with_unknown_status_returns_not_found()
+    public async Task PUT_rental_with_invalid_status_returns_bad_request()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
 
-        var response = await admin.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
+        using var content = JsonContent.Create(new
         {
-            RentalStatusGuid = Guid.NewGuid(),
-            RequestTitle = "Should fail",
+            rental_status = "InvalidStatus",
+            request_title = "Should fail"
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var response = await admin.AppClient.PutAsync("/api/v1/rentals", content);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task PUT_rental_with_pickup_after_return_returns_bad_request()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
 
         var response = await admin.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatusGuid = statusGuid,
+            RentalStatus = status,
             PlannedPickupAt = "2025-09-10T00:00:00Z",
             PlannedReturnAt = "2025-09-01T00:00:00Z",
         });
@@ -95,15 +97,15 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task GET_rental_returns_created_rental()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
-        var created = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var created = await RentalTestHelpers.CreateRentalAsync(admin, status);
 
         var response = await admin.AppClient.GetAsync($"/api/v1/rentals/{created.Uuid}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var rental = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
         rental.Uuid.Should().Be(created.Uuid);
-        rental.RentalStatusUuid.Should().Be(statusGuid);
+        rental.RentalStatus.Should().Be(status);
     }
 
     [Fact]
@@ -120,9 +122,9 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task GET_rentals_supports_search_and_paging()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
         var marker = $"SearchMarker-{Guid.NewGuid():N}";
-        _ = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid, title: marker);
+        _ = await RentalTestHelpers.CreateRentalAsync(admin, status, title: marker);
 
         var response = await admin.AppClient.GetAsync(
             $"/api/v1/rentals?search={marker}&limit=10&offset=0");
@@ -141,10 +143,10 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task GET_rentals_pagination_limits_page_size()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
 
         for (var i = 0; i < 3; i++)
-            _ = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
+            _ = await RentalTestHelpers.CreateRentalAsync(admin, status);
 
         var response = await admin.AppClient.GetAsync("/api/v1/rentals?limit=2&offset=0");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -167,8 +169,8 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task PATCH_rental_updates_title_and_priority()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
-        var rental = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, status);
 
         var response = await admin.AppClient.PatchAsJsonAsync(
             $"/api/v1/rentals/{rental.Uuid}",
@@ -206,8 +208,8 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task DELETE_rental_removes_it()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var statusGuid = await RentalTestHelpers.EnsureRentalStatusAsync();
-        var rental = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
+        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, status);
 
         var deleteResponse = await admin.AppClient.DeleteAsync($"/api/v1/rentals/{rental.Uuid}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -314,5 +316,79 @@ public class RentalEndpointsTests(AuthFixture fixture)
         body.GetProperty("list")
             .Deserialize<List<StockBindingConflictView>>(Json.GetJsonSerializerOptions())!
             .Should().HaveCount(1);
+    }
+
+    // =========================================================================
+    // Status state-machine
+    // =========================================================================
+
+    [Fact]
+    public async Task GET_rental_statuses_returns_lookup_list()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var response = await admin.AppClient.GetAsync("/api/v1/rentals/statuses");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+        body.GetProperty("total").GetInt64().Should().BeGreaterThan(0);
+
+        var statuses = body.GetProperty("list")
+            .Deserialize<List<RentalStatus>>(Json.GetJsonSerializerOptions())!;
+
+        statuses.Should().Contain(RentalStatus.Approved);
+        statuses.Should().Contain(RentalStatus.Requested);
+    }
+
+    [Fact]
+    public async Task GET_rental_transitions_returns_allowed_targets_for_current_state()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var requested = await RentalTestHelpers.EnsureRentalStatusByNameAsync("Requested");
+
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, requested);
+
+        var response = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}/transitions");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+
+        Enum.Parse<RentalStatus>(body.GetProperty("current").GetString()!).Should().Be(RentalStatus.Requested);
+
+        var allowed = body.GetProperty("allowed")
+            .Deserialize<List<RentalStatus>>(Json.GetJsonSerializerOptions())!;
+
+        allowed.Should().Contain(RentalStatus.Approved);
+        allowed.Should().Contain(RentalStatus.Rejected);
+        allowed.Should().Contain(RentalStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task POST_rental_transition_updates_status_when_transition_is_allowed()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        var response = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/transitions",
+            new TransitionRentalStatusDto { TargetStatus = RentalStatus.Approved });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
+        updated.RentalStatus.Should().Be(RentalStatus.Approved);
+        updated.AssignedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task POST_rental_transition_returns_bad_request_for_invalid_transition()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        var response = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/transitions",
+            new TransitionRentalStatusDto { TargetStatus = RentalStatus.Completed });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
