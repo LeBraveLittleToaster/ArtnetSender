@@ -129,17 +129,23 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
-    public async Task<IReadOnlyList<Group>> GetGroupsForUserAsync(string keycloakId, CancellationToken ct)
+    public async Task<(IReadOnlyList<Group> groups, long total)> GetGroupsForUserAsync(string keycloakId, int limit, int offset, CancellationToken ct)
     {
         var userId = await GetUserIdByKeycloakIdAsync(keycloakId, ct);
-        return await _db.GroupUsers
+        var query = _db.GroupUsers
             .AsNoTracking()
             .Where(gu => gu.UserId == userId)
-            .Select(gu => gu.Group)
+            .Select(gu => gu.Group);
+
+        var total = await query.LongCountAsync(ct);
+        var groups = await query
+            .OrderBy(g => g.Name)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync(ct);
+
+        return (groups, total);
     }
-
-
 
     /// <summary>
     /// Resolves the internal group id for a group Guid.

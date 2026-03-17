@@ -14,12 +14,27 @@ public sealed class QuestionRepository(AppDbContext db) : IQuestionRepository
             .Include(q => q.Answers)
             .SingleOrDefaultAsync(q => q.Uuid == questionGuid, ct);
 
-    public async Task<IReadOnlyList<Question>> ListActiveQuestionsAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<Question>> GetQuestionsByGuidsAsync(IReadOnlyCollection<Guid> questionGuids, CancellationToken ct)
         => await db.Questions
             .AsNoTracking()
-            .Where(q => q.IsActive)
-            .OrderBy(q => q.DisplayOrder)
+            .Where(q => questionGuids.Contains(q.Uuid))
             .ToListAsync(ct);
+
+    public async Task<(IReadOnlyList<Question> items, long total)> ListActiveQuestionsAsync(int limit, int offset, CancellationToken ct)
+    {
+        var query = db.Questions
+            .AsNoTracking()
+            .Where(q => q.IsActive);
+
+        var total = await query.LongCountAsync(ct);
+        var items = await query
+            .OrderBy(q => q.DisplayOrder)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
 
     public async Task<(IReadOnlyList<Question> items, long total)> ListAllQuestionsAsync(
         string? search,
@@ -70,9 +85,11 @@ public sealed class QuestionRepository(AppDbContext db) : IQuestionRepository
             .Include(a => a.Rental)
             .SingleOrDefaultAsync(a => a.Uuid == answerGuid, ct);
 
-    public async Task<IReadOnlyList<Answer>> ListAnswersForQuestionAsync(
+    public async Task<(IReadOnlyList<Answer> items, long total)> ListAnswersForQuestionAsync(
         Guid questionGuid,
         Guid? rentalGuid,
+        int limit,
+        int offset,
         CancellationToken ct)
     {
         var query = db.Answers
@@ -85,13 +102,22 @@ public sealed class QuestionRepository(AppDbContext db) : IQuestionRepository
             query = query.Where(a => a.Rental != null && a.Rental.Uuid == rentalGuid.Value);
         }
 
-        return await query
+        var total = await query.LongCountAsync(ct);
+        var items = await query
+            .AsNoTracking()
             .OrderByDescending(a => a.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync(ct);
+
+        return (items, total);
     }
 
     public Task AddAnswerAsync(Answer answer, CancellationToken ct)
         => db.Answers.AddAsync(answer, ct).AsTask();
+
+    public Task AddAnswersAsync(IReadOnlyCollection<Answer> answers, CancellationToken ct)
+        => db.Answers.AddRangeAsync(answers, ct);
 
     public Task DeleteAnswerAsync(Answer answer, CancellationToken ct)
     {

@@ -315,7 +315,7 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         await SyncJobResolution(jobGuid, ct);
     }
 
-    public async Task<IReadOnlyList<MaintenanceLogEntryView>> ListTaskLogs(Guid jobGuid, Guid taskGuid, CancellationToken ct)
+    public async Task<(IReadOnlyList<MaintenanceLogEntryView> items, long total)> ListTaskLogs(Guid jobGuid, Guid taskGuid, int limit, int offset, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.None, ct)
             ?? throw new NotFoundException($"Maintenance task '{taskGuid}' not found.");
@@ -325,8 +325,8 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
             throw new NotFoundException($"Task '{taskGuid}' is not part of job '{jobGuid}'.");
         }
 
-        var logs = await repository.ListLogsForTaskAsync(taskGuid, ct);
-        return logs.Select(MaintenanceLogEntryView.FromEntity).ToList();
+        var (logs, total) = await repository.ListLogsForTaskAsync(taskGuid, limit, offset, ct);
+        return (logs.Select(MaintenanceLogEntryView.FromEntity).ToList(), total);
     }
 
     public async Task<MaintenanceLogEntryView> AddTaskLog(Guid jobGuid, Guid taskGuid, CreateMaintenanceLogEntryDto dto, CancellationToken ct)

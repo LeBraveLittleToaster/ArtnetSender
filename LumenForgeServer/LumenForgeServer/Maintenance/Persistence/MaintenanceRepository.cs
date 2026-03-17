@@ -115,11 +115,21 @@ public sealed class MaintenanceRepository(AppDbContext db) : IMaintenanceReposit
     public Task AddLogEntryAsync(MaintenanceLogEntry logEntry, CancellationToken ct)
         => db.MaintenanceLogEntries.AddAsync(logEntry, ct).AsTask();
 
-    public async Task<IReadOnlyList<MaintenanceLogEntry>> ListLogsForTaskAsync(Guid taskGuid, CancellationToken ct)
-        => await db.MaintenanceLogEntries
+    public async Task<(IReadOnlyList<MaintenanceLogEntry> items, long total)> ListLogsForTaskAsync(Guid taskGuid, int limit, int offset, CancellationToken ct)
+    {
+        var query = db.MaintenanceLogEntries
             .Where(l => l.MaintenanceTask.Guid == taskGuid)
-            .OrderBy(l => l.CreatedAt)
+            .OrderBy(l => l.CreatedAt);
+
+        var total = await query.LongCountAsync(ct);
+        var items = await query
+            .AsNoTracking()
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync(ct);
+
+        return (items, total);
+    }
 
     public Task SaveChangesAsync(CancellationToken ct)
         => db.SaveChangesAsync(ct);

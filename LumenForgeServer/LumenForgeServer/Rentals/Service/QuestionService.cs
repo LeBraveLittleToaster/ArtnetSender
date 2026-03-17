@@ -1,6 +1,7 @@
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Command;
+using LumenForgeServer.Rentals.Dto.Query;
 using LumenForgeServer.Rentals.Dto.View;
 using LumenForgeServer.Rentals.Persistence;
 using NodaTime;
@@ -11,7 +12,7 @@ namespace LumenForgeServer.Rentals.Service;
 /// Application service for rental survey questions and answers.
 /// Provides read-only public access to questions and accept answer submissions.
 /// </summary>
-public class QuestionService(IQuestionRepository repository)
+public class QuestionService(IQuestionRepository repository, IRentalRepository rentalRepository)
 {
     private const int RandomQuestionCount = 10;
 
@@ -19,10 +20,10 @@ public class QuestionService(IQuestionRepository repository)
     /// Returns all active survey questions ordered by display order.
     /// Public endpoint — no authentication required.
     /// </summary>
-    public async Task<IReadOnlyList<QuestionView>> ListActiveQuestionsAsync(CancellationToken ct)
+    public async Task<(IReadOnlyList<QuestionView> items, long total)> ListActiveQuestionsAsync(int limit, int offset, CancellationToken ct)
     {
-        var questions = await repository.ListActiveQuestionsAsync(ct);
-        return questions.Select(q => QuestionView.FromEntity(q)).ToList();
+        var (questions, total) = await repository.ListActiveQuestionsAsync(limit, offset, ct);
+        return (questions.Select(q => QuestionView.FromEntity(q)).ToList(), total);
     }
 
     /// <summary>
@@ -141,16 +142,18 @@ public class QuestionService(IQuestionRepository repository)
     /// <summary>
     /// Returns answers for a specific question.
     /// </summary>
-    public async Task<IReadOnlyList<AnswerView>> ListAnswersForQuestionAsync(
+    public async Task<(IReadOnlyList<AnswerView> items, long total)> ListAnswersForQuestionAsync(
         Guid questionUuid,
         Guid? rentalGuid,
+        int limit,
+        int offset,
         CancellationToken ct)
     {
         _ = await repository.GetQuestionByGuidAsync(questionUuid, ct)
             ?? throw new NotFoundException($"Question '{questionUuid}' not found.");
 
-        var answers = await repository.ListAnswersForQuestionAsync(questionUuid, rentalGuid, ct);
-        return answers.Select(a => AnswerView.FromEntity(a)).ToList();
+        var (answers, total) = await repository.ListAnswersForQuestionAsync(questionUuid, rentalGuid, limit, offset, ct);
+        return (answers.Select(a => AnswerView.FromEntity(a)).ToList(), total);
     }
 
     /// <summary>
@@ -176,6 +179,71 @@ public class QuestionService(IQuestionRepository repository)
     {
         var questions = await repository.GetRandomActiveQuestionsAsync(RandomQuestionCount, ct);
         return questions.Select(q => QuestionView.FromEntity(q)).ToList();
+    }
+
+    /// <summary>
+    /// Submits answers to all survey questions for one rental in a single transaction.
+    /// </summary>
+    public async Task<IReadOnlyList<AnswerView>> SubmitAnswersBulkAsync(
+        SubmitAnswersBulkDto dto,
+        string? respondentUserId,
+        CancellationToken ct)
+    {
+        var rental = await rentalRepository.GetRentalByGuidAsync(dto.RentalUuid, RentalInclude.None, ct)
+            ?? throw new NotFoundException($"Rental '{dto.RentalUuid}' not found.");
+
+        var requestedGuids = dto.Answers.Select(a => a.QuestionUuid).Distinct().ToList();
+        var questions = await repository.GetQuestionsByGuidsAsync(requestedGuids, ct);
+        var questionMap = questions.ToDictionary(q => q.Uuid);
+
+        var missingGuids = requestedGuids.Except(questionMap.Keys).ToList();
+        if (missingGuids.Count > 0)
+            throw new NotFoundException($"Questions not found: {string.Join(", ", missingGuids)}.");
+
+        var invalidEntries = dto.Answers
+            .Where(a => !IsValidResponse(a.Response))
+            .Select(a => a.QuestionUuid.ToString())
+            .ToList();
+
+        if (invalidEntries.Count > 0)
+            throw new ValidationException(
+                "One or more answers contain an invalid response value.",
+                new Dictionary<string, string[]>
+                {
+                    ["response"] = [$"Must be one of: Yes, No, NotImportant, Unknown. Invalid entries: {string.Join(", ", invalidEntries)}"]
+                });
+
+        var now = SystemClock.Instance.GetCurrentInstant();
+        var answers = dto.Answers
+            .Select(entry => new Answer
+            {
+                Uuid = Guid.CreateVersion7(),
+                QuestionId = questionMap[entry.QuestionUuid].Id,
+                RentalId = rental.Id,
+                Response = entry.Response,
+                Comment = entry.Comment?.Trim(),
+                RespondentUserId = respondentUserId,
+                CreatedAt = now,
+                UpdatedAt = now,
+            })
+            .ToList();
+
+        await repository.AddAnswersAsync(answers, ct);
+        await repository.SaveChangesAsync(ct);
+
+        return dto.Answers
+            .Select((entry, i) => new AnswerView
+            {
+                Uuid = answers[i].Uuid,
+                QuestionUuid = entry.QuestionUuid,
+                QuestionText = questionMap[entry.QuestionUuid].QuestionText,
+                Response = entry.Response,
+                Comment = entry.Comment?.Trim(),
+                RespondentUserId = respondentUserId,
+                RentalUuid = dto.RentalUuid,
+                CreatedAt = now,
+            })
+            .ToList();
     }
 
     private static bool IsValidResponse(string response) =>

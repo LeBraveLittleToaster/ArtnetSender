@@ -88,14 +88,23 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
             .AsSplitQuery()
             .SingleOrDefaultAsync(c => c.Uuid == checklistGuid && c.Rental.Uuid == rentalGuid, ct);
 
-    public async Task<IReadOnlyList<Checklist>> ListChecklistsForRentalAsync(Guid rentalGuid, CancellationToken ct)
-        => await db.Checklists
+    public async Task<(IReadOnlyList<Checklist> items, long total)> ListChecklistsForRentalAsync(Guid rentalGuid, int limit, int offset, CancellationToken ct)
+    {
+        var query = db.Checklists
             .Include(c => c.Items).ThenInclude(ci => ci.RentalItem)
             .Include(c => c.SourceChecklist)
             .Where(c => c.Rental.Uuid == rentalGuid)
+            .AsSplitQuery();
+
+        var total = await query.LongCountAsync(ct);
+        var items = await query
             .OrderBy(c => c.GeneratedAt)
-            .AsSplitQuery()
+            .Skip(offset)
+            .Take(limit)
             .ToListAsync(ct);
+
+        return (items, total);
+    }
 
     public Task<ChecklistItem?> GetChecklistItemByGuidAsync(
         Guid rentalGuid, Guid checklistGuid, Guid itemGuid, CancellationToken ct)

@@ -126,7 +126,7 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
             .SingleOrDefaultAsync(d => d.Guid == deviceGuid, ct);
     }
 
-    public async Task<IReadOnlyList<Device>> ListDevicesAsync(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<Device> devices, long total)> ListDevicesAsync(string? search, int limit, int offset, CancellationToken ct)
     {
         var query = BuildDeviceGraphQuery()
             .AsNoTracking();
@@ -141,11 +141,14 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
                 d.DeviceCategories.Any(dc => dc.Category.Name.Contains(search)));
         }
 
-        return await query
+        var total = await query.LongCountAsync(ct);
+        var devices = await query
             .OrderBy(d => d.SerialNumber)
             .Skip(offset)
             .Take(limit)
             .ToListAsync(ct);
+
+        return (devices, total);
     }
 
     public Task DeleteDeviceAsync(Device device, CancellationToken ct)

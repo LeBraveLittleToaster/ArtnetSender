@@ -148,9 +148,9 @@ public class UserService(IAuthRepository authRepository)
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
-    public async Task<IReadOnlyList<GroupView>> GetGroupsForUser(string keycloakId, CancellationToken ct)
+    public async Task<(IReadOnlyList<GroupView> groups, long total)> GetGroupsForUser(string keycloakId, int limit, int offset, CancellationToken ct)
     {
-        var groups = await authRepository.GetGroupsForUserAsync(keycloakId, ct);
-        return groups.Select(GroupView.FromEntity).ToList();
+        var (groups, total) = await authRepository.GetGroupsForUserAsync(keycloakId, limit, offset, ct);
+        return (groups.Select(GroupView.FromEntity).ToList(), total);
     }
 }

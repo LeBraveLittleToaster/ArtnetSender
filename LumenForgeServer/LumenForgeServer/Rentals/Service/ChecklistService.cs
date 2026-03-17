@@ -131,13 +131,13 @@ public class ChecklistService(IRentalRepository repository)
     /// <summary>
     /// Returns all checklists for a rental ordered by generation time.
     /// </summary>
-    public async Task<IReadOnlyList<ChecklistView>> ListChecklists(Guid rentalGuid, CancellationToken ct)
+    public async Task<(IReadOnlyList<ChecklistView> items, long total)> ListChecklists(Guid rentalGuid, int limit, int offset, CancellationToken ct)
     {
         if (!await repository.RentalExistsByGuidAsync(rentalGuid, ct))
             throw new NotFoundException($"Rental '{rentalGuid}' not found.");
 
-        var checklists = await repository.ListChecklistsForRentalAsync(rentalGuid, ct);
-        return checklists.Select(ChecklistView.FromEntity).ToList();
+        var (checklists, total) = await repository.ListChecklistsForRentalAsync(rentalGuid, limit, offset, ct);
+        return (checklists.Select(ChecklistView.FromEntity).ToList(), total);
     }
 
     /// <summary>

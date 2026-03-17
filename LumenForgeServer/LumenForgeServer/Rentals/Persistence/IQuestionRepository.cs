@@ -8,11 +8,12 @@ namespace LumenForgeServer.Rentals.Persistence;
 public interface IQuestionRepository
 {
     Task<Question?> GetQuestionByGuidAsync(Guid questionGuid, CancellationToken ct);
-    
+    Task<IReadOnlyList<Question>> GetQuestionsByGuidsAsync(IReadOnlyCollection<Guid> questionGuids, CancellationToken ct);
+
     /// <summary>
-    /// Returns all active questions ordered by display order.
+    /// Returns active questions ordered by display order with paging.
     /// </summary>
-    Task<IReadOnlyList<Question>> ListActiveQuestionsAsync(CancellationToken ct);
+    Task<(IReadOnlyList<Question> items, long total)> ListActiveQuestionsAsync(int limit, int offset, CancellationToken ct);
 
     /// <summary>
     /// Returns all questions (including inactive ones), useful for admin views.
@@ -34,14 +35,17 @@ public interface IQuestionRepository
     Task<Answer?> GetAnswerByGuidAsync(Guid answerGuid, CancellationToken ct);
 
     /// <summary>
-    /// Returns answers for a specific question, optionally filtered by rental.
+    /// Returns answers for a specific question, optionally filtered by rental, with paging.
     /// </summary>
-    Task<IReadOnlyList<Answer>> ListAnswersForQuestionAsync(
+    Task<(IReadOnlyList<Answer> items, long total)> ListAnswersForQuestionAsync(
         Guid questionGuid,
         Guid? rentalGuid,
+        int limit,
+        int offset,
         CancellationToken ct);
 
     Task AddAnswerAsync(Answer answer, CancellationToken ct);
+    Task AddAnswersAsync(IReadOnlyCollection<Answer> answers, CancellationToken ct);
     Task DeleteAnswerAsync(Answer answer, CancellationToken ct);
 
     Task SaveChangesAsync(CancellationToken ct);

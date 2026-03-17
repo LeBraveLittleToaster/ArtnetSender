@@ -33,7 +33,7 @@ public interface IMaintenanceRepository
     Task DeleteTaskAsync(MaintenanceTask task, CancellationToken ct);
 
     Task AddLogEntryAsync(MaintenanceLogEntry logEntry, CancellationToken ct);
-    Task<IReadOnlyList<MaintenanceLogEntry>> ListLogsForTaskAsync(Guid taskGuid, CancellationToken ct);
+    Task<(IReadOnlyList<MaintenanceLogEntry> items, long total)> ListLogsForTaskAsync(Guid taskGuid, int limit, int offset, CancellationToken ct);
 
     Task SaveChangesAsync(CancellationToken ct);
 }

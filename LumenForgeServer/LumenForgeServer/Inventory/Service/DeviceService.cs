@@ -52,10 +52,10 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceView.FromEntity(device);
     }
 
-    public async Task<IReadOnlyList<DeviceView>> ListDevices(string? search, int limit, int offset, CancellationToken ct)
+    public async Task<(IReadOnlyList<DeviceView> devices, long total)> ListDevices(string? search, int limit, int offset, CancellationToken ct)
     {
-        var devices = await repository.ListDevicesAsync(search, limit, offset, ct);
-        return devices.Select(DeviceView.FromEntity).ToList();
+        var (devices, total) = await repository.ListDevicesAsync(search, limit, offset, ct);
+        return (devices.Select(DeviceView.FromEntity).ToList(), total);
     }
 
     public async Task<DeviceView> UpdateDevice(Guid deviceGuid, UpdateDeviceDto dto, CancellationToken ct)

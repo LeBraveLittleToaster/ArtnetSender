@@ -30,7 +30,7 @@ public interface IRentalRepository
     Task AddChecklistAsync(Checklist checklist, CancellationToken ct);
     Task<bool> RentalExistsByGuidAsync(Guid rentalGuid, CancellationToken ct);
     Task<Checklist?> GetChecklistByGuidAsync(Guid rentalGuid, Guid checklistGuid, CancellationToken ct);
-    Task<IReadOnlyList<Checklist>> ListChecklistsForRentalAsync(Guid rentalGuid, CancellationToken ct);
+    Task<(IReadOnlyList<Checklist> items, long total)> ListChecklistsForRentalAsync(Guid rentalGuid, int limit, int offset, CancellationToken ct);
     Task<ChecklistItem?> GetChecklistItemByGuidAsync(Guid rentalGuid, Guid checklistGuid, Guid itemGuid, CancellationToken ct);
 
     /// <summary>

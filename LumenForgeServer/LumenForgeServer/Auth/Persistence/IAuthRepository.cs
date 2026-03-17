@@ -71,7 +71,7 @@ public interface IAuthRepository
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
-    Task<IReadOnlyList<Group>> GetGroupsForUserAsync(string keycloakId, CancellationToken ct);
+    Task<(IReadOnlyList<Group> groups, long total)> GetGroupsForUserAsync(string keycloakId, int limit, int offset, CancellationToken ct);
 
 
     /// <summary>

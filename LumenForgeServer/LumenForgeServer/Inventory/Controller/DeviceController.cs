@@ -35,8 +35,8 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
     [Produces("application/json")]
     public async Task<IActionResult> ListDevices([FromQuery] ListQueryDto query, CancellationToken ct)
     {
-        var devices = await deviceService.ListDevices(query.Search, query.Limit, query.Offset, ct);
-        return Ok(devices);
+        var (devices, total) = await deviceService.ListDevices(query.Search, query.Limit, query.Offset, ct);
+        return Ok(new { list = devices, total });
     }
 
     [HttpGet("{deviceGuid:Guid}")]

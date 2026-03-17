@@ -26,7 +26,7 @@ public interface IInventoryRepository
 
     Task AddDeviceAsync(Device device, CancellationToken ct);
     Task<Device?> GetDeviceByGuidAsync(Guid deviceGuid, CancellationToken ct);
-    Task<IReadOnlyList<Device>> ListDevicesAsync(string? search, int limit, int offset, CancellationToken ct);
+    Task<(IReadOnlyList<Device> devices, long total)> ListDevicesAsync(string? search, int limit, int offset, CancellationToken ct);
     Task DeleteDeviceAsync(Device device, CancellationToken ct);
     Task ReplaceDeviceCategoriesAsync(long deviceId, IReadOnlyCollection<long> categoryIds, CancellationToken ct);
     Task<long?> TryGetDeviceIdByGuidAsync(Guid deviceGuid, CancellationToken ct);

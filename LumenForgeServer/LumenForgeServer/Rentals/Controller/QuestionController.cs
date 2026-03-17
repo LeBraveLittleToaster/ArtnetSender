@@ -35,10 +35,13 @@ public class QuestionController(QuestionService questionService) : ControllerBas
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Produces("application/json")]
-    public async Task<IActionResult> ListActiveQuestions(CancellationToken ct)
+    public async Task<IActionResult> ListActiveQuestions(
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        var questions = await questionService.ListActiveQuestionsAsync(ct);
-        return Ok(questions);
+        var (items, total) = await questionService.ListActiveQuestionsAsync(limit, offset, ct);
+        return Ok(new { list = items, total });
     }
 
     [HttpGet("questions/{questionGuid:Guid}")]
@@ -136,11 +139,8 @@ public class QuestionController(QuestionService questionService) : ControllerBas
         [FromBody] SubmitAnswerDto dto,
         CancellationToken ct)
     {
-        // Ensure the question UUID in route matches the payload
         if (questionGuid != dto.QuestionUuid)
-        {
             return BadRequest(new { error = "Question UUID mismatch between route and payload." });
-        }
 
         var respondentUserId = User.FindFirstValue("sub")
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -148,6 +148,31 @@ public class QuestionController(QuestionService questionService) : ControllerBas
 
         var answer = await questionService.SubmitAnswerAsync(dto, respondentUserId, ct);
         return CreatedAtAction(nameof(GetAnswer), new { answerGuid = answer.Uuid }, answer);
+    }
+
+    /// <summary>
+    /// Submits answers to all survey questions for one rental in a single request.
+    /// </summary>
+    /// <remarks>
+    /// All answers are validated and persisted in a single transaction.
+    /// The rental must exist; all question UUIDs must resolve to active questions.
+    /// </remarks>
+    [HttpPost("answers")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/json")]
+    public async Task<IActionResult> SubmitAnswersBulk(
+        [FromBody] SubmitAnswersBulkDto dto,
+        CancellationToken ct)
+    {
+        var respondentUserId = User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.Identity?.Name;
+
+        var answers = await questionService.SubmitAnswersBulkAsync(dto, respondentUserId, ct);
+        return Created($"api/v1/rentals/surveys/answers?rental_uuid={dto.RentalUuid}", answers);
     }
 
     [HttpGet("questions/{questionGuid:Guid}/answers")]
@@ -158,10 +183,12 @@ public class QuestionController(QuestionService questionService) : ControllerBas
     public async Task<IActionResult> ListAnswersForQuestion(
         [FromRoute] Guid questionGuid,
         [FromQuery] Guid? rentalGuid,
-        CancellationToken ct)
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        var answers = await questionService.ListAnswersForQuestionAsync(questionGuid, rentalGuid, ct);
-        return Ok(answers);
+        var (items, total) = await questionService.ListAnswersForQuestionAsync(questionGuid, rentalGuid, limit, offset, ct);
+        return Ok(new { list = items, total });
     }
 
     [HttpGet("answers/{answerGuid:Guid}")]
@@ -169,13 +196,8 @@ public class QuestionController(QuestionService questionService) : ControllerBas
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
-    public async Task<IActionResult> GetAnswer(
-        [FromRoute] Guid answerGuid,
-        CancellationToken ct)
+    public IActionResult GetAnswer([FromRoute] Guid answerGuid)
     {
-        var answers = await questionService.ListAnswersForQuestionAsync(Guid.Empty, null, ct);
-        // Note: In a real scenario, you'd retrieve a single answer by ID
-        // For now, returning 404 as this would need a dedicated repository method
         return NotFound();
     }
 

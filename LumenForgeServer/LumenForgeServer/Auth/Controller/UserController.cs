@@ -107,10 +107,12 @@ public class UserController(UserService userService, KcService kcService, ILogge
     public async Task<IActionResult> GetUserGroups(
         [FromRoute, Required, MinLength(1), RegularExpression(@".*\S.*")]
         string userKcId,
-        CancellationToken ct)
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        var groups = await userService.GetGroupsForUser(userKcId, ct);
-        return Ok(groups);
+        var (groups, total) = await userService.GetGroupsForUser(userKcId, limit, offset, ct);
+        return Ok(new { list = groups, total });
     }
 
     /// <summary>

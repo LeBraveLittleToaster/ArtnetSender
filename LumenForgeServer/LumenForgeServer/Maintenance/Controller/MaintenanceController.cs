@@ -174,10 +174,12 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
     public async Task<IActionResult> ListTaskLogs(
         [FromRoute] Guid jobGuid,
         [FromRoute] Guid taskGuid,
-        CancellationToken ct)
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        var logs = await maintenanceService.ListTaskLogs(jobGuid, taskGuid, ct);
-        return Ok(logs);
+        var (items, total) = await maintenanceService.ListTaskLogs(jobGuid, taskGuid, limit, offset, ct);
+        return Ok(new { list = items, total });
     }
 
     [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/logs")]

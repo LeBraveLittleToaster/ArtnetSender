@@ -131,10 +131,14 @@ public class RentalController(RentalService rentalService, ChecklistService chec
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
-    public async Task<IActionResult> ListChecklists([FromRoute] Guid rentalGuid, CancellationToken ct)
+    public async Task<IActionResult> ListChecklists(
+        [FromRoute] Guid rentalGuid,
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        var checklists = await checklistService.ListChecklists(rentalGuid, ct);
-        return Ok(checklists);
+        var (items, total) = await checklistService.ListChecklists(rentalGuid, limit, offset, ct);
+        return Ok(new { list = items, total });
     }
 
     /// <summary>
