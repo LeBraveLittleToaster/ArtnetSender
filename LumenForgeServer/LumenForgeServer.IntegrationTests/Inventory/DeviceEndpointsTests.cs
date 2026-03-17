@@ -1,5 +1,6 @@
 // DeviceEndpointsTests.cs
 using FluentAssertions;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
@@ -134,8 +135,8 @@ public class DeviceEndpointsTests(AuthFixture fixture)
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var listed = await InventoryTestHelpers.DeserializeResponseAsync<List<DeviceView>>(response);
-        listed.Should().Contain(d => d.Guid == device.Guid);
+        var listed = await InventoryTestHelpers.DeserializeResponseAsync<ListViewDto<DeviceView>>(response);
+        listed.list.Should().Contain(d => d.Guid == device.Guid);
     }
 
     [Fact]

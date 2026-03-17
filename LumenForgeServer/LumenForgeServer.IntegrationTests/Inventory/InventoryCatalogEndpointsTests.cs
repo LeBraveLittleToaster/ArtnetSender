@@ -1,5 +1,6 @@
 // InventoryCatalogEndpointsTests.cs
 using FluentAssertions;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
 using LumenForgeServer.IntegrationTests.TestSupport;
@@ -64,8 +65,8 @@ public class InventoryCatalogEndpointsTests(AuthFixture fixture)
             $"/api/v1/inventory/categories?search={Uri.EscapeDataString(categoryName)}&limit=10&offset=0");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var listed = await InventoryTestHelpers.DeserializeResponseAsync<List<CategoryView>>(listResponse);
-        listed.Should().Contain(c => c.Guid == created.Guid);
+        var listed = await InventoryTestHelpers.DeserializeResponseAsync<ListViewDto<CategoryView>>(listResponse);
+        listed.list.Should().Contain(c => c.Guid == created.Guid);
 
         var patchResponse = await admin.AppClient.PatchAsJsonAsync(
             $"/api/v1/inventory/categories/{created.Guid}",
@@ -191,8 +192,8 @@ public class InventoryCatalogEndpointsTests(AuthFixture fixture)
             $"/api/v1/inventory/vendors?search={Uri.EscapeDataString(vendorName)}&limit=10&offset=0");
         listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var listed = await InventoryTestHelpers.DeserializeResponseAsync<List<VendorView>>(listResponse);
-        listed.Should().Contain(v => v.Guid == created.Guid);
+        var listed = await InventoryTestHelpers.DeserializeResponseAsync<ListViewDto<VendorView>>(listResponse);
+        listed.list.Should().Contain(v => v.Guid == created.Guid);
 
         var patchResponse = await admin.AppClient.PatchAsJsonAsync(
             $"/api/v1/inventory/vendors/{created.Guid}",

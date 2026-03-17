@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
@@ -90,8 +91,8 @@ public class MaintenanceTaskEndpointsTests(AuthFixture fixture)
 
         var logsResponse = await admin.AppClient.GetAsync($"/api/v1/maintenance/jobs/{job.Guid}/tasks/{task.Guid}/logs");
         logsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var logs = await MaintenanceTestHelpers.DeserializeAsync<List<MaintenanceLogEntryView>>(logsResponse);
-        logs.Should().Contain(l => l.Guid == log.Guid);
+        var logs = await MaintenanceTestHelpers.DeserializeAsync<ListViewDto<MaintenanceLogEntryView>>(logsResponse);
+        logs.list.Should().Contain(l => l.Guid == log.Guid);
     }
 
     [Fact]

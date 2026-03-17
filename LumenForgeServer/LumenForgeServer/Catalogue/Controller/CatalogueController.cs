@@ -30,15 +30,14 @@ public class CatalogueController(CatalogueService catalogueService) : Controller
     }
 
     [HttpGet("{itemGuid:Guid}")]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
-    public async Task<IActionResult> GetItem([FromRoute] Guid itemGuid, [FromQuery(Name = "include_unpublished")] bool includeUnpublished, CancellationToken ct)
+    public async Task<IActionResult> GetItem([FromRoute] Guid itemGuid, CancellationToken ct)
     {
-
+        var includeUnpublished = User.IsInRole(nameof(Permissions.CatalogueRead));
         var item = await catalogueService.GetItem(itemGuid, includeUnpublished, ct);
         return Ok(item);
     }

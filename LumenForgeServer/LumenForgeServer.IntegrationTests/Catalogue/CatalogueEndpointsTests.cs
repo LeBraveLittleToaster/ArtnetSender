@@ -30,8 +30,8 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
         var publishedItem = await InventoryTestHelpers.CreateCatalogueItemAsync(admin, publishedDevice.Guid, true, $"Published Item {token}");
         var hiddenItem = await InventoryTestHelpers.CreateCatalogueItemAsync(admin, hiddenDevice.Guid, false, $"Hidden Item {token}");
 
-        using var client = fixture.GetAnonymousClient();
-        var response = await client.GetAsync($"/api/v1/catalogue/items?search={token}&limit=10&offset=0");
+        var user = await fixture.CreateNewUserAsync(CreateTestUserDto.CreateTestUser());
+        var response = await user.AppClient.GetAsync($"/api/v1/catalogue/items?search={token}&limit=10&offset=0");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var listed = await InventoryTestHelpers.DeserializeResponseAsync<ListViewDto<CatalogueItemView>>(response);
@@ -47,36 +47,36 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
         var device = await CreateCatalogueDeviceAsync(admin);
         var hiddenItem = await InventoryTestHelpers.CreateCatalogueItemAsync(admin, device.Guid, false);
 
-        using var client = fixture.GetAnonymousClient();
-        var response = await client.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}");
+        var user = await fixture.CreateNewUserAsync(CreateTestUserDto.CreateTestUser());
+        var response = await user.AppClient.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
-    public async Task GET_catalogue_item_include_unpublished_as_anonymous_returns_unauthorized()
+    public async Task GET_catalogue_item_as_anonymous_returns_unauthorized()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
         var device = await CreateCatalogueDeviceAsync(admin);
         var hiddenItem = await InventoryTestHelpers.CreateCatalogueItemAsync(admin, device.Guid, false);
 
         using var client = fixture.GetAnonymousClient();
-        var response = await client.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}?include_unpublished=true");
+        var response = await client.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task GET_catalogue_item_include_unpublished_as_non_reader_returns_forbidden()
+    public async Task GET_catalogue_item_unpublished_as_non_reader_returns_not_found()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
         var nonAdmin = await fixture.CreateNewUserAsync(CreateTestUserDto.CreateTestUser());
         var device = await CreateCatalogueDeviceAsync(admin);
         var hiddenItem = await InventoryTestHelpers.CreateCatalogueItemAsync(admin, device.Guid, false);
 
-        var response = await nonAdmin.AppClient.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}?include_unpublished=true");
+        var response = await nonAdmin.AppClient.GetAsync($"/api/v1/catalogue/items/{hiddenItem.Guid}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -135,8 +135,7 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
             SortOrder = 1
         });
 
-        using var client = fixture.GetAnonymousClient();
-        var response = await client.GetAsync("/api/v1/catalogue/items?published_only=true&limit=10&offset=0");
+        var response = await admin.AppClient.GetAsync("/api/v1/catalogue/items?published_only=true&limit=10&offset=0");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var listed = await InventoryTestHelpers.DeserializeResponseAsync<ListViewDto<CatalogueItemView>>(response);
@@ -223,13 +222,13 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
         updated.IsPublished.Should().BeFalse();
         updated.SortOrder.Should().Be(2);
 
-        var hiddenGetResponse = await admin.AppClient.GetAsync($"/api/v1/catalogue/items/{created.Guid}?include_unpublished=true");
+        var hiddenGetResponse = await admin.AppClient.GetAsync($"/api/v1/catalogue/items/{created.Guid}");
         hiddenGetResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var deleteResponse = await admin.AppClient.DeleteAsync($"/api/v1/catalogue/items/{created.Guid}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var getDeletedResponse = await admin.AppClient.GetAsync($"/api/v1/catalogue/items/{created.Guid}?include_unpublished=true");
+        var getDeletedResponse = await admin.AppClient.GetAsync($"/api/v1/catalogue/items/{created.Guid}");
         getDeletedResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -373,9 +372,9 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
     [Fact]
     public async Task GET_catalogue_item_not_found_returns_not_found()
     {
-        using var client = fixture.GetAnonymousClient();
+        var admin = await fixture.GetInitialAdminUserAsync();
 
-        var response = await client.GetAsync($"/api/v1/catalogue/items/{Guid.NewGuid()}");
+        var response = await admin.AppClient.GetAsync($"/api/v1/catalogue/items/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -383,9 +382,9 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
     [Fact]
     public async Task GET_catalogue_items_invalid_limit_returns_bad_request()
     {
-        using var client = fixture.GetAnonymousClient();
+        var admin = await fixture.GetInitialAdminUserAsync();
 
-        var response = await client.GetAsync("/api/v1/catalogue/items?limit=0&offset=0");
+        var response = await admin.AppClient.GetAsync("/api/v1/catalogue/items?limit=0&offset=0");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -393,9 +392,9 @@ public class CatalogueEndpointsTests(AuthFixture fixture)
     [Fact]
     public async Task GET_catalogue_items_negative_offset_returns_bad_request()
     {
-        using var client = fixture.GetAnonymousClient();
+        var admin = await fixture.GetInitialAdminUserAsync();
 
-        var response = await client.GetAsync("/api/v1/catalogue/items?limit=10&offset=-1");
+        var response = await admin.AppClient.GetAsync("/api/v1/catalogue/items?limit=10&offset=-1");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

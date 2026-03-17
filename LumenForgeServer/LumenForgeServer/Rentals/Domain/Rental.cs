@@ -1,5 +1,4 @@
 using LumenForgeServer.Billing.Domain;
-using LumenForgeServer.Common;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;
@@ -18,39 +17,16 @@ public class Rental
     // Keycloak user id
     public string CustomerUserId { get; set; } = null!;
 
-    public string? RequestTitle { get; set; }
-    public string? RequestDescription { get; set; }
-    public string? EventName { get; set; }
-    public string? CustomerNotes { get; set; }
-    public string? DeliveryAddress { get; set; }
-
-    public RentalPriority Priority { get; set; } = RentalPriority.NORMAL;
-
-    public Instant? RequestedAt { get; set; }
-
-    // Planned vs actual pickup and return
-    public Instant? PlannedPickupAt { get; set; }
-    public Instant? PlannedReturnAt { get; set; }
+    public RentalRequest Request { get; set; } = new();
+    public RentalSchedule Schedule { get; set; } = new();
+    public RentalAssignment Assignment { get; set; } = new();
+    public RentalScrap Scrap { get; set; } = new();
 
     public Instant CreatedAt { get; set; }
-    public Instant? PickupAt { get; set; }
-    public Instant? DropoffAt { get; set; }
     public Instant? CompletedAt { get; set; }
     public Instant? InvoicedAt { get; set; }
     public Instant? PaidAt { get; set; }
     public Instant? ReportedAt { get; set; }
-
-    public string? AssignedByUserId { get; set; }
-    public Instant? AssignedAt { get; set; }
-
-    public string? PickupProcessedByUserId { get; set; }
-    public string? DropoffProcessedByUserId { get; set; }
-    public string? CompletedByUserId { get; set; }
-
-    public bool IsScrapped { get; set; }
-    public Instant? ScrappedAt { get; set; }
-    public string? ScrappedByUserId { get; set; }
-
     public Instant UpdatedAt { get; set; }
 
     public List<RentalItem> Items { get; set; } = new();

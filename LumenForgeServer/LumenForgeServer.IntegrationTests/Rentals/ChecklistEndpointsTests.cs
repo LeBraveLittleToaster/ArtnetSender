@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LumenForgeServer.Auth.Dto.Views;
 using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
@@ -91,9 +92,9 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
             $"/api/v1/rentals/{rental.Uuid}/checklists");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var checklists = await RentalTestHelpers.DeserializeAsync<List<ChecklistView>>(response);
-        checklists.Should().HaveCount(1);
-        checklists[0].ChecklistType.Should().Be(ChecklistType.PICKUP);
+        var checklists = await RentalTestHelpers.DeserializeAsync<ListViewDto<ChecklistView>>(response);
+        checklists.list.Should().HaveCount(1);
+        checklists.list[0].ChecklistType.Should().Be(ChecklistType.PICKUP);
     }
 
     [Fact]
@@ -407,9 +408,9 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var response = await admin.AppClient.GetAsync(
             $"/api/v1/rentals/{rental.Uuid}/checklists");
 
-        var checklists = await RentalTestHelpers.DeserializeAsync<List<ChecklistView>>(response);
-        checklists.Should().HaveCount(2);
-        checklists.Should().ContainSingle(c => c.ChecklistType == ChecklistType.PICKUP);
-        checklists.Should().ContainSingle(c => c.ChecklistType == ChecklistType.DROPOFF);
+        var checklists = await RentalTestHelpers.DeserializeAsync<ListViewDto<ChecklistView>>(response);
+        checklists.list.Should().HaveCount(2);
+        checklists.list.Should().ContainSingle(c => c.ChecklistType == ChecklistType.PICKUP);
+        checklists.list.Should().ContainSingle(c => c.ChecklistType == ChecklistType.DROPOFF);
     }
 }

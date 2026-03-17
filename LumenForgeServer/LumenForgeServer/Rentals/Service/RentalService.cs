@@ -38,15 +38,21 @@ public class RentalService(IRentalRepository repository, IInventoryRepository in
             Uuid = Guid.NewGuid(),
             RentalStatusId = rentalStatusId,
             CustomerUserId = customerUserId,
-            RequestTitle = dto.RequestTitle?.Trim(),
-            RequestDescription = dto.RequestDescription?.Trim(),
-            EventName = dto.EventName?.Trim(),
-            CustomerNotes = dto.CustomerNotes?.Trim(),
-            DeliveryAddress = dto.DeliveryAddress?.Trim(),
-            Priority = dto.Priority,
-            PlannedPickupAt = plannedPickupAt,
-            PlannedReturnAt = plannedReturnAt,
-            RequestedAt = now,
+            Request = new RentalRequest
+            {
+                Title = dto.RequestTitle?.Trim(),
+                Description = dto.RequestDescription?.Trim(),
+                EventName = dto.EventName?.Trim(),
+                CustomerNotes = dto.CustomerNotes?.Trim(),
+                DeliveryAddress = dto.DeliveryAddress?.Trim(),
+                Priority = dto.Priority,
+            },
+            Schedule = new RentalSchedule
+            {
+                RequestedAt = now,
+                PlannedPickupAt = plannedPickupAt,
+                PlannedReturnAt = plannedReturnAt,
+            },
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -102,21 +108,21 @@ public class RentalService(IRentalRepository repository, IInventoryRepository in
                 ?? throw new NotFoundException($"Rental status '{dto.RentalStatusGuid}' not found.");
         }
 
-        if (dto.RequestTitle is not null) rental.RequestTitle = dto.RequestTitle.Trim();
-        if (dto.RequestDescription is not null) rental.RequestDescription = dto.RequestDescription.Trim();
-        if (dto.EventName is not null) rental.EventName = dto.EventName.Trim();
-        if (dto.CustomerNotes is not null) rental.CustomerNotes = dto.CustomerNotes.Trim();
-        if (dto.DeliveryAddress is not null) rental.DeliveryAddress = dto.DeliveryAddress.Trim();
-        if (dto.Priority.HasValue) rental.Priority = dto.Priority.Value;
+        if (dto.RequestTitle is not null) rental.Request.Title = dto.RequestTitle.Trim();
+        if (dto.RequestDescription is not null) rental.Request.Description = dto.RequestDescription.Trim();
+        if (dto.EventName is not null) rental.Request.EventName = dto.EventName.Trim();
+        if (dto.CustomerNotes is not null) rental.Request.CustomerNotes = dto.CustomerNotes.Trim();
+        if (dto.DeliveryAddress is not null) rental.Request.DeliveryAddress = dto.DeliveryAddress.Trim();
+        if (dto.Priority.HasValue) rental.Request.Priority = dto.Priority.Value;
 
         if (dto.PlannedPickupAt is not null)
-            rental.PlannedPickupAt = ParseOptionalInstant(dto.PlannedPickupAt, "planned_pickup_at");
+            rental.Schedule.PlannedPickupAt = ParseOptionalInstant(dto.PlannedPickupAt, "planned_pickup_at");
 
         if (dto.PlannedReturnAt is not null)
-            rental.PlannedReturnAt = ParseOptionalInstant(dto.PlannedReturnAt, "planned_return_at");
+            rental.Schedule.PlannedReturnAt = ParseOptionalInstant(dto.PlannedReturnAt, "planned_return_at");
 
-        if (rental.PlannedPickupAt.HasValue && rental.PlannedReturnAt.HasValue
-            && rental.PlannedPickupAt >= rental.PlannedReturnAt)
+        if (rental.Schedule.PlannedPickupAt.HasValue && rental.Schedule.PlannedReturnAt.HasValue
+            && rental.Schedule.PlannedPickupAt >= rental.Schedule.PlannedReturnAt)
         {
             throw new ValidationException("Planned pickup must be before planned return.", new Dictionary<string, string[]>
             {

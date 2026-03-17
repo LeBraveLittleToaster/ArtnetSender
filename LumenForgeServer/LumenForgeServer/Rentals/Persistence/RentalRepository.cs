@@ -39,9 +39,9 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(r =>
-                (r.RequestTitle != null && r.RequestTitle.Contains(search)) ||
-                (r.RequestDescription != null && r.RequestDescription.Contains(search)) ||
-                (r.EventName != null && r.EventName.Contains(search)) ||
+                (r.Request.Title != null && r.Request.Title.Contains(search)) ||
+                (r.Request.Description != null && r.Request.Description.Contains(search)) ||
+                (r.Request.EventName != null && r.Request.EventName.Contains(search)) ||
                 r.CustomerUserId.Contains(search));
         }
 
@@ -52,7 +52,7 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
 
         if (priority.HasValue)
         {
-            query = query.Where(r => r.Priority == priority.Value);
+            query = query.Where(r => r.Request.Priority == priority.Value);
         }
 
         var total = await query.LongCountAsync(ct);
