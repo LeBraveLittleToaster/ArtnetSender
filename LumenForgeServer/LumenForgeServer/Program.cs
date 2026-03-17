@@ -2,6 +2,7 @@ using LumenForgeServer.Common;
 using LumenForgeServer.Common.Database.Seeding;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,7 @@ DiRegistration.RegisterSeeders(builder);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 });
 

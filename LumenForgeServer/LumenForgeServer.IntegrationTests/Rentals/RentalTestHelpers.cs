@@ -46,12 +46,11 @@ internal static class RentalTestHelpers
     /// </summary>
     public static async Task<RentalView> CreateRentalAsync(
         TestUserBundle user,
-        RentalStatus rentalStatus,
+        RentalStatus _,
         string? title = null)
     {
         var response = await user.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatus = rentalStatus,
             RequestTitle = title ?? $"Rental-{Guid.NewGuid():N}",
             EventName = "Integration test event",
             Priority = RentalPriority.NORMAL,

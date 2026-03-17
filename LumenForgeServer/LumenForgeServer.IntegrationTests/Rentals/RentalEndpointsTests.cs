@@ -36,11 +36,9 @@ public class RentalEndpointsTests(AuthFixture fixture)
     public async Task PUT_rental_creates_and_returns_rental()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
 
         var response = await admin.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatus = status,
             RequestTitle = "Camera kit for concert",
             EventName = "Summer Concert 2025",
             Priority = RentalPriority.HIGH,
@@ -51,7 +49,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var rental = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
         rental.Uuid.Should().NotBe(Guid.Empty);
-        rental.RentalStatus.Should().Be(status);
+        rental.RentalStatus.Should().Be(RentalStatus.Requested);
         rental.RequestTitle.Should().Be("Camera kit for concert");
         rental.EventName.Should().Be("Summer Concert 2025");
         rental.PlannedPickupAt.Should().NotBeNull();
@@ -59,29 +57,30 @@ public class RentalEndpointsTests(AuthFixture fixture)
     }
 
     [Fact]
-    public async Task PUT_rental_with_invalid_status_returns_bad_request()
+    public async Task PUT_rental_ignores_supplied_status_and_sets_requested()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
 
         using var content = JsonContent.Create(new
         {
-            rental_status = "InvalidStatus",
-            request_title = "Should fail"
+            rental_status = nameof(RentalStatus.Completed),
+            request_title = "Should still be requested"
         });
 
         var response = await admin.AppClient.PutAsync("/api/v1/rentals", content);
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var rental = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
+        rental.RentalStatus.Should().Be(RentalStatus.Requested);
     }
 
     [Fact]
     public async Task PUT_rental_with_pickup_after_return_returns_bad_request()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var status = await RentalTestHelpers.EnsureRentalStatusAsync();
 
         var response = await admin.AppClient.PutAsJsonAsync("/api/v1/rentals", new CreateRentalDto
         {
-            RentalStatus = status,
             PlannedPickupAt = "2025-09-10T00:00:00Z",
             PlannedReturnAt = "2025-09-01T00:00:00Z",
         });
@@ -105,7 +104,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var rental = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
         rental.Uuid.Should().Be(created.Uuid);
-        rental.RentalStatus.Should().Be(status);
+        rental.RentalStatus.Should().Be(RentalStatus.Requested);
     }
 
     [Fact]

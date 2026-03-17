@@ -61,7 +61,7 @@ public class RentalService(IRentalRepository repository, IInventoryRepository in
         var rental = new Rental
         {
             Uuid = Guid.NewGuid(),
-            RentalStatus = dto.RentalStatus,
+            RentalStatus = RentalStatus.Requested,
             CustomerUserId = customerUserId,
             Request = new RentalRequest
             {
