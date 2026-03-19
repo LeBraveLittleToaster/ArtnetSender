@@ -22,7 +22,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
     public async Task GET_checklists_requires_authentication()
     {
         var response = await fixture.GetAnonymousClient()
-            .GetAsync($"/api/v1/rentals/{Guid.NewGuid()}/checklists");
+            .GetAsync(RentalTestHelpers.GetChecklistsPath(Guid.NewGuid()));
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -39,7 +39,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // No approved items seeded — service must reject
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto { ChecklistType = ChecklistType.PICKUP });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -70,7 +70,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var admin = await fixture.GetInitialAdminUserAsync();
 
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{Guid.NewGuid()}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(Guid.NewGuid()),
             new GenerateChecklistDto { ChecklistType = ChecklistType.PICKUP });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -89,7 +89,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         _ = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists");
+            RentalTestHelpers.GetChecklistsPath(rental.Uuid));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var checklists = await RentalTestHelpers.DeserializeAsync<ListViewDto<ChecklistView>>(response);
@@ -106,7 +106,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var checklist = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}");
+            RentalTestHelpers.GetChecklistPath(rental.Uuid, checklist.Uuid));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var detail = await RentalTestHelpers.DeserializeAsync<ChecklistView>(response);
@@ -124,7 +124,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var rental = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{Guid.NewGuid()}");
+            RentalTestHelpers.GetChecklistPath(rental.Uuid, Guid.NewGuid()));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -143,7 +143,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var itemUuid = checklist.Items[0].Uuid;
 
         var response = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/items/{itemUuid}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, checklist.Uuid, itemUuid),
             new UpdateChecklistItemDto
             {
                 QuantityChecked = 2,
@@ -169,7 +169,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var itemUuid = checklist.Items[0].Uuid;
 
         var response = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/items/{itemUuid}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, checklist.Uuid, itemUuid),
             new UpdateChecklistItemDto
             {
                 QuantityChecked = 1,
@@ -197,12 +197,12 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Submit inspection for the single item
         _ = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/items/{checklist.Items[0].Uuid}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, checklist.Uuid, checklist.Items[0].Uuid),
             new UpdateChecklistItemDto { QuantityChecked = 2, ConditionOk = true });
 
         // Reload checklist — is_complete and checked_items_count must reflect the update
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}");
+            RentalTestHelpers.GetChecklistPath(rental.Uuid, checklist.Uuid));
 
         var updated = await RentalTestHelpers.DeserializeAsync<ChecklistView>(response);
         updated.CheckedItemsCount.Should().Be(1);
@@ -218,7 +218,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var rental = await RentalTestHelpers.CreateRentalAsync(admin, statusGuid);
 
         var response = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{Guid.NewGuid()}/items/{Guid.NewGuid()}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, Guid.NewGuid(), Guid.NewGuid()),
             new UpdateChecklistItemDto { QuantityChecked = 1, ConditionOk = true });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -237,7 +237,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var checklist = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto { Notes = "All items handed over." });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -259,7 +259,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Sign without checking any items
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -277,11 +277,11 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var checklist = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         _ = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto());
 
         var secondSign = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto());
 
         secondSign.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -297,12 +297,12 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Sign first
         _ = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto());
 
         // Attempt to update item on the now-signed checklist
         var response = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/items/{checklist.Items[0].Uuid}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, checklist.Uuid, checklist.Items[0].Uuid),
             new UpdateChecklistItemDto { QuantityChecked = 1, ConditionOk = true });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -320,11 +320,10 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var (rental, _) = await RentalTestHelpers.SeedRentalWithApprovedItemAsync(admin, statusGuid);
 
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto
             {
                 ChecklistType = ChecklistType.DROPOFF,
-                // SourceChecklistGuid intentionally omitted
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -340,7 +339,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Generate DROPOFF referencing the PICKUP
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto
             {
                 ChecklistType = ChecklistType.DROPOFF,
@@ -368,7 +367,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Generate a DROPOFF from another DROPOFF (invalid)
         var firstDropoff = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto
             {
                 ChecklistType = ChecklistType.DROPOFF,
@@ -379,7 +378,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
 
         // Now try to use the DROPOFF as a source — must be rejected
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto
             {
                 ChecklistType = ChecklistType.DROPOFF,
@@ -398,7 +397,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
         var pickup = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         _ = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/generate",
+            RentalTestHelpers.GetChecklistGeneratePath(rental.Uuid),
             new GenerateChecklistDto
             {
                 ChecklistType = ChecklistType.DROPOFF,
@@ -406,7 +405,7 @@ public class ChecklistEndpointsTests(AuthFixture fixture)
             });
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists");
+            RentalTestHelpers.GetChecklistsPath(rental.Uuid));
 
         var checklists = await RentalTestHelpers.DeserializeAsync<ListViewDto<ChecklistView>>(response);
         checklists.list.Should().HaveCount(2);

@@ -20,7 +20,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
     public async Task GET_scan_requires_authentication()
     {
         var response = await fixture.GetAnonymousClient()
-            .GetAsync($"/api/v1/rentals/{Guid.NewGuid()}/checklists/{Guid.NewGuid()}/scan?device_guid={Guid.NewGuid()}");
+            .GetAsync(RentalTestHelpers.GetChecklistScanPath(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -42,7 +42,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
         var checklist = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={deviceGuid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, deviceGuid));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var item = await RentalTestHelpers.DeserializeAsync<ChecklistItemView>(response);
@@ -63,7 +63,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
         var checklist = await RentalTestHelpers.GeneratePickupChecklistAsync(admin, rental.Uuid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={deviceGuid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, deviceGuid));
 
         var item = await RentalTestHelpers.DeserializeAsync<ChecklistItemView>(response);
         item.IsChecked.Should().BeFalse();
@@ -84,16 +84,16 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
 
         // Locate the item via the scan endpoint, then submit an inspection result
         var scanResponse = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={deviceGuid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, deviceGuid));
         var item = await RentalTestHelpers.DeserializeAsync<ChecklistItemView>(scanResponse);
 
         _ = await admin.AppClient.PatchAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/items/{item.Uuid}",
+            RentalTestHelpers.GetChecklistItemPath(rental.Uuid, checklist.Uuid, item.Uuid),
             new UpdateChecklistItemDto { QuantityChecked = 1, ConditionOk = true });
 
         // Scan again — the returned item must now show is_checked = true
         var rescanResponse = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={deviceGuid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, deviceGuid));
 
         rescanResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var rescanned = await RentalTestHelpers.DeserializeAsync<ChecklistItemView>(rescanResponse);
@@ -120,7 +120,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
         // Scan an entirely different device that has no rental item on this checklist
         var unrelatedDevice = await InventoryTestHelpers.CreateDeviceAsync(admin, vendor.Guid);
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={unrelatedDevice.Guid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, unrelatedDevice.Guid));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -135,7 +135,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
         var device = await InventoryTestHelpers.CreateDeviceAsync(admin, vendor.Guid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{Guid.NewGuid()}/scan?device_guid={device.Guid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, Guid.NewGuid(), device.Guid));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -148,7 +148,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
         var device = await InventoryTestHelpers.CreateDeviceAsync(admin, vendor.Guid);
 
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{Guid.NewGuid()}/checklists/{Guid.NewGuid()}/scan?device_guid={device.Guid}");
+            RentalTestHelpers.GetChecklistScanPath(Guid.NewGuid(), Guid.NewGuid(), device.Guid));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -166,12 +166,12 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
 
         // Sign the checklist to make it immutable
         _ = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/sign",
+            RentalTestHelpers.GetChecklistSignPath(rental.Uuid, checklist.Uuid),
             new SignChecklistDto());
 
         // Scanning a signed checklist must be rejected
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rental.Uuid}/checklists/{checklist.Uuid}/scan?device_guid={deviceGuid}");
+            RentalTestHelpers.GetChecklistScanPath(rental.Uuid, checklist.Uuid, deviceGuid));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -194,7 +194,7 @@ public class ChecklistScanEndpointsTests(AuthFixture fixture)
 
         // Scan rentalA's device against rentalB's checklist — must not match
         var response = await admin.AppClient.GetAsync(
-            $"/api/v1/rentals/{rentalB.Uuid}/checklists/{checklistB.Uuid}/scan?device_guid={deviceGuidA}");
+            RentalTestHelpers.GetChecklistScanPath(rentalB.Uuid, checklistB.Uuid, deviceGuidA));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

@@ -22,6 +22,24 @@ internal static class RentalTestHelpers
 {
     private static readonly AppDbFixture DbFixture = new();
 
+    public static string GetChecklistsPath(Guid rentalGuid)
+        => $"/api/v1/rentals/{rentalGuid}/checklists";
+
+    public static string GetChecklistGeneratePath(Guid rentalGuid)
+        => $"{GetChecklistsPath(rentalGuid)}/generate";
+
+    public static string GetChecklistPath(Guid rentalGuid, Guid checklistGuid)
+        => $"{GetChecklistsPath(rentalGuid)}/{checklistGuid}";
+
+    public static string GetChecklistItemPath(Guid rentalGuid, Guid checklistGuid, Guid itemGuid)
+        => $"{GetChecklistPath(rentalGuid, checklistGuid)}/items/{itemGuid}";
+
+    public static string GetChecklistSignPath(Guid rentalGuid, Guid checklistGuid)
+        => $"{GetChecklistPath(rentalGuid, checklistGuid)}/sign";
+
+    public static string GetChecklistScanPath(Guid rentalGuid, Guid checklistGuid, Guid deviceGuid)
+        => $"{GetChecklistPath(rentalGuid, checklistGuid)}/scan?device_guid={deviceGuid}";
+
     public static Task<RentalStatus> EnsureRentalStatusByNameAsync(string name)
     {
         return Task.FromResult(name.Trim() switch
@@ -102,7 +120,7 @@ internal static class RentalTestHelpers
         Guid rentalGuid)
     {
         var response = await user.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rentalGuid}/checklists/generate",
+            GetChecklistGeneratePath(rentalGuid),
             new GenerateChecklistDto { ChecklistType = ChecklistType.PICKUP });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
