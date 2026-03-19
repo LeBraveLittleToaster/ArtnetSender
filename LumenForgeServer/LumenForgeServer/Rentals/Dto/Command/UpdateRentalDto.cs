@@ -1,5 +1,4 @@
 using LumenForgeServer.Common;
-using LumenForgeServer.Rentals.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -7,12 +6,10 @@ namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>
 /// Payload for partially updating a rental. Null fields are left unchanged.
+/// Status transitions are now performed via the action framework.
 /// </summary>
 public sealed record UpdateRentalDto
 {
-    [JsonPropertyName("rental_status")]
-    public RentalStatus? RentalStatus { get; init; }
-
     [StringLength(512)]
     [JsonPropertyName("request_title")]
     public string? RequestTitle { get; init; }

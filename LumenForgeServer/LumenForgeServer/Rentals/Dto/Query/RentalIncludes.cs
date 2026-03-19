@@ -10,4 +10,5 @@ public enum RentalInclude
     Events = 8,
     Extensions = 16,
     Report = 32,
+    Actions = 64,
 }

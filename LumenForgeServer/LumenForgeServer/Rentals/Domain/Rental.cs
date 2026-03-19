@@ -1,4 +1,5 @@
 using LumenForgeServer.Billing.Domain;
+using LumenForgeServer.Rentals.Domain.Actions;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;
@@ -33,6 +34,7 @@ public class Rental
     public List<Invoice> Invoices { get; set; } = new();
     public List<RentalEvent> Events { get; set; } = new();
     public List<RentalExtension> Extensions { get; set; } = new();
+    public List<RentalAction> Actions { get; set; } = new();
 
     public RentalReport RentalReport { get; set; } = null!;
 }

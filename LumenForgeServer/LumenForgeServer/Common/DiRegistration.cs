@@ -12,6 +12,8 @@ using LumenForgeServer.Inventory.Persistance;
 using LumenForgeServer.Inventory.Service;
 using LumenForgeServer.Maintenance.Persistence;
 using LumenForgeServer.Maintenance.Service;
+using LumenForgeServer.Rentals.Actions;
+using LumenForgeServer.Rentals.Actions.Handlers;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.Rentals.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -86,6 +88,32 @@ public static class DiRegistration
         builder.Services.AddScoped<RentalService>();
         builder.Services.AddScoped<ChecklistService>();
         builder.Services.AddScoped<QuestionService>();
+        builder.Services.AddScoped<StockBindingService>();
+
+        // Rental action handlers
+        builder.Services.AddScoped<IRentalActionHandler, ApproveRequestHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RejectRequestHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RecordPickupHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RecordReturnHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, CompleteRentalHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, CancelRentalHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, ScrapRentalHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, AssignItemsHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RemoveItemsHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, ApproveItemsHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RejectItemsHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, GenerateChecklistHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, ScanChecklistHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, SignChecklistHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RequestExtensionHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, ApproveExtensionHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RejectExtensionHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RecordDamagesHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, CreateMaintenanceJobsHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, GenerateInvoiceHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, RecordPaymentHandler>();
+        builder.Services.AddScoped<IRentalActionHandler, GenerateReportHandler>();
+        builder.Services.AddScoped<RentalActionService>();
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using LumenForgeServer.Common;
 using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Domain.Actions;
 using LumenForgeServer.Rentals.Dto.Query;
 using NodaTime;
 
@@ -52,4 +53,8 @@ public interface IRentalRepository
         CancellationToken ct);
 
     Task SaveChangesAsync(CancellationToken ct);
+
+    // Actions
+    Task<(IReadOnlyList<RentalAction> items, long total)> ListActionsForRentalAsync(
+        Guid rentalGuid, int limit, int offset, CancellationToken ct);
 }

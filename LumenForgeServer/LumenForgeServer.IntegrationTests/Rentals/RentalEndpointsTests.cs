@@ -11,6 +11,7 @@ using NodaTime;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LumenForgeServer.Auth.Dto.Views;
 
 namespace LumenForgeServer.IntegrationTests.Rentals;
 
@@ -318,7 +319,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
     }
 
     // =========================================================================
-    // Status state-machine
+    // Statuses lookup
     // =========================================================================
 
     [Fact]
@@ -339,55 +340,193 @@ public class RentalEndpointsTests(AuthFixture fixture)
         statuses.Should().Contain(RentalStatus.Requested);
     }
 
+    // =========================================================================
+    // Actions — available
+    // =========================================================================
+
     [Fact]
-    public async Task GET_rental_transitions_returns_allowed_targets_for_current_state()
+    public async Task GET_available_actions_for_requested_rental_includes_approve_and_reject()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var requested = await RentalTestHelpers.EnsureRentalStatusByNameAsync("Requested");
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
 
-        var rental = await RentalTestHelpers.CreateRentalAsync(admin, requested);
-
-        var response = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}/transitions");
+        var response = await admin.AppClient.GetAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions/available");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var body = JsonSerializer.Deserialize<JsonElement>(await response.Content.ReadAsStringAsync());
+        var available = await RentalTestHelpers.DeserializeAsync<ListViewDto<AvailableActionView>>(response);
 
-        Enum.Parse<RentalStatus>(body.GetProperty("current").GetString()!).Should().Be(RentalStatus.Requested);
-
-        var allowed = body.GetProperty("allowed")
-            .Deserialize<List<RentalStatus>>(Json.GetJsonSerializerOptions())!;
-
-        allowed.Should().Contain(RentalStatus.Approved);
-        allowed.Should().Contain(RentalStatus.Rejected);
-        allowed.Should().Contain(RentalStatus.Cancelled);
+        available.list.Should().Contain(a => a.ActionType == RentalActionType.ApproveRequest);
+        available.list.Should().Contain(a => a.ActionType == RentalActionType.RejectRequest);
+        available.list.Should().Contain(a => a.ActionType == RentalActionType.CancelRental);
     }
 
     [Fact]
-    public async Task POST_rental_transition_updates_status_when_transition_is_allowed()
+    public async Task GET_available_actions_for_unknown_rental_returns_not_found()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+
+        var response = await admin.AppClient.GetAsync(
+            $"/api/v1/rentals/{Guid.NewGuid()}/actions/available");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    // =========================================================================
+    // Actions — execute
+    // =========================================================================
+
+    [Fact]
+    public async Task POST_action_approve_request_transitions_rental_to_approved()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
         var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
 
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/transitions",
-            new TransitionRentalStatusDto { TargetStatus = RentalStatus.Approved });
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(response);
+        var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
+        action.ActionType.Should().Be(RentalActionType.ApproveRequest);
+        action.Uuid.Should().NotBe(Guid.Empty);
+        action.PerformedByUserId.Should().NotBeNullOrEmpty();
+
+        // Verify the rental status was actually updated
+        var getResponse = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}");
+        var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(getResponse);
         updated.RentalStatus.Should().Be(RentalStatus.Approved);
         updated.AssignedAt.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task POST_rental_transition_returns_bad_request_for_invalid_transition()
+    public async Task POST_action_reject_request_transitions_rental_to_rejected()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
         var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
 
         var response = await admin.AppClient.PostAsJsonAsync(
-            $"/api/v1/rentals/{rental.Uuid}/transitions",
-            new TransitionRentalStatusDto { TargetStatus = RentalStatus.Completed });
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto
+            {
+                ActionType = RentalActionType.RejectRequest,
+                Input = JsonSerializer.SerializeToElement(new { reason = "Out of stock" }),
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
+        action.ActionType.Should().Be(RentalActionType.RejectRequest);
+
+        var getResponse = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}");
+        var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(getResponse);
+        updated.RentalStatus.Should().Be(RentalStatus.Rejected);
+    }
+
+    [Fact]
+    public async Task POST_action_returns_bad_request_when_action_not_available()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        // CompleteRental is not available from Requested status
+        var response = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto { ActionType = RentalActionType.CompleteRental });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task POST_action_for_unknown_rental_returns_not_found()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+
+        var response = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{Guid.NewGuid()}/actions",
+            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task POST_action_cancel_rental_from_requested_transitions_to_cancelled()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        var response = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto
+            {
+                ActionType = RentalActionType.CancelRental,
+                Input = JsonSerializer.SerializeToElement(new { reason = "Customer withdrew" }),
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
+        action.ActionType.Should().Be(RentalActionType.CancelRental);
+
+        var getResponse = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}");
+        var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(getResponse);
+        updated.RentalStatus.Should().Be(RentalStatus.Cancelled);
+    }
+
+    // =========================================================================
+    // Actions — history
+    // =========================================================================
+
+    [Fact]
+    public async Task GET_action_history_returns_executed_actions()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        // Execute an action first
+        _ = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+
+        var response = await admin.AppClient.GetAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions?limit=50&offset=0");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var history = await RentalTestHelpers.DeserializeAsync<ListViewDto<RentalActionView>>(response);
+        history.total.Should().BeGreaterThanOrEqualTo(1);
+        history.list.Should().Contain(a => a.ActionType == RentalActionType.ApproveRequest);
+    }
+
+    [Fact]
+    public async Task GET_action_history_for_unknown_rental_returns_not_found()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+
+        var response = await admin.AppClient.GetAsync(
+            $"/api/v1/rentals/{Guid.NewGuid()}/actions?limit=50&offset=0");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GET_available_actions_updates_after_status_change()
+    {
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var rental = await RentalTestHelpers.CreateRentalAsync(admin, RentalStatus.Requested);
+
+        // Approve the rental
+        _ = await admin.AppClient.PostAsJsonAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions",
+            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+
+        // Available actions should now reflect Approved status
+        var response = await admin.AppClient.GetAsync(
+            $"/api/v1/rentals/{rental.Uuid}/actions/available");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var available = await RentalTestHelpers.DeserializeAsync<ListViewDto<AvailableActionView>>(response);
+
+        // ApproveRequest should no longer be available
+        available.list.Should().NotContain(a => a.ActionType == RentalActionType.ApproveRequest);
+        // RecordPickup should now be available from Approved status
+        available.list.Should().Contain(a => a.ActionType == RentalActionType.RecordPickup);
     }
 }

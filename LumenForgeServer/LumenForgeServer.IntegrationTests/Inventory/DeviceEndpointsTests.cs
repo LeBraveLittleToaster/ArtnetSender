@@ -1,9 +1,9 @@
 // DeviceEndpointsTests.cs
 using FluentAssertions;
 using LumenForgeServer.Auth.Dto.Views;
-using LumenForgeServer.Common;
 using LumenForgeServer.IntegrationTests.Collections;
 using LumenForgeServer.IntegrationTests.Fixtures;
+using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Dto.Update;
 using LumenForgeServer.Inventory.Dto.View;

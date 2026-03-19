@@ -1,4 +1,3 @@
-using LumenForgeServer.Common;
 using NodaTime;
 
 namespace LumenForgeServer.Inventory.Domain;

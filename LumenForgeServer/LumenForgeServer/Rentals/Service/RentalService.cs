@@ -12,38 +12,11 @@ using NodaTime.Text;
 namespace LumenForgeServer.Rentals.Service;
 
 /// <summary>
-/// Application service for rental lifecycle operations and stock-binding conflict checks.
+/// Application service for rental CRUD operations and stock-binding conflict checks.
+/// Status transitions are now handled by <see cref="RentalActionService"/>.
 /// </summary>
 public class RentalService(IRentalRepository repository, IInventoryRepository inventoryRepository)
 {
-    public Task<IReadOnlyList<RentalStatus>> ListRentalStatuses(CancellationToken ct)
-        => Task.FromResult((IReadOnlyList<RentalStatus>)Enum.GetValues<RentalStatus>());
-
-    public async Task<(RentalStatus current, IReadOnlyList<RentalStatus> allowed)> ListAllowedTransitions(Guid rentalGuid, CancellationToken ct)
-    {
-        var rental = await repository.GetRentalByGuidAsync(rentalGuid, RentalInclude.None, ct)
-            ?? throw new NotFoundException($"Rental '{rentalGuid}' not found.");
-
-        var allowed = RentalStatusStateMachine.GetAllowedTargets(rental.RentalStatus).ToList();
-        return (rental.RentalStatus, allowed);
-    }
-
-    public async Task<RentalView> TransitionRentalStatus(Guid rentalGuid, RentalStatus targetStatus, string? actorUserId, CancellationToken ct)
-    {
-        var rental = await repository.GetRentalByGuidAsync(rentalGuid, RentalInclude.None, ct)
-            ?? throw new NotFoundException($"Rental '{rentalGuid}' not found.");
-
-        ApplyStatusTransition(rental, targetStatus, actorUserId);
-
-        rental.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
-        await repository.SaveChangesAsync(ct);
-
-        var updated = await repository.GetRentalByGuidAsync(rentalGuid, RentalInclude.Items, ct)
-            ?? throw new NotFoundException("Rental not found after transition.");
-
-        return RentalView.FromEntity(updated);
-    }
-
     public async Task<RentalView> CreateRental(CreateRentalDto dto, string customerUserId, CancellationToken ct)
     {
         var plannedPickupAt = ParseOptionalInstant(dto.PlannedPickupAt, "planned_pickup_at");
@@ -129,11 +102,6 @@ public class RentalService(IRentalRepository repository, IInventoryRepository in
     {
         var rental = await repository.GetRentalByGuidAsync(rentalGuid, RentalInclude.None, ct)
             ?? throw new NotFoundException($"Rental '{rentalGuid}' not found.");
-
-        if (dto.RentalStatus.HasValue)
-        {
-            ApplyStatusTransition(rental, dto.RentalStatus.Value, actorUserId);
-        }
 
         if (dto.RequestTitle is not null) rental.Request.Title = dto.RequestTitle.Trim();
         if (dto.RequestDescription is not null) rental.Request.Description = dto.RequestDescription.Trim();
@@ -226,54 +194,5 @@ public class RentalService(IRentalRepository repository, IInventoryRepository in
         }
 
         return (start, end);
-    }
-
-    private void ApplyStatusTransition(Rental rental, RentalStatus targetStatus, string? actorUserId)
-    {
-        var currentStatus = rental.RentalStatus;
-
-        if (!RentalStatusStateMachine.CanTransition(currentStatus, targetStatus))
-        {
-            throw new ValidationException(
-                $"Transition '{currentStatus}' -> '{targetStatus}' is not allowed.",
-                new Dictionary<string, string[]>
-                {
-                    ["rental_status"] = [$"Transition '{currentStatus}' -> '{targetStatus}' is not allowed."]
-                });
-        }
-
-        rental.RentalStatus = targetStatus;
-
-        if (currentStatus == targetStatus)
-        {
-            return;
-        }
-
-        var now = SystemClock.Instance.GetCurrentInstant();
-
-        switch (targetStatus)
-        {
-            case RentalStatus.Approved:
-                rental.Assignment.AssignedAt ??= now;
-                rental.Assignment.AssignedByUserId ??= actorUserId;
-                break;
-            case RentalStatus.PickedUp:
-                rental.Schedule.PickupAt ??= now;
-                rental.Assignment.PickupProcessedByUserId = actorUserId;
-                break;
-            case RentalStatus.Returned:
-                rental.Schedule.DropoffAt ??= now;
-                rental.Assignment.DropoffProcessedByUserId = actorUserId;
-                break;
-            case RentalStatus.Completed:
-                rental.CompletedAt ??= now;
-                rental.Assignment.CompletedByUserId = actorUserId;
-                break;
-            case RentalStatus.Scrapped:
-                rental.Scrap.IsScrapped = true;
-                rental.Scrap.ScrappedAt ??= now;
-                rental.Scrap.ScrappedByUserId = actorUserId;
-                break;
-        }
     }
 }

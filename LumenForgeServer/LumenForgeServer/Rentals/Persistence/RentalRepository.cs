@@ -2,6 +2,7 @@ using LumenForgeServer.Common;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Domain.Actions;
 using LumenForgeServer.Rentals.Dto.Query;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
@@ -151,6 +152,27 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
     public Task SaveChangesAsync(CancellationToken ct)
         => db.SaveChangesAsync(ct);
 
+    // -------------------------------------------------------------------------
+    // Actions
+    // -------------------------------------------------------------------------
+
+    public async Task<(IReadOnlyList<RentalAction> items, long total)> ListActionsForRentalAsync(
+        Guid rentalGuid, int limit, int offset, CancellationToken ct)
+    {
+        var query = db.RentalActions
+            .Where(a => a.Rental.Uuid == rentalGuid);
+
+        var total = await query.LongCountAsync(ct);
+        var items = await query
+            .AsNoTracking()
+            .OrderByDescending(a => a.ExecutedAt)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
+
     private IQueryable<Rental> BuildRentalQuery(RentalInclude include)
     {
         var query = db.Rentals.AsQueryable();
@@ -188,6 +210,11 @@ public sealed class RentalRepository(AppDbContext db) : IRentalRepository
         if (include.HasFlag(RentalInclude.Report))
         {
             query = query.Include(r => r.RentalReport);
+        }
+
+        if (include.HasFlag(RentalInclude.Actions))
+        {
+            query = query.Include(r => r.Actions);
         }
 
         return query.AsSplitQuery();

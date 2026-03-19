@@ -1,4 +1,4 @@
-using LumenForgeServer.Common;
+using LumenForgeServer.Inventory.Domain;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 

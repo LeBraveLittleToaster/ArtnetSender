@@ -1,5 +1,6 @@
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Common.Exceptions;
+using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Dto.Query;
 using LumenForgeServer.Rentals.Service;
@@ -10,7 +11,8 @@ using System.Security.Claims;
 namespace LumenForgeServer.Rentals.Controller;
 
 /// <summary>
-/// HTTP API for rental lifecycle management, stock-binding conflict checks, and status transitions.
+/// HTTP API for rental CRUD operations and stock-binding conflict checks.
+/// Status transitions are handled via <see cref="RentalActionController"/>.
 /// </summary>
 /// <remarks>
 /// Routes are under <c>api/v1/rentals</c>.
@@ -130,48 +132,10 @@ public class RentalController(RentalService rentalService) : ControllerBase
     [Authorize(Roles = nameof(Permissions.RentalStatusRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<IActionResult> ListRentalStatuses(CancellationToken ct)
+    public IActionResult ListRentalStatuses()
     {
-        var statuses = await rentalService.ListRentalStatuses(ct);
-        return Ok(new { list = statuses, total = statuses.Count });
-    }
-
-    /// <summary>
-    /// Returns the current and allowed status transitions for a rental.
-    /// </summary>
-    [HttpGet("{rentalGuid:Guid}/transitions")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> ListAllowedTransitions([FromRoute] Guid rentalGuid, CancellationToken ct)
-    {
-        var (current, allowed) = await rentalService.ListAllowedTransitions(rentalGuid, ct);
-        return Ok(new { current, allowed });
-    }
-
-    /// <summary>
-    /// Transitions the rental to a different status.
-    /// Only allowed statuses can be transitioned to.
-    /// </summary>
-    [HttpPost("{rentalGuid:Guid}/transitions")]
-    [Authorize(Roles = nameof(Permissions.RentalUpdate))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
-    public async Task<IActionResult> TransitionRentalStatus(
-        [FromRoute] Guid rentalGuid,
-        [FromBody] TransitionRentalStatusDto dto,
-        CancellationToken ct)
-    {
-        var actorUserId = User.FindFirstValue("sub")
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.Identity?.Name
-            ?? "unknown-user";
-
-        var rental = await rentalService.TransitionRentalStatus(rentalGuid, dto.TargetStatus, actorUserId, ct);
-        return Ok(rental);
+        var statuses = Enum.GetValues<RentalStatus>();
+        return Ok(new { list = statuses, total = statuses.Length });
     }
 
     private static RentalInclude ParseIncludes(string? include)
