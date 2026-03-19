@@ -9,5 +9,5 @@ namespace LumenForgeServer.Rentals.Dto.View;
 public sealed record AvailableActionView
 {
     [JsonPropertyName("action_type")]
-    public RentalActionType ActionType { get; init; }
+    public ActionType ActionType { get; init; }
 }

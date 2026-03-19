@@ -356,9 +356,9 @@ public class RentalEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var available = await RentalTestHelpers.DeserializeAsync<ListViewDto<AvailableActionView>>(response);
 
-        available.list.Should().Contain(a => a.ActionType == RentalActionType.ApproveRequest);
-        available.list.Should().Contain(a => a.ActionType == RentalActionType.RejectRequest);
-        available.list.Should().Contain(a => a.ActionType == RentalActionType.CancelRental);
+        available.list.Should().Contain(a => a.ActionType == ActionType.ApproveRequest);
+        available.list.Should().Contain(a => a.ActionType == ActionType.RejectRequest);
+        available.list.Should().Contain(a => a.ActionType == ActionType.CancelRental);
     }
 
     [Fact]
@@ -384,11 +384,11 @@ public class RentalEndpointsTests(AuthFixture fixture)
 
         var response = await admin.AppClient.PostAsJsonAsync(
             $"/api/v1/rentals/{rental.Uuid}/actions",
-            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+            new ExecuteActionDto { ActionType = ActionType.ApproveRequest });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
-        action.ActionType.Should().Be(RentalActionType.ApproveRequest);
+        action.ActionType.Should().Be(ActionType.ApproveRequest);
         action.Uuid.Should().NotBe(Guid.Empty);
         action.PerformedByUserId.Should().NotBeNullOrEmpty();
 
@@ -409,13 +409,13 @@ public class RentalEndpointsTests(AuthFixture fixture)
             $"/api/v1/rentals/{rental.Uuid}/actions",
             new ExecuteActionDto
             {
-                ActionType = RentalActionType.RejectRequest,
+                ActionType = ActionType.RejectRequest,
                 Input = JsonSerializer.SerializeToElement(new { reason = "Out of stock" }),
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
-        action.ActionType.Should().Be(RentalActionType.RejectRequest);
+        action.ActionType.Should().Be(ActionType.RejectRequest);
 
         var getResponse = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}");
         var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(getResponse);
@@ -431,7 +431,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         // CompleteRental is not available from Requested status
         var response = await admin.AppClient.PostAsJsonAsync(
             $"/api/v1/rentals/{rental.Uuid}/actions",
-            new ExecuteActionDto { ActionType = RentalActionType.CompleteRental });
+            new ExecuteActionDto { ActionType = ActionType.CompleteRental });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -443,7 +443,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
 
         var response = await admin.AppClient.PostAsJsonAsync(
             $"/api/v1/rentals/{Guid.NewGuid()}/actions",
-            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+            new ExecuteActionDto { ActionType = ActionType.ApproveRequest });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -458,13 +458,13 @@ public class RentalEndpointsTests(AuthFixture fixture)
             $"/api/v1/rentals/{rental.Uuid}/actions",
             new ExecuteActionDto
             {
-                ActionType = RentalActionType.CancelRental,
+                ActionType = ActionType.CancelRental,
                 Input = JsonSerializer.SerializeToElement(new { reason = "Customer withdrew" }),
             });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var action = await RentalTestHelpers.DeserializeAsync<RentalActionView>(response);
-        action.ActionType.Should().Be(RentalActionType.CancelRental);
+        action.ActionType.Should().Be(ActionType.CancelRental);
 
         var getResponse = await admin.AppClient.GetAsync($"/api/v1/rentals/{rental.Uuid}");
         var updated = await RentalTestHelpers.DeserializeAsync<RentalView>(getResponse);
@@ -484,7 +484,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         // Execute an action first
         _ = await admin.AppClient.PostAsJsonAsync(
             $"/api/v1/rentals/{rental.Uuid}/actions",
-            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+            new ExecuteActionDto { ActionType = ActionType.ApproveRequest });
 
         var response = await admin.AppClient.GetAsync(
             $"/api/v1/rentals/{rental.Uuid}/actions?limit=50&offset=0");
@@ -492,7 +492,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var history = await RentalTestHelpers.DeserializeAsync<ListViewDto<RentalActionView>>(response);
         history.total.Should().BeGreaterThanOrEqualTo(1);
-        history.list.Should().Contain(a => a.ActionType == RentalActionType.ApproveRequest);
+        history.list.Should().Contain(a => a.ActionType == ActionType.ApproveRequest);
     }
 
     [Fact]
@@ -515,7 +515,7 @@ public class RentalEndpointsTests(AuthFixture fixture)
         // Approve the rental
         _ = await admin.AppClient.PostAsJsonAsync(
             $"/api/v1/rentals/{rental.Uuid}/actions",
-            new ExecuteActionDto { ActionType = RentalActionType.ApproveRequest });
+            new ExecuteActionDto { ActionType = ActionType.ApproveRequest });
 
         // Available actions should now reflect Approved status
         var response = await admin.AppClient.GetAsync(
@@ -525,8 +525,8 @@ public class RentalEndpointsTests(AuthFixture fixture)
         var available = await RentalTestHelpers.DeserializeAsync<ListViewDto<AvailableActionView>>(response);
 
         // ApproveRequest should no longer be available
-        available.list.Should().NotContain(a => a.ActionType == RentalActionType.ApproveRequest);
+        available.list.Should().NotContain(a => a.ActionType == ActionType.ApproveRequest);
         // RecordPickup should now be available from Approved status
-        available.list.Should().Contain(a => a.ActionType == RentalActionType.RecordPickup);
+        available.list.Should().Contain(a => a.ActionType == ActionType.RecordPickup);
     }
 }

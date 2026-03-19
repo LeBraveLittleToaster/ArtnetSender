@@ -4,7 +4,6 @@ using LumenForgeServer.Catalogue.Domain;
 using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Maintenance.Domain;
 using LumenForgeServer.Rentals.Domain;
-using LumenForgeServer.Rentals.Domain.Actions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LumenForgeServer.Common.Database;
@@ -139,7 +138,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// <summary>
     /// Rental action audit log (TPT base table).
     /// </summary>
-    public DbSet<RentalAction> RentalActions => Set<RentalAction>();
+    public DbSet<StepAction> RentalActions => Set<StepAction>();
     /// <summary>
     /// Survey questions for rental feedback.
     /// </summary>

@@ -34,6 +34,10 @@
 
   <ItemGroup>
     <Folder Include="Inventory\Dto\Delete\" />
+    <Folder Include="Rentals\Actions\Handlers\" />
+    <Folder Include="Rentals\Controller\" />
+    <Folder Include="Rentals\Domain\Requests\" />
+    <Folder Include="Rentals\Persistence\" />
   </ItemGroup>
 
   <ItemGroup>

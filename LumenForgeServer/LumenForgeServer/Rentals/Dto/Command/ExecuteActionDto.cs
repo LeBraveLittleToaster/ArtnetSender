@@ -12,7 +12,7 @@ public sealed record ExecuteActionDto
 {
     [Required]
     [JsonPropertyName("action_type")]
-    public required RentalActionType ActionType { get; init; }
+    public required ActionType ActionType { get; init; }
 
     /// <summary>
     /// Optional action-specific input companion. Structure varies by <see cref="ActionType"/>.

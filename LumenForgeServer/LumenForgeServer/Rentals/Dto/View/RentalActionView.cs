@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using LumenForgeServer.Rentals.Domain;
-using LumenForgeServer.Rentals.Domain.Actions;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Dto.View;
@@ -14,7 +13,7 @@ public sealed record RentalActionView
     public Guid Uuid { get; init; }
 
     [JsonPropertyName("action_type")]
-    public RentalActionType ActionType { get; init; }
+    public ActionType ActionType { get; init; }
 
     [JsonPropertyName("performed_by_user_id")]
     public string? PerformedByUserId { get; init; }
@@ -29,7 +28,7 @@ public sealed record RentalActionView
     [JsonPropertyName("details")]
     public object? Details { get; init; }
 
-    public static RentalActionView FromEntity(RentalAction e) => new()
+    public static RentalActionView FromEntity(StepAction e) => new()
     {
         Uuid = e.Uuid,
         ActionType = e.ActionType,
@@ -39,7 +38,7 @@ public sealed record RentalActionView
         Details = MapDetails(e),
     };
 
-    private static object? MapDetails(RentalAction e) => e switch
+    private static object? MapDetails(StepAction e) => e switch
     {
         RejectRequestAction a => new { reason = a.Reason },
         CancelRentalAction a => new { reason = a.Reason },
