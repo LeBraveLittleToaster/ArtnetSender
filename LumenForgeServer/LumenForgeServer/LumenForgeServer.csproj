@@ -34,10 +34,9 @@
 
   <ItemGroup>
     <Folder Include="Inventory\Dto\Delete\" />
-    <Folder Include="Rentals\Actions\Handlers\" />
-    <Folder Include="Rentals\Controller\" />
-    <Folder Include="Rentals\Domain\Requests\" />
-    <Folder Include="Rentals\Persistence\" />
+    <Folder Include="Rentals\Dto\Query\" />
+    <Folder Include="Rentals\Dto\View\" />
+    <Folder Include="Rentals\Service\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +45,13 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Common\Database\Seeding\Data\*.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Rentals\Domain\Requests\**" />
+    <Content Remove="Rentals\Domain\Requests\**" />
+    <EmbeddedResource Remove="Rentals\Domain\Requests\**" />
+    <None Remove="Rentals\Domain\Requests\**" />
   </ItemGroup>
 
 </Project>

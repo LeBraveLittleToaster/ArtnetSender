@@ -1,32 +1,53 @@
-using System.Text.Json;
 using LumenForgeServer.Rentals.Domain;
 
 namespace LumenForgeServer.Rentals.Actions;
 
 /// <summary>
-/// Contract for a preprogrammed rental action handler.
-/// Each implementation corresponds to exactly one <see cref="Domain.ActionType"/>
-/// and is resolved by <see cref="Service.RentalActionService"/> via DI.
+/// Non-generic handler contract used by the DI container and the
+/// <see cref="RentalActionService"/> orchestrator to discover and invoke
+/// action handlers at runtime.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Every concrete handler is registered as
+/// <c>IServiceCollection.AddScoped&lt;IRentalActionHandler, THandler&gt;()</c>.
+/// The orchestrator receives <c>IEnumerable&lt;IRentalActionHandler&gt;</c>,
+/// selects the handler whose <see cref="ActionType"/> matches the request,
+/// validates <see cref="AllowedStages"/>, and runs the before / execute / after
+/// lifecycle.
+/// </para>
+/// <para>
+/// Implementors should derive from <see cref="RentalActionHandlerBase{TInput}"/>
+/// instead of implementing this interface directly, so that input deserialization
+/// and the lifecycle skeleton are handled automatically.
+/// </para>
+/// </remarks>
 public interface IRentalActionHandler
 {
-    /// <summary>The action type this handler processes.</summary>
-    ActionType ActionType { get; }
+    /// <summary>The action type this handler is responsible for.</summary>
+    RentalActionType ActionType { get; }
 
     /// <summary>
-    /// Returns <c>true</c> when the action can be executed against <paramref name="rental"/>
-    /// in its current state. Called by the "available actions" endpoint.
+    /// Stages in which this action is allowed to execute.
+    /// The orchestrator checks the current stage of the <see cref="RentalProcessInstance"/>
+    /// against this set before invoking the handler.
     /// </summary>
-    bool CanExecute(Rental rental);
+    IReadOnlySet<RentalStage> AllowedStages { get; }
 
     /// <summary>
-    /// Executes the action, mutating <paramref name="rental"/> and producing
-    /// the persisted <see cref="StepAction"/> audit record.
+    /// Runs pre-execution validation and context loading.
+    /// Return a failed <see cref="ActionResult"/> to abort the action.
     /// </summary>
-    /// <param name="rental">The tracked rental entity (loaded with required includes).</param>
-    /// <param name="input">Optional JSON payload with action-specific companion input.</param>
-    /// <param name="actorUserId">Keycloak user id of the actor.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The concrete <see cref="StepAction"/> entity to persist.</returns>
-    Task<StepAction> ExecuteAsync(Rental rental, JsonElement? input, string actorUserId, CancellationToken ct);
+    Task<ActionResult> BeforeExecuteAsync(RentalProcessInstance process, ActionInput input, CancellationToken ct);
+
+    /// <summary>
+    /// Performs the core business logic of the action.
+    /// </summary>
+    Task<ActionResult> ExecuteAsync(RentalProcessInstance process, ActionInput input, CancellationToken ct);
+
+    /// <summary>
+    /// Runs post-execution logic (cleanup, notifications, side-effects).
+    /// Called regardless of success or failure of <see cref="ExecuteAsync"/>.
+    /// </summary>
+    Task AfterExecuteAsync(RentalProcessInstance process, ActionResult result, CancellationToken ct);
 }

@@ -102,15 +102,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// </summary>
     public DbSet<MaintenanceLogEntry> MaintenanceLogEntries => Set<MaintenanceLogEntry>();
 
-    // Rentals
+    // Rentals — Process Framework
     /// <summary>
-    /// Rental records.
+    /// Rental process instances tracking workflow state.
+    /// </summary>
+    public DbSet<RentalProcessInstance> RentalProcessInstances => Set<RentalProcessInstance>();
+    /// <summary>
+    /// Audit log of every action executed on rental processes.
+    /// </summary>
+    public DbSet<RentalActionLog> RentalActionLogs => Set<RentalActionLog>();
+    /// <summary>
+    /// Rental data aggregates.
     /// </summary>
     public DbSet<Rental> Rentals => Set<Rental>();
-    /// <summary>
-    /// Rental line items.
-    /// </summary>
-    public DbSet<RentalItem> RentalItems => Set<RentalItem>();
     /// <summary>
     /// Checklists associated with rentals.
     /// </summary>
@@ -120,26 +124,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// </summary>
     public DbSet<ChecklistItem> ChecklistItems => Set<ChecklistItem>();
     /// <summary>
-    /// Damage reports for individual rental line items.
-    /// </summary>
-    public DbSet<RentalItemDamageReport> RentalItemDamageReports => Set<RentalItemDamageReport>();
-    /// <summary>
-    /// Audit log events for rentals.
-    /// </summary>
-    public DbSet<RentalEvent> RentalEvents => Set<RentalEvent>();
-    /// <summary>
-    /// Rental extension requests.
-    /// </summary>
-    public DbSet<RentalExtension> RentalExtensions => Set<RentalExtension>();
-    /// <summary>
-    /// Rental report records.
-    /// </summary>
-    public DbSet<RentalReport> RentalReports => Set<RentalReport>();
-    /// <summary>
-    /// Rental action audit log (TPT base table).
-    /// </summary>
-    public DbSet<StepAction> RentalActions => Set<StepAction>();
-    /// <summary>
     /// Survey questions for rental feedback.
     /// </summary>
     public DbSet<Question> Questions => Set<Question>();
@@ -147,6 +131,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// Survey answers submitted by users.
     /// </summary>
     public DbSet<Answer> Answers => Set<Answer>();
+    /// <summary>
+    /// Rental extension requests.
+    /// </summary>
+    public DbSet<RentalExtension> RentalExtensions => Set<RentalExtension>();
+    /// <summary>
+    /// Rental damage reports.
+    /// </summary>
+    public DbSet<RentalDamageReport> RentalDamageReports => Set<RentalDamageReport>();
 
     /// <summary>
     /// Configures the entity schema for all modules.

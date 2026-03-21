@@ -15,7 +15,6 @@ using LumenForgeServer.Maintenance.Service;
 using LumenForgeServer.Rentals.Actions;
 using LumenForgeServer.Rentals.Actions.Handlers;
 using LumenForgeServer.Rentals.Persistence;
-using LumenForgeServer.Rentals.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -67,8 +66,7 @@ public static class DiRegistration
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
         builder.Services.AddScoped<ICatalogueRepository, CatalogueRepository>();
-        builder.Services.AddScoped<IRentalRepository, RentalRepository>();
-        builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+        builder.Services.AddScoped<IRentalProcessRepository, RentalProcessRepository>();
     }
 
     /// <summary>
@@ -85,12 +83,11 @@ public static class DiRegistration
         builder.Services.AddScoped<DeviceService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<MaintenanceService>();
-        builder.Services.AddScoped<RentalService>();
-        builder.Services.AddScoped<ChecklistService>();
-        builder.Services.AddScoped<QuestionService>();
         builder.Services.AddScoped<StockBindingService>();
 
-        // Rental action handlers
+        // Rental action framework
+        builder.Services.AddSingleton<IRentalActionRegistry, RentalActionRegistry>();
+        builder.Services.AddScoped<IRentalActionHandler, CreateRentalHandler>();
         builder.Services.AddScoped<IRentalActionHandler, ApproveRequestHandler>();
         builder.Services.AddScoped<IRentalActionHandler, RejectRequestHandler>();
         builder.Services.AddScoped<IRentalActionHandler, RecordPickupHandler>();

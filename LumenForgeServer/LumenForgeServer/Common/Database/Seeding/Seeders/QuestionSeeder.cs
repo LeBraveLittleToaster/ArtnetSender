@@ -1,5 +1,4 @@
-using LumenForgeServer.Rentals.Dto.Command;
-using LumenForgeServer.Rentals.Service;
+using LumenForgeServer.Rentals.Domain;
 
 namespace LumenForgeServer.Common.Database.Seeding.Seeders;
 
@@ -7,7 +6,7 @@ namespace LumenForgeServer.Common.Database.Seeding.Seeders;
 /// Seeds survey questions from the embedded questions CSV.
 /// Runs in all environments; idempotent — skips if questions already exist.
 /// </summary>
-public class QuestionSeeder(QuestionService questionService, AppDbContext db) : IDataSeeder
+public class QuestionSeeder(AppDbContext db) : IDataSeeder
 {
     public int Order => 50;
     public SeedEnvironment Environment => SeedEnvironment.All;
@@ -21,13 +20,16 @@ public class QuestionSeeder(QuestionService questionService, AppDbContext db) : 
         {
             if (row.Length < 4) continue;
 
-            await questionService.CreateQuestionAsync(new CreateQuestionDto
+            db.Questions.Add(new Question
             {
+                Guid         = Guid.NewGuid(),
                 QuestionText = row[0].Trim(),
                 Category     = row[1].Trim(),
                 DisplayOrder = int.Parse(row[2].Trim()),
                 IsActive     = bool.Parse(row[3].Trim()),
-            }, ct);
+            });
         }
+
+        await db.SaveChangesAsync(ct);
     }
 }
