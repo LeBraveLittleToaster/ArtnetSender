@@ -12,8 +12,6 @@ using LumenForgeServer.Inventory.Persistance;
 using LumenForgeServer.Inventory.Service;
 using LumenForgeServer.Maintenance.Persistence;
 using LumenForgeServer.Maintenance.Service;
-using LumenForgeServer.Rentals.Actions;
-using LumenForgeServer.Rentals.Actions.Handlers;
 using LumenForgeServer.Rentals.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +21,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using LumenForgeServer.Common.Database.Seeding;
 using LumenForgeServer.Common.Database.Seeding.Seeders;
+using LumenForgeServer.Rentals.Service;
+using LumenForgeServer.Rentals.Service.Actions;
+using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using Microsoft.AspNetCore.Routing;
 
 namespace LumenForgeServer.Common;

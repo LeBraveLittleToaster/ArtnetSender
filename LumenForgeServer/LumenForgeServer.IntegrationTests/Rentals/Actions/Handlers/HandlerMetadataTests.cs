@@ -1,9 +1,9 @@
 using FluentAssertions;
-using LumenForgeServer.Rentals.Actions;
-using LumenForgeServer.Rentals.Actions.Handlers;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.IntegrationTests.Rentals.Actions.Helpers;
+using LumenForgeServer.Rentals.Service.Actions;
+using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NSubstitute;
 
 namespace LumenForgeServer.IntegrationTests.Rentals.Actions.Handlers;

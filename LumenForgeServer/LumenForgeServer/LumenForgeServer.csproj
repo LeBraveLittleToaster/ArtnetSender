@@ -36,7 +36,6 @@
     <Folder Include="Inventory\Dto\Delete\" />
     <Folder Include="Rentals\Dto\Query\" />
     <Folder Include="Rentals\Dto\View\" />
-    <Folder Include="Rentals\Service\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,12 +1,13 @@
+using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;
 
 /// <summary>
 /// Represents a request to extend the rental period.
-/// Created by <see cref="Actions.Handlers.RequestExtensionHandler"/> and
-/// resolved by <see cref="Actions.Handlers.ApproveExtensionHandler"/> or
-/// <see cref="Actions.Handlers.RejectExtensionHandler"/>.
+/// Created by <see cref="RequestExtensionHandler"/> and
+/// resolved by <see cref="ApproveExtensionHandler"/> or
+/// <see cref="RejectExtensionHandler"/>.
 /// </summary>
 public class RentalExtension
 {

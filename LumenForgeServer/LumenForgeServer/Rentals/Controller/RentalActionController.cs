@@ -1,8 +1,11 @@
 using System.Security.Claims;
-using LumenForgeServer.Rentals.Actions;
-using LumenForgeServer.Rentals.Actions.Handlers;
+using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Rentals.Service;
+using LumenForgeServer.Rentals.Service.Actions;
+using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ActionResult = LumenForgeServer.Rentals.Service.Actions.ActionResult;
 
 namespace LumenForgeServer.Rentals.Controller;
 
@@ -25,7 +28,8 @@ public class RentalActionController(RentalActionService actionService) : Control
     public async Task<IActionResult> GetAvailableActions(
         [FromRoute] Guid processGuid, CancellationToken ct)
     {
-        var actions = await actionService.GetAvailableActionsAsync(processGuid, ct);
+        var permissions = User.GetAppPermissions();
+        var actions = await actionService.GetAvailableActionsAsync(processGuid, permissions, ct);
         return Ok(actions);
     }
 
@@ -39,7 +43,8 @@ public class RentalActionController(RentalActionService actionService) : Control
         [FromBody] CreateRentalInput input, CancellationToken ct)
     {
         SetActor(input);
-        var result = await actionService.CreateProcessAsync(input, ct);
+        var permissions =  User.GetAppPermissions();
+        var result = await actionService.CreateProcessAsync(input, permissions, ct);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
@@ -50,14 +55,14 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ApproveRequest(
         [FromRoute] Guid processGuid, [FromBody] ApproveRequestInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveRequest, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveRequest, input, User.GetAppPermissions(),ct));
 
     /// <summary>Rejects a rental request.</summary>
     [HttpPost("{processGuid:guid}/reject-request")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RejectRequest(
         [FromRoute] Guid processGuid, [FromBody] RejectRequestInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectRequest, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectRequest, input, User.GetAppPermissions(),ct));
 
     // ── Item management ─────────────────────────────────────────────
 
@@ -66,28 +71,28 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> AssignItems(
         [FromRoute] Guid processGuid, [FromBody] AssignItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.AssignItems, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.AssignItems, input, User.GetAppPermissions(),ct));
 
     /// <summary>Removes assigned items from the rental.</summary>
     [HttpPost("{processGuid:guid}/remove-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RemoveItems(
         [FromRoute] Guid processGuid, [FromBody] RemoveItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RemoveItems, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RemoveItems, input, User.GetAppPermissions(),ct));
 
     /// <summary>Approves the assigned item list.</summary>
     [HttpPost("{processGuid:guid}/approve-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ApproveItems(
         [FromRoute] Guid processGuid, [FromBody] ApproveItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveItems, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveItems, input, User.GetAppPermissions(),ct));
 
     /// <summary>Rejects the assigned item list.</summary>
     [HttpPost("{processGuid:guid}/reject-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RejectItems(
         [FromRoute] Guid processGuid, [FromBody] RejectItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectItems, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectItems, input, User.GetAppPermissions(),ct));
 
     // ── Checklists ──────────────────────────────────────────────────
 
@@ -96,21 +101,21 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GenerateChecklist(
         [FromRoute] Guid processGuid, [FromBody] GenerateChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateChecklist, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateChecklist, input, User.GetAppPermissions(),ct));
 
     /// <summary>Records a device scan against a checklist.</summary>
     [HttpPost("{processGuid:guid}/scan-checklist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ScanChecklist(
         [FromRoute] Guid processGuid, [FromBody] ScanChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScanChecklist, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScanChecklist, input, User.GetAppPermissions(),ct));
 
     /// <summary>Records a signature on a checklist.</summary>
     [HttpPost("{processGuid:guid}/sign-checklist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> SignChecklist(
         [FromRoute] Guid processGuid, [FromBody] SignChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.SignChecklist, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.SignChecklist, input, User.GetAppPermissions(),ct));
 
     // ── Pickup / Return ─────────────────────────────────────────────
 
@@ -119,14 +124,14 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RecordPickup(
         [FromRoute] Guid processGuid, [FromBody] RecordPickupInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPickup, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPickup, input, User.GetAppPermissions(),ct));
 
     /// <summary>Records that items were returned.</summary>
     [HttpPost("{processGuid:guid}/record-return")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RecordReturn(
         [FromRoute] Guid processGuid, [FromBody] RecordReturnInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordReturn, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordReturn, input, User.GetAppPermissions(),ct));
 
     // ── Extensions ──────────────────────────────────────────────────
 
@@ -135,21 +140,21 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RequestExtension(
         [FromRoute] Guid processGuid, [FromBody] RequestExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RequestExtension, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RequestExtension, input, User.GetAppPermissions(),ct));
 
     /// <summary>Approves an extension request.</summary>
     [HttpPost("{processGuid:guid}/approve-extension")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ApproveExtension(
         [FromRoute] Guid processGuid, [FromBody] ApproveExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveExtension, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveExtension, input, User.GetAppPermissions(),ct));
 
     /// <summary>Rejects an extension request.</summary>
     [HttpPost("{processGuid:guid}/reject-extension")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RejectExtension(
         [FromRoute] Guid processGuid, [FromBody] RejectExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectExtension, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectExtension, input, User.GetAppPermissions(),ct));
 
     // ── Post-return ─────────────────────────────────────────────────
 
@@ -158,14 +163,14 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RecordDamages(
         [FromRoute] Guid processGuid, [FromBody] RecordDamagesInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordDamages, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordDamages, input, User.GetAppPermissions(),ct));
 
     /// <summary>Creates maintenance jobs for damaged items.</summary>
     [HttpPost("{processGuid:guid}/create-maintenance-jobs")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> CreateMaintenanceJobs(
         [FromRoute] Guid processGuid, [FromBody] CreateMaintenanceJobsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CreateMaintenanceJobs, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CreateMaintenanceJobs, input, User.GetAppPermissions(),ct));
 
     // ── Billing ─────────────────────────────────────────────────────
 
@@ -174,14 +179,14 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GenerateInvoice(
         [FromRoute] Guid processGuid, [FromBody] GenerateInvoiceInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateInvoice, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateInvoice, input, User.GetAppPermissions(),ct));
 
     /// <summary>Records a payment against the invoice.</summary>
     [HttpPost("{processGuid:guid}/record-payment")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> RecordPayment(
         [FromRoute] Guid processGuid, [FromBody] RecordPaymentInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPayment, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPayment, input, User.GetAppPermissions(),ct));
 
     // ── Reporting ───────────────────────────────────────────────────
 
@@ -190,7 +195,7 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GenerateReport(
         [FromRoute] Guid processGuid, [FromBody] GenerateReportInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateReport, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateReport, input, User.GetAppPermissions(),ct));
 
     // ── Lifecycle ───────────────────────────────────────────────────
 
@@ -199,30 +204,30 @@ public class RentalActionController(RentalActionService actionService) : Control
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> CompleteRental(
         [FromRoute] Guid processGuid, [FromBody] CompleteRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CompleteRental, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CompleteRental, input, User.GetAppPermissions(),ct));
 
     /// <summary>Cancels the rental.</summary>
     [HttpPost("{processGuid:guid}/cancel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> CancelRental(
         [FromRoute] Guid processGuid, [FromBody] CancelRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CancelRental, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CancelRental, input, User.GetAppPermissions(),ct));
 
     /// <summary>Scraps the rental (total write-off).</summary>
     [HttpPost("{processGuid:guid}/scrap")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ScrapRental(
         [FromRoute] Guid processGuid, [FromBody] ScrapRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScrapRental, input, ct));
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScrapRental, input, User.GetAppPermissions(), ct));
 
     // ── Helpers ─────────────────────────────────────────────────────
 
     /// <summary>Shorthand that sets the actor from the token and delegates to the orchestrator.</summary>
-    private async Task<Actions.ActionResult> ExecuteAsync(
-        Guid processGuid, RentalActionType actionType, ActionInput input, CancellationToken ct)
+    private async Task<ActionResult> ExecuteAsync(
+        Guid processGuid, RentalActionType actionType, ActionInput input, IReadOnlyList<Permissions> permissions, CancellationToken ct)
     {
         SetActor(input);
-        return await actionService.ExecuteActionAsync(processGuid, actionType, input, ct);
+        return await actionService.ExecuteActionAsync(processGuid, actionType, permissions, input, ct);
     }
 
     /// <summary>

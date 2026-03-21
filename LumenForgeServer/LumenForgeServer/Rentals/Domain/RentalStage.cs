@@ -1,8 +1,10 @@
+using LumenForgeServer.Rentals.Service.Actions;
+
 namespace LumenForgeServer.Rentals.Domain;
 
 /// <summary>
 /// Stages of the rental process. The current stage of a <see cref="RentalProcessInstance"/>
-/// determines which <see cref="Actions.RentalActionType"/> actions are available next.
+/// determines which <see cref="RentalActionType"/> actions are available next.
 /// Transitions between stages are driven exclusively by action handlers.
 /// </summary>
 public enum RentalStage

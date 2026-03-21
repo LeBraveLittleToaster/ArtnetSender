@@ -59,11 +59,13 @@ public enum Permissions
     RentalUpdate = 62,
     RentalDelete = 63,
 
-    // Rental Status (70–79)
-    RentalStatusCreate = 70,
-    RentalStatusRead = 71,
-    RentalStatusUpdate = 72,
-    RentalStatusDelete = 73,
+    // Rental Status (70–79), (70-73) currently not used, actions cannot be dynamically CRUD
+    RentalActionCreate = 70,
+    RentalActionRead = 71,
+    RentalActionUpdate = 72,
+    RentalActionDelete = 73,
+    
+    RentalActionCall = 74,
 
     // =========================
     // Billing

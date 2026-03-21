@@ -1,3 +1,4 @@
+using LumenForgeServer.Billing.Domain;
 using LumenForgeServer.Common;
 using NodaTime;
 
@@ -52,5 +53,5 @@ public class Rental
     public RentalProcessInstance? ProcessInstance { get; set; }
 
     /// <summary>Invoices generated for this rental.</summary>
-    public List<LumenForgeServer.Billing.Domain.Invoice> Invoices { get; set; } = [];
+    public List<Invoice> Invoices { get; set; } = [];
 }

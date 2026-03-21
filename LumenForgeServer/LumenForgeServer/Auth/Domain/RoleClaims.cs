@@ -27,4 +27,16 @@ public static class RoleClaims
 
     public static bool HasRealmAdmin(this ClaimsPrincipal principal) =>
         principal.IsInRole("REALM_ADMIN");
+
+    public static IReadOnlyList<Permissions> GetAppPermissions(this ClaimsPrincipal principal)
+    {
+        return principal.FindAll(ClaimTypes.Role)
+            .Select(c => Enum.TryParse<Permissions>(c.Value, out var permission)
+                ? (Permissions?)permission
+                : null)
+            .Where(p => p.HasValue)
+            .Select(p => p!.Value)
+            .Distinct()
+            .ToList();
+    }
 }

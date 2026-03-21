@@ -1,7 +1,6 @@
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Inventory.Persistance;
 using LumenForgeServer.Inventory.Service;
-using LumenForgeServer.Rentals.Actions;
 using LumenForgeServer.Rentals.Domain;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;

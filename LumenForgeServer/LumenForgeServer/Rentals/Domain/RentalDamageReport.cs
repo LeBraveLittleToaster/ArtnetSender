@@ -1,11 +1,12 @@
 using LumenForgeServer.Common;
+using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;
 
 /// <summary>
 /// Records damage found on a specific item during post-return inspection.
-/// Created by <see cref="Actions.Handlers.RecordDamagesHandler"/>.
+/// Created by <see cref="RecordDamagesHandler"/>.
 /// </summary>
 public class RentalDamageReport
 {

@@ -1,4 +1,5 @@
-using LumenForgeServer.Rentals.Actions;
+using LumenForgeServer.Rentals.Service;
+using LumenForgeServer.Rentals.Service.Actions;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Domain;

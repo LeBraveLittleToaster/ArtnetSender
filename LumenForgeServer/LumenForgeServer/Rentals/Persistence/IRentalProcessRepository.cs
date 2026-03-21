@@ -1,10 +1,11 @@
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Service;
 
 namespace LumenForgeServer.Rentals.Persistence;
 
 /// <summary>
 /// Data-access contract for <see cref="RentalProcessInstance"/> and its related
-/// entities. Used by action handlers and the <see cref="Actions.RentalActionService"/> orchestrator.
+/// entities. Used by action handlers and the <see cref="RentalActionService"/> orchestrator.
 /// </summary>
 public interface IRentalProcessRepository
 {
