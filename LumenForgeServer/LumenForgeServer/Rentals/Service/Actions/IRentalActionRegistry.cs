@@ -18,5 +18,11 @@ public interface IRentalActionRegistry
     /// Returns the action types that are valid when the process is in
     /// <paramref name="stage"/>.
     /// </summary>
-    IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage, IReadOnlyList<Permissions> permissions);
+    IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage);
+    
+    /// <summary>
+    /// Returns the action types that are valid when the process is in
+    /// <paramref name="stage"/>.
+    /// </summary>
+    IReadOnlySet<RentalActionType> GetAvailableAllowedActions(RentalStage stage, IReadOnlyList<Permissions> permissions);
 }

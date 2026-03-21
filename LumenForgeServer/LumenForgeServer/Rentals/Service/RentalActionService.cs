@@ -40,14 +40,13 @@ public sealed class RentalActionService(
     public async Task<ActionResult> ExecuteActionAsync(
         Guid processGuid,
         RentalActionType actionType,
-        IReadOnlyList<Permissions> permissions,
         ActionInput input,
         CancellationToken ct)
     {
         var process = await processRepository.GetByGuidAsync(processGuid, ct)
             ?? throw new NotFoundException($"Process instance '{processGuid}' not found.");
 
-        return await RunLifecycleAsync(process, actionType, permissions, input, ct);
+        return await RunLifecycleAsync(process, actionType, input, ct);
     }
 
     /// <summary>
@@ -56,7 +55,6 @@ public sealed class RentalActionService(
     /// </summary>
     public async Task<ActionResult> CreateProcessAsync(
         ActionInput input,
-        IReadOnlyList<Permissions> permissions,
         CancellationToken ct)
     {
         var process = new RentalProcessInstance
@@ -70,7 +68,7 @@ public sealed class RentalActionService(
 
         await processRepository.AddAsync(process, ct);
 
-        return await RunLifecycleAsync(process, RentalActionType.CreateRental, permissions, input, ct);
+        return await RunLifecycleAsync(process, RentalActionType.CreateRental, input, ct);
     }
 
     /// <summary>
@@ -80,13 +78,28 @@ public sealed class RentalActionService(
     /// <exception cref="NotFoundException">Thrown when no process with the given GUID exists.</exception>
     public async Task<IReadOnlySet<RentalActionType>> GetAvailableActionsAsync(
         Guid processGuid,
-        IReadOnlyList<Permissions> permissions,
         CancellationToken ct)
     {
         var process = await processRepository.GetByGuidAsync(processGuid, ct)
             ?? throw new NotFoundException($"Process instance '{processGuid}' not found.");
 
-        return registry.GetAvailableActions(process.CurrentStage, permissions);
+        return registry.GetAvailableActions(process.CurrentStage);
+    }
+    
+    /// <summary>
+    /// Returns the actions available for the process identified by
+    /// <paramref name="processGuid"/> based on its current stage.
+    /// </summary>
+    /// <exception cref="NotFoundException">Thrown when no process with the given GUID exists.</exception>
+    public async Task<IReadOnlySet<RentalActionType>> GetAvailableAllowedActionsAsync(
+        Guid processGuid,
+        IReadOnlyList<Permissions> permissions,
+        CancellationToken ct)
+    {
+        var process = await processRepository.GetByGuidAsync(processGuid, ct)
+                      ?? throw new NotFoundException($"Process instance '{processGuid}' not found.");
+
+        return registry.GetAvailableAllowedActions(process.CurrentStage, permissions);
     }
 
     // ── Private helpers ─────────────────────────────────────────────
@@ -97,7 +110,6 @@ public sealed class RentalActionService(
     private async Task<ActionResult> RunLifecycleAsync(
         RentalProcessInstance process,
         RentalActionType actionType,
-        IReadOnlyList<Permissions> permissions,
         ActionInput input,
         CancellationToken ct)
     {
@@ -111,7 +123,7 @@ public sealed class RentalActionService(
                 });
         }
 
-        var allowed = registry.GetAvailableActions(process.CurrentStage, permissions);
+        var allowed = registry.GetAvailableActions(process.CurrentStage);
         if (!allowed.Contains(actionType))
         {
             throw new ValidationException(

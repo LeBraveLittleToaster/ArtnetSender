@@ -42,7 +42,7 @@ public class RentalActionServiceTests
 
         var act = () => service.ExecuteActionAsync(
             guid, RentalActionType.ApproveRequest,
-            _rentalActionPermissions,
+
             new ApproveRequestInput { ActorKcId = "actor" }, _ct);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -59,7 +59,7 @@ public class RentalActionServiceTests
 
         var act = () => service.ExecuteActionAsync(
             process.Guid, RentalActionType.ApproveRequest,
-            _rentalActionPermissions,
+
             new ApproveRequestInput { ActorKcId = "actor" }, _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
@@ -76,7 +76,7 @@ public class RentalActionServiceTests
 
         var act = () => service.ExecuteActionAsync(
             process.Guid, RentalActionType.ApproveRequest,
-            _rentalActionPermissions,
+
             new ApproveRequestInput { ActorKcId = "actor" }, _ct);
 
         await act.Should().ThrowAsync<ValidationException>();
@@ -92,7 +92,7 @@ public class RentalActionServiceTests
 
         var result = await service.ExecuteActionAsync(
             process.Guid, RentalActionType.ApproveRequest,
-            _rentalActionPermissions,
+
             new ApproveRequestInput { ActorKcId = "actor" }, _ct);
 
         result.Success.Should().BeTrue();
@@ -121,7 +121,7 @@ public class RentalActionServiceTests
         };
 
         var result = await service.ExecuteActionAsync(
-            process.Guid, RentalActionType.CreateRental, _noPermissions, input, _ct);
+            process.Guid, RentalActionType.CreateRental,  input, _ct);
 
         result.Success.Should().BeFalse();
         process.CurrentStage.Should().Be(RentalStage.None); // not changed
@@ -153,7 +153,7 @@ public class RentalActionServiceTests
         };
 
         var result = await service.ExecuteActionAsync(
-            process.Guid, RentalActionType.ScanChecklist, _rentalActionPermissions, input, _ct);
+            process.Guid, RentalActionType.ScanChecklist, input, _ct);
 
         result.Success.Should().BeTrue();
         result.NewStage.Should().BeNull();
@@ -176,7 +176,7 @@ public class RentalActionServiceTests
             RequestedEnd = now + Duration.FromDays(5)
         };
 
-        var result = await service.CreateProcessAsync(input, _noPermissions, _ct);
+        var result = await service.CreateProcessAsync(input,  _ct);
 
         result.Success.Should().BeTrue();
         result.NewStage.Should().Be(RentalStage.Requested);
@@ -198,7 +198,7 @@ public class RentalActionServiceTests
 
         var service = CreateService();
 
-        var act = () => service.GetAvailableActionsAsync(guid, _rentalActionPermissions, _ct);
+        var act = () => service.GetAvailableActionsAsync(guid, _ct);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
@@ -211,7 +211,7 @@ public class RentalActionServiceTests
 
         var service = CreateService();
 
-        var actions = await service.GetAvailableActionsAsync(process.Guid, _rentalActionPermissions, _ct);
+        var actions = await service.GetAvailableActionsAsync(process.Guid, _ct);
 
         actions.Should().Contain(RentalActionType.ApproveRequest);
         actions.Should().Contain(RentalActionType.RejectRequest);
@@ -227,7 +227,7 @@ public class RentalActionServiceTests
 
         var service = CreateService();
 
-        var actions = await service.GetAvailableActionsAsync(process.Guid, _rentalActionPermissions, _ct);
+        var actions = await service.GetAvailableActionsAsync(process.Guid, _ct);
 
         actions.Should().BeEmpty();
     }
@@ -240,7 +240,7 @@ public class RentalActionServiceTests
 
         var service = CreateService();
 
-        var actions = await service.GetAvailableActionsAsync(process.Guid, _rentalActionPermissions, _ct);
+        var actions = await service.GetAvailableActionsAsync(process.Guid, _ct);
 
         actions.Should().Contain(RentalActionType.RecordReturn);
         actions.Should().Contain(RentalActionType.RequestExtension);

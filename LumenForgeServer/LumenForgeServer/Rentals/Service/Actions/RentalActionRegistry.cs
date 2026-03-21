@@ -100,7 +100,7 @@ public sealed class RentalActionRegistry : IRentalActionRegistry
     };
     
     /// <inheritdoc />
-    public IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage, IReadOnlyList<Permissions> permissions)
+    public IReadOnlySet<RentalActionType> GetAvailableAllowedActions(RentalStage stage, IReadOnlyList<Permissions> permissions)
     {
         if (!StageActions.TryGetValue(stage, out var actions))
         {
@@ -112,5 +112,12 @@ public sealed class RentalActionRegistry : IRentalActionRegistry
                 rentalActionType.GetNeededPermissions().All(permissions.Contains))
             .ToHashSet();
 
+    }
+
+    public IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage)
+    {
+        return !StageActions.TryGetValue(stage, out var actions) 
+            ? new HashSet<RentalActionType>() 
+            : actions;
     }
 }
