@@ -1,10 +1,11 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for approving a rental request.</summary>
-public sealed record ApproveRequestDto
+public sealed record ApproveRequestDto : IActionInputDerivable<ApproveRequestInput>
 {
     /// <summary>Optional comment for the approval (visible in the audit log).</summary>
     [JsonPropertyName("comment")]
@@ -15,7 +16,7 @@ public sealed record ApproveRequestDto
 }
 
 /// <summary>API request DTO for rejecting a rental request.</summary>
-public sealed record RejectRequestDto
+public sealed record RejectRequestDto : IActionInputDerivable<RejectRequestInput>
 {
     /// <summary>Reason for rejecting the request (required).</summary>
     [JsonPropertyName("reason")]

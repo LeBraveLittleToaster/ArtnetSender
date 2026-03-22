@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for creating a new rental.</summary>
-public sealed record CreateRentalDto
+public sealed record CreateRentalDto : IActionInputDerivable<CreateRentalInput>
 {
     /// <summary>Full name of the customer requesting the rental.</summary>
     [JsonPropertyName("customer_name")]

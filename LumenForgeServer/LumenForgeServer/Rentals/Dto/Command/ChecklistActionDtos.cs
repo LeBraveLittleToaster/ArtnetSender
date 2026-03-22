@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
 using LumenForgeServer.Common;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for generating a checklist.</summary>
-public sealed record GenerateChecklistDto
+public sealed record GenerateChecklistDto : IActionInputDerivable<GenerateChecklistInput>
 {
     /// <summary>Type of checklist to generate (PICKUP or DROPOFF).</summary>
     [JsonPropertyName("checklist_type")]
@@ -16,7 +17,7 @@ public sealed record GenerateChecklistDto
 }
 
 /// <summary>API request DTO for recording a device scan against a checklist.</summary>
-public sealed record ScanChecklistDto
+public sealed record ScanChecklistDto : IActionInputDerivable<ScanChecklistInput>
 {
     /// <summary>GUID of the checklist to scan against.</summary>
     [JsonPropertyName("checklist_guid")]
@@ -35,7 +36,7 @@ public sealed record ScanChecklistDto
 }
 
 /// <summary>API request DTO for signing a checklist.</summary>
-public sealed record SignChecklistDto
+public sealed record SignChecklistDto : IActionInputDerivable<SignChecklistInput>
 {
     /// <summary>GUID of the checklist to sign.</summary>
     [JsonPropertyName("checklist_guid")]

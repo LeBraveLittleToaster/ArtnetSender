@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using LumenForgeServer.Common;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
@@ -18,7 +19,7 @@ public sealed record DamageEntryDto
 }
 
 /// <summary>API request DTO for recording damages found during inspection.</summary>
-public sealed record RecordDamagesDto
+public sealed record RecordDamagesDto : IActionInputDerivable<RecordDamagesInput>
 {
     [JsonPropertyName("damages")]
     public required List<DamageEntryDto> Damages { get; init; }
@@ -36,7 +37,7 @@ public sealed record RecordDamagesDto
 }
 
 /// <summary>API request DTO for creating maintenance jobs for damaged items.</summary>
-public sealed record CreateMaintenanceJobsDto
+public sealed record CreateMaintenanceJobsDto : IActionInputDerivable<CreateMaintenanceJobsInput>
 {
     [JsonPropertyName("damaged_stock_binding_guids")]
     public required List<Guid> DamagedStockBindingGuids { get; init; }

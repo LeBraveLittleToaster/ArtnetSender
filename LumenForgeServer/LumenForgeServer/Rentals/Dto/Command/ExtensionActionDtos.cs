@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NodaTime;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for submitting an extension request.</summary>
-public sealed record RequestExtensionDto
+public sealed record RequestExtensionDto : IActionInputDerivable<RequestExtensionInput>
 {
     /// <summary>New desired end date for the rental period (NodaTime Instant).</summary>
     [JsonPropertyName("new_requested_end")]
@@ -24,7 +25,7 @@ public sealed record RequestExtensionDto
 }
 
 /// <summary>API request DTO for approving an extension request.</summary>
-public sealed record ApproveExtensionDto
+public sealed record ApproveExtensionDto : IActionInputDerivable<ApproveExtensionInput>
 {
     /// <summary>GUID of the extension to approve.</summary>
     [JsonPropertyName("extension_guid")]
@@ -43,7 +44,7 @@ public sealed record ApproveExtensionDto
 }
 
 /// <summary>API request DTO for rejecting an extension request.</summary>
-public sealed record RejectExtensionDto
+public sealed record RejectExtensionDto : IActionInputDerivable<RejectExtensionInput>
 {
     /// <summary>GUID of the extension to reject.</summary>
     [JsonPropertyName("extension_guid")]

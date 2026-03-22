@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
 using LumenForgeServer.Common;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for generating an invoice.</summary>
-public sealed record GenerateInvoiceDto
+public sealed record GenerateInvoiceDto : IActionInputDerivable<GenerateInvoiceInput>
 {
     [JsonPropertyName("due_date_override")]
     public string? DueDateOverride { get; init; }
@@ -15,7 +16,7 @@ public sealed record GenerateInvoiceDto
 }
 
 /// <summary>API request DTO for recording a payment against an invoice.</summary>
-public sealed record RecordPaymentDto
+public sealed record RecordPaymentDto : IActionInputDerivable<RecordPaymentInput>
 {
     [JsonPropertyName("invoice_guid")]
     public required Guid InvoiceGuid { get; init; }

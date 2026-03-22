@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
@@ -16,7 +17,7 @@ public sealed record ItemAssignmentDto
 }
 
 /// <summary>API request DTO for assigning inventory items to a rental.</summary>
-public sealed record AssignItemsDto
+public sealed record AssignItemsDto : IActionInputDerivable<AssignItemsInput>
 {
     /// <summary>List of device/quantity pairs to assign.</summary>
     [JsonPropertyName("items")]
@@ -34,7 +35,7 @@ public sealed record AssignItemsDto
 }
 
 /// <summary>API request DTO for removing assigned items from a rental.</summary>
-public sealed record RemoveItemsDto
+public sealed record RemoveItemsDto : IActionInputDerivable<RemoveItemsInput>
 {
     /// <summary>Stock-binding GUIDs of the items to remove.</summary>
     [JsonPropertyName("stock_binding_guids")]
@@ -45,7 +46,7 @@ public sealed record RemoveItemsDto
 }
 
 /// <summary>API request DTO for approving the assigned item list.</summary>
-public sealed record ApproveItemsDto
+public sealed record ApproveItemsDto : IActionInputDerivable<ApproveItemsInput>
 {
     /// <summary>Optional approval comment.</summary>
     [JsonPropertyName("comment")]
@@ -56,7 +57,7 @@ public sealed record ApproveItemsDto
 }
 
 /// <summary>API request DTO for rejecting the assigned item list.</summary>
-public sealed record RejectItemsDto
+public sealed record RejectItemsDto : IActionInputDerivable<RejectItemsInput>
 {
     /// <summary>Reason for rejecting the item list (required).</summary>
     [JsonPropertyName("reason")]

@@ -1,10 +1,11 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for generating a summary report.</summary>
-public sealed record GenerateReportDto
+public sealed record GenerateReportDto : IActionInputDerivable<GenerateReportInput>
 {
     [JsonPropertyName("include_damages")]
     public bool IncludeDamages { get; init; } = true;

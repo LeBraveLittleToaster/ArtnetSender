@@ -1,10 +1,11 @@
 using System.Text.Json.Serialization;
+using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 
 namespace LumenForgeServer.Rentals.Dto.Command;
 
 /// <summary>API request DTO for recording a pickup.</summary>
-public sealed record RecordPickupDto
+public sealed record RecordPickupDto : IActionInputDerivable<RecordPickupInput>
 {
     /// <summary>Optional notes about the pickup (e.g. condition remarks).</summary>
     [JsonPropertyName("notes")]
@@ -15,7 +16,7 @@ public sealed record RecordPickupDto
 }
 
 /// <summary>API request DTO for recording a return.</summary>
-public sealed record RecordReturnDto
+public sealed record RecordReturnDto : IActionInputDerivable<RecordReturnInput>
 {
     /// <summary>Optional notes about the return (e.g. condition remarks).</summary>
     [JsonPropertyName("notes")]
