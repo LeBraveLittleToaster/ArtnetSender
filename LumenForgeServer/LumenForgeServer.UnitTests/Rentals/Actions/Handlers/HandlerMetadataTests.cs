@@ -1,12 +1,12 @@
 using FluentAssertions;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Persistence;
-using LumenForgeServer.IntegrationTests.Rentals.Actions.Helpers;
+using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NSubstitute;
 
-namespace LumenForgeServer.IntegrationTests.Rentals.Actions.Handlers;
+namespace LumenForgeServer.UnitTests.Rentals.Actions.Handlers;
 
 /// <summary>
 /// Verifies that every handler declares the correct <see cref="RentalActionType"/>

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using NSubstitute;
 
-namespace LumenForgeServer.IntegrationTests.Rentals.Actions.Helpers;
+namespace LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 
 /// <summary>
 /// Factory methods for creating domain objects used across handler tests.

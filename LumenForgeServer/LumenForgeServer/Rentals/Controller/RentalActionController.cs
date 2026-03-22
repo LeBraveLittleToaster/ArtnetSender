@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
-using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ActionResult = LumenForgeServer.Rentals.Service.Actions.ActionResult;
@@ -14,13 +14,24 @@ namespace LumenForgeServer.Rentals.Controller;
 /// Each action has its own endpoint for easy discoverability and extension.
 /// All endpoints delegate to the <see cref="RentalActionService"/> orchestrator.
 /// </summary>
+/// <remarks>
+/// <para>Actions are stage-gated: an action is only available when the process is
+/// in a stage that permits it. Call <c>GET {processGuid}/available</c> to discover
+/// which actions are currently allowed.</para>
+/// <para>The actor identity is always taken from the JWT <c>sub</c> claim and
+/// cannot be overridden through the request body.</para>
+/// </remarks>
 [Route("api/v1/rentals/actions")]
 [ApiController]
+[Tags("Rentals – Actions")]
 public class RentalActionController(RentalActionService actionService) : ControllerBase
 {
     // ── Process queries ─────────────────────────────────────────────
 
-    /// <summary>Returns the actions available for the given process instance.</summary>
+    /// <summary>Returns the actions available for the given process instance based on its current stage and the caller’s permissions.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 200 response with the list of allowed action types.</returns>
     [HttpGet("{processGuid:guid}/available")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -36,212 +47,282 @@ public class RentalActionController(RentalActionService actionService) : Control
     // ── Create ──────────────────────────────────────────────────────
 
     /// <summary>Creates a new rental and starts its process instance.</summary>
+    /// <remarks>Side-effects: creates a <c>RentalProcessInstance</c> in the <c>Requested</c> stage, a <c>Rental</c> entity, and an action log entry.</remarks>
+    /// <param name="dto">Rental creation payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 201 response with the action result.</returns>
     [HttpPost("create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> CreateRental(
-        [FromBody] CreateRentalInput input, CancellationToken ct)
+        [FromBody] CreateRentalDto dto, CancellationToken ct)
     {
+        var input = dto.ToActionInput();
         SetActor(input);
-        var permissions =  User.GetAppPermissions();
         var result = await actionService.CreateProcessAsync(input, ct);
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
     // ── Request approval ────────────────────────────────────────────
 
-    /// <summary>Approves a rental request.</summary>
+    /// <summary>Approves a rental request, advancing the process to the Approved stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional approval comment.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/approve-request")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> ApproveRequest(
-        [FromRoute] Guid processGuid, [FromBody] ApproveRequestInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveRequest, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] ApproveRequestDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveRequest, dto.ToActionInput(), ct));
 
-    /// <summary>Rejects a rental request.</summary>
+    /// <summary>Rejects a rental request and moves the process to the Cancelled stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Rejection reason (required).</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/reject-request")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RejectRequest(
-        [FromRoute] Guid processGuid, [FromBody] RejectRequestInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectRequest, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RejectRequestDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectRequest, dto.ToActionInput(), ct));
 
     // ── Item management ─────────────────────────────────────────────
 
-    /// <summary>Assigns inventory items to the rental.</summary>
+    /// <summary>Assigns inventory items (devices + quantities) to the rental. Creates stock bindings.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">List of device GUIDs and quantities.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/assign-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> AssignItems(
-        [FromRoute] Guid processGuid, [FromBody] AssignItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.AssignItems, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] AssignItemsDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.AssignItems, dto.ToActionInput(), ct));
 
-    /// <summary>Removes assigned items from the rental.</summary>
+    /// <summary>Removes previously assigned items from the rental by their stock-binding GUIDs.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Stock binding GUIDs to remove.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/remove-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RemoveItems(
-        [FromRoute] Guid processGuid, [FromBody] RemoveItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RemoveItems, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RemoveItemsDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RemoveItems, dto.ToActionInput(), ct));
 
-    /// <summary>Approves the assigned item list.</summary>
+    /// <summary>Approves the currently assigned item list, locking in the devices for pickup.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional approval comment.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/approve-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> ApproveItems(
-        [FromRoute] Guid processGuid, [FromBody] ApproveItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveItems, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] ApproveItemsDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveItems, dto.ToActionInput(), ct));
 
-    /// <summary>Rejects the assigned item list.</summary>
+    /// <summary>Rejects the currently assigned item list, requiring re-assignment.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Rejection reason (required).</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/reject-items")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RejectItems(
-        [FromRoute] Guid processGuid, [FromBody] RejectItemsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectItems, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RejectItemsDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectItems, dto.ToActionInput(), ct));
 
     // ── Checklists ──────────────────────────────────────────────────
 
-    /// <summary>Generates a checklist for the rental.</summary>
+    /// <summary>Generates a checklist (pickup or dropoff) from the rental’s assigned items.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Checklist type to generate.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/generate-checklist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> GenerateChecklist(
-        [FromRoute] Guid processGuid, [FromBody] GenerateChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateChecklist, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] GenerateChecklistDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateChecklist, dto.ToActionInput(), ct));
 
-    /// <summary>Records a device scan against a checklist.</summary>
+    /// <summary>Records a QR / barcode scan against a checklist item. Marks the item as scanned.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Checklist GUID and scanned value.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/scan-checklist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> ScanChecklist(
-        [FromRoute] Guid processGuid, [FromBody] ScanChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScanChecklist, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] ScanChecklistDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScanChecklist, dto.ToActionInput(), ct));
 
-    /// <summary>Records a signature on a checklist.</summary>
+    /// <summary>Records a digital signature on a checklist, finalising it.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Checklist GUID and base-64 signature data.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/sign-checklist")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> SignChecklist(
-        [FromRoute] Guid processGuid, [FromBody] SignChecklistInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.SignChecklist, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] SignChecklistDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.SignChecklist, dto.ToActionInput(), ct));
 
     // ── Pickup / Return ─────────────────────────────────────────────
 
-    /// <summary>Records that items were picked up.</summary>
+    /// <summary>Records that items were picked up by the customer. Advances the process to the Active stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional pickup notes.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/record-pickup")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RecordPickup(
-        [FromRoute] Guid processGuid, [FromBody] RecordPickupInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPickup, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RecordPickupDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPickup, dto.ToActionInput(), ct));
 
-    /// <summary>Records that items were returned.</summary>
+    /// <summary>Records that items were returned by the customer. Advances the process to the Returned stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional return notes.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/record-return")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RecordReturn(
-        [FromRoute] Guid processGuid, [FromBody] RecordReturnInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordReturn, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RecordReturnDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordReturn, dto.ToActionInput(), ct));
 
     // ── Extensions ──────────────────────────────────────────────────
 
-    /// <summary>Submits an extension request.</summary>
+    /// <summary>Submits a request to extend the rental period to a new end date.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">New end date and optional reason.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/request-extension")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RequestExtension(
-        [FromRoute] Guid processGuid, [FromBody] RequestExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RequestExtension, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RequestExtensionDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RequestExtension, dto.ToActionInput(), ct));
 
-    /// <summary>Approves an extension request.</summary>
+    /// <summary>Approves a pending extension request. Updates the rental’s requested end date.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Extension GUID and optional comment.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/approve-extension")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> ApproveExtension(
-        [FromRoute] Guid processGuid, [FromBody] ApproveExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveExtension, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] ApproveExtensionDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ApproveExtension, dto.ToActionInput(), ct));
 
-    /// <summary>Rejects an extension request.</summary>
+    /// <summary>Rejects a pending extension request with a required reason.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Extension GUID and rejection reason.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/reject-extension")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RejectExtension(
-        [FromRoute] Guid processGuid, [FromBody] RejectExtensionInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectExtension, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RejectExtensionDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RejectExtension, dto.ToActionInput(), ct));
 
     // ── Post-return ─────────────────────────────────────────────────
 
-    /// <summary>Records damages found during inspection.</summary>
+    /// <summary>Records one or more damage reports found during post-return inspection.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">List of damage entries (device, description, severity).</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/record-damages")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RecordDamages(
-        [FromRoute] Guid processGuid, [FromBody] RecordDamagesInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordDamages, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RecordDamagesDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordDamages, dto.ToActionInput(), ct));
 
-    /// <summary>Creates maintenance jobs for damaged items.</summary>
+    /// <summary>Creates maintenance jobs for damaged stock bindings. Links them to the rental.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">List of damaged stock-binding GUIDs.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/create-maintenance-jobs")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> CreateMaintenanceJobs(
-        [FromRoute] Guid processGuid, [FromBody] CreateMaintenanceJobsInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CreateMaintenanceJobs, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] CreateMaintenanceJobsDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CreateMaintenanceJobs, dto.ToActionInput(), ct));
 
     // ── Billing ─────────────────────────────────────────────────────
 
-    /// <summary>Generates an invoice for the rental.</summary>
+    /// <summary>Generates an invoice for the rental based on the rental period and assigned items.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional due-date override.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/generate-invoice")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> GenerateInvoice(
-        [FromRoute] Guid processGuid, [FromBody] GenerateInvoiceInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateInvoice, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] GenerateInvoiceDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateInvoice, dto.ToActionInput(), ct));
 
-    /// <summary>Records a payment against the invoice.</summary>
+    /// <summary>Records a payment against an existing invoice. Supports CASH, CARD, TRANSFER, or OTHER.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Invoice GUID, amount, method, and optional reference.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/record-payment")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> RecordPayment(
-        [FromRoute] Guid processGuid, [FromBody] RecordPaymentInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPayment, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] RecordPaymentDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.RecordPayment, dto.ToActionInput(), ct));
 
     // ── Reporting ───────────────────────────────────────────────────
 
-    /// <summary>Generates a summary report.</summary>
+    /// <summary>Generates a summary report for the rental. Can optionally include damages and payments.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Flags for including damages and/or payments.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/generate-report")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> GenerateReport(
-        [FromRoute] Guid processGuid, [FromBody] GenerateReportInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateReport, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] GenerateReportDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.GenerateReport, dto.ToActionInput(), ct));
 
     // ── Lifecycle ───────────────────────────────────────────────────
 
-    /// <summary>Completes the rental.</summary>
+    /// <summary>Completes the rental, advancing the process to the terminal Completed stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Optional completion comment.</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/complete")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> CompleteRental(
-        [FromRoute] Guid processGuid, [FromBody] CompleteRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CompleteRental, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] CompleteRentalDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CompleteRental, dto.ToActionInput(), ct));
 
-    /// <summary>Cancels the rental.</summary>
+    /// <summary>Cancels the rental, advancing the process to the terminal Cancelled stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Cancellation reason (required).</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/cancel")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> CancelRental(
-        [FromRoute] Guid processGuid, [FromBody] CancelRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.CancelRental, input, ct));
+        [FromRoute] Guid processGuid, [FromBody] CancelRentalDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.CancelRental, dto.ToActionInput(), ct));
 
-    /// <summary>Scraps the rental (total write-off).</summary>
+    /// <summary>Scraps the rental (total write-off), advancing the process to the terminal Scrapped stage.</summary>
+    /// <param name="processGuid">Process instance identifier.</param>
+    /// <param name="dto">Scrap reason (required).</param>
+    /// <param name="ct">Cancellation token.</param>
     [HttpPost("{processGuid:guid}/scrap")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Authorize(Roles = nameof(Permissions.RentalActionCall))]
     public async Task<IActionResult> ScrapRental(
-        [FromRoute] Guid processGuid, [FromBody] ScrapRentalInput input, CancellationToken ct)
-        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScrapRental, input,  ct));
+        [FromRoute] Guid processGuid, [FromBody] ScrapRentalDto dto, CancellationToken ct)
+        => Ok(await ExecuteAsync(processGuid, RentalActionType.ScrapRental, dto.ToActionInput(), ct));
 
     // ── Helpers ─────────────────────────────────────────────────────
 

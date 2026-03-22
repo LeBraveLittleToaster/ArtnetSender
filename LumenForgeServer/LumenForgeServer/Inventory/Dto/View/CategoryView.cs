@@ -9,18 +9,23 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record CategoryView
 {
+    /// <summary>Unique category identifier.</summary>
     [JsonPropertyName("guid")]
     public Guid Guid { get; init; }
 
+    /// <summary>Category display name.</summary>
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
+    /// <summary>Optional category description.</summary>
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 
+    /// <summary>Timestamp when the category was created.</summary>
     [JsonPropertyName("created_at")]
     public Instant CreatedAt { get; init; }
 
+    /// <summary>Timestamp when the category was last updated.</summary>
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 

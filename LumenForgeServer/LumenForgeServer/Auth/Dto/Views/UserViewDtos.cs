@@ -25,9 +25,13 @@ public record UserView
     [JsonPropertyName("groups")]
     public List<GroupView> Groups { get; private set; } = [];
 
+    /// <summary>Keycloak login username.</summary>
     [JsonPropertyName("username")] public required string Username { get; set; }
+    /// <summary>User’s e-mail address.</summary>
     [JsonPropertyName("email")] public required string Email { get; set; }
+    /// <summary>User’s first name.</summary>
     [JsonPropertyName("firstName")] public required string FirstName { get; set; }
+    /// <summary>User’s last name.</summary>
     [JsonPropertyName("lastName")] public required string LastName { get; set; }
 
     public static UserView FromEntity(KcUserReference tEntity)

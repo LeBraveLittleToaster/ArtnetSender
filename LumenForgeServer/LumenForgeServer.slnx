@@ -3,5 +3,6 @@
     <File Path="compose.yaml" />
   </Folder>
   <Project Path="LumenForgeServer.IntegrationTests/LumenForgeServer.IntegrationTests.csproj" />
+  <Project Path="LumenForgeServer.UnitTests/LumenForgeServer.UnitTests.csproj" />
   <Project Path="LumenForgeServer/LumenForgeServer.csproj" />
 </Solution>

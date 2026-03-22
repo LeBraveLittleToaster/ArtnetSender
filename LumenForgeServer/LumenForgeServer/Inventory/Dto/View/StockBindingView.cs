@@ -9,18 +9,23 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record StockBindingView
 {
+    /// <summary>Unique stock-binding identifier.</summary>
     [JsonPropertyName("guid")]
     public Guid Guid { get; init; }
 
+    /// <summary>Binding type (e.g. RENTAL, MAINTENANCE).</summary>
     [JsonPropertyName("binding_type")]
     public BindingType BindingType { get; init; }
 
+    /// <summary>Start of the reservation period.</summary>
     [JsonPropertyName("start")]
     public Instant Start { get; init; }
 
+    /// <summary>End of the reservation period.</summary>
     [JsonPropertyName("end")]
     public Instant End { get; init; }
 
+    /// <summary>Timestamp when the binding was created.</summary>
     [JsonPropertyName("created_at")]
     public Instant CreatedAt { get; init; }
 

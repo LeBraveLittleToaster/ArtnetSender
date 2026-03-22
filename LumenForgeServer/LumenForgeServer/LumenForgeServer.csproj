@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>feea7467-ea74-43e0-9f99-2d21764c389b</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,8 +36,6 @@
 
   <ItemGroup>
     <Folder Include="Inventory\Dto\Delete\" />
-    <Folder Include="Rentals\Dto\Query\" />
-    <Folder Include="Rentals\Dto\View\" />
   </ItemGroup>
 
   <ItemGroup>

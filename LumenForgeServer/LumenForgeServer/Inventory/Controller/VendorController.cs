@@ -18,6 +18,7 @@ namespace LumenForgeServer.Inventory.Controller;
 /// </remarks>
 [Route("api/v1/inventory/vendors")]
 [ApiController]
+[Tags("Inventory – Vendors")]
 public class VendorController(VendorService vendorService) : ControllerBase
 {
     /// <summary>
@@ -40,6 +41,12 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return Ok(new ListViewDto<VendorView> { list = vendors.vendors, total = vendors.total });
     }
 
+    /// <summary>
+    /// Retrieves a single vendor by its GUID.
+    /// </summary>
+    /// <param name="vendorGuid">Unique vendor identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 200 response with the vendor payload.</returns>
     [HttpGet("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -51,11 +58,16 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return Ok(vendor);
     }
 
+    /// <summary>
+    /// Creates a new vendor.
+    /// </summary>
+    /// <param name="dto">Vendor creation payload.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 201 response with the created vendor.</returns>
     [HttpPut("")]
     [Authorize(Roles = nameof(Permissions.VendorCreate))]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Produces("application/json")]
     public async Task<IActionResult> CreateVendor([FromBody] CreateVendorDto dto, CancellationToken ct)
     {
@@ -63,12 +75,18 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return CreatedAtAction(nameof(GetVendor), new { vendorGuid = vendor.Guid }, vendor);
     }
 
+    /// <summary>
+    /// Updates an existing vendor's name.
+    /// </summary>
+    /// <param name="vendorGuid">Vendor to update.</param>
+    /// <param name="dto">Fields to change.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 200 response with the updated vendor.</returns>
     [HttpPatch("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Produces("application/json")]
     public async Task<IActionResult> UpdateVendor([FromRoute] Guid vendorGuid, [FromBody] UpdateVendorDto dto, CancellationToken ct)
     {
@@ -76,11 +94,16 @@ public class VendorController(VendorService vendorService) : ControllerBase
         return Ok(vendor);
     }
 
+    /// <summary>
+    /// Permanently deletes a vendor. Devices referencing this vendor must be re-assigned first.
+    /// </summary>
+    /// <param name="vendorGuid">Vendor to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A 204 response when deleted successfully.</returns>
     [HttpDelete("{vendorGuid:Guid}")]
     [Authorize(Roles = nameof(Permissions.VendorDelete))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Produces("application/json")]
     public async Task<IActionResult> DeleteVendor([FromRoute] Guid vendorGuid, CancellationToken ct)
     {
         await vendorService.DeleteVendor(vendorGuid, ct);

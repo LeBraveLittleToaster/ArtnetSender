@@ -14,11 +14,11 @@ namespace LumenForgeServer.Auth.Controller;
 /// HTTP API for managing users in the auth domain.
 /// </summary>
 /// <remarks>
-/// Routes are under <c>api/v1/auth/user</c> and require authenticated access.
+/// Routes are under <c>api/v1/auth/users</c> and require authenticated access.
 /// </remarks>
 [Route("api/v1/auth/users")]
 [ApiController]
-
+[Tags("Auth – Users")]
 public class UserController(UserService userService, KcService kcService, ILogger<UserController> _logger) : ControllerBase
 {
     /// <summary>

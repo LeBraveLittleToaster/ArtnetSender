@@ -162,8 +162,16 @@ public static class DiRegistration
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "LumenForge API",
-                Version = "v0.0.1"
+                Version = "v0.0.1",
+                Description = "REST API for the LumenForge platform covering authentication, "
+                    + "inventory management, maintenance tracking, catalogue publishing, "
+                    + "and a stage-based rental workflow. All mutating endpoints require a "
+                    + "valid Keycloak JWT token; the required permission is noted on each operation."
             });
+
+            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
 
             options.AddSecurityDefinition(nameof(SecuritySchemeType.OAuth2), new OpenApiSecurityScheme
             {
@@ -297,6 +305,8 @@ public static class DiRegistration
                 p => p.RequireRole(nameof(Permissions.UserRead), nameof(Permissions.RoleRead)));
             options.AddPolicy(nameof(Policy.UserReadOrOwnProfile), p => p.RequireAssertion(ctx =>
                 ctx.User.IsInRole(nameof(Permissions.UserRead)) || IsOwnProfileAccess(ctx)));
+            options.AddPolicy(nameof(Policy.RentalReadOrOwnProcesses), p => p.RequireAssertion(ctx =>
+                ctx.User.IsInRole(nameof(Permissions.RentalRead)) || IsAuthenticated(ctx)));
         });
     }
 
@@ -315,5 +325,13 @@ public static class DiRegistration
 
         return !string.IsNullOrWhiteSpace(callerUserId)
                && string.Equals(routeUserId, callerUserId, StringComparison.Ordinal);
+    }
+
+    private static bool IsAuthenticated(AuthorizationHandlerContext ctx)
+    {
+        return ctx.User.Identity?.IsAuthenticated == true
+               && !string.IsNullOrWhiteSpace(
+                   ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? ctx.User.FindFirstValue("sub"));
     }
 }

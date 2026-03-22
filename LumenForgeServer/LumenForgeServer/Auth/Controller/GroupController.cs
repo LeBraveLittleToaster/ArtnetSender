@@ -13,11 +13,13 @@ namespace LumenForgeServer.Auth.Controller;
 /// HTTP API for managing groups in the auth domain.
 /// </summary>
 /// <remarks>
-/// Routes are under <c>api/v1/auth/group</c> and require authenticated access by REALM_ADMIN
+/// Routes are under <c>api/v1/auth/groups</c>. Most endpoints require the
+/// corresponding Group* permission; user-assignment endpoints also require user-read.
 /// </remarks>
 [Route("api/v1/auth/groups")]
 [ApiController]
 [Authorize]
+[Tags("Auth – Groups")]
 public class GroupController(GroupService groupService) : ControllerBase
 {
     /// <summary>

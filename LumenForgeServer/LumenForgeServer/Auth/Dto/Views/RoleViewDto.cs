@@ -8,8 +8,10 @@ namespace LumenForgeServer.Auth.Dto.Views;
 /// </summary>
 public sealed record RoleViewDto
 {
+    /// <summary>Display name of the permission (e.g. "DeviceRead").</summary>
     [JsonPropertyName("name")]
     public required string Name { get; init; }
+    /// <summary>Numeric value of the permission enum.</summary>
     [JsonPropertyName("value")]
     public required int Value { get; init; }
 

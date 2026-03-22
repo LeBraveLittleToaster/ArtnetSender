@@ -24,8 +24,12 @@ public record AssignUserToGroupDto
     public required string userKcId { get; init; }
 }
 
+/// <summary>
+/// Payload for replacing all role assignments on a group.
+/// </summary>
 public record AssignGroupRolesDto
 {
+    /// <summary>Complete set of roles to assign. Existing roles are replaced.</summary>
     [JsonPropertyName("roles")]
     public required Permissions[] Roles { get; init; }
 }

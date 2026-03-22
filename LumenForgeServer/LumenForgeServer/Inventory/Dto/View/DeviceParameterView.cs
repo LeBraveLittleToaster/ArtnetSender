@@ -9,15 +9,19 @@ namespace LumenForgeServer.Inventory.Dto.View;
 /// </summary>
 public sealed record DeviceParameterView
 {
+    /// <summary>Parameter key name.</summary>
     [JsonPropertyName("key")]
     public required string Key { get; init; }
 
+    /// <summary>Parameter value.</summary>
     [JsonPropertyName("value")]
     public required string Value { get; init; }
 
+    /// <summary>Timestamp when the parameter was created.</summary>
     [JsonPropertyName("created_at")]
     public Instant CreatedAt { get; init; }
 
+    /// <summary>Timestamp when the parameter was last updated.</summary>
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 

@@ -3,7 +3,7 @@ using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Persistence;
-using LumenForgeServer.IntegrationTests.Rentals.Actions.Helpers;
+using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using NodaTime;
 using NSubstitute;
 
-namespace LumenForgeServer.IntegrationTests.Rentals.Actions;
+namespace LumenForgeServer.UnitTests.Rentals.Actions;
 
 /// <summary>
 /// Tests the <see cref="RentalActionService"/> orchestrator:
@@ -24,8 +24,6 @@ public class RentalActionServiceTests
     private readonly IRentalActionRegistry _registry = new RentalActionRegistry();
     private readonly ILogger<RentalActionService> _logger = Substitute.For<ILogger<RentalActionService>>();
     private readonly CancellationToken _ct = CancellationToken.None;
-    private static readonly IReadOnlyList<Permissions> _noPermissions = [];
-    private static readonly IReadOnlyList<Permissions> _rentalActionPermissions = [Permissions.RentalActionCall];
 
     private RentalActionService CreateService(params IRentalActionHandler[] handlers)
         => new(handlers, _repo, _registry, _logger);

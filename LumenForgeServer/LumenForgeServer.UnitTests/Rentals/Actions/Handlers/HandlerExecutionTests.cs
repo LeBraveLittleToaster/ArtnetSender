@@ -3,13 +3,13 @@ using LumenForgeServer.Common;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Persistence;
-using LumenForgeServer.IntegrationTests.Rentals.Actions.Helpers;
+using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using NodaTime;
 using NSubstitute;
 
-namespace LumenForgeServer.IntegrationTests.Rentals.Actions.Handlers;
+namespace LumenForgeServer.UnitTests.Rentals.Actions.Handlers;
 
 /// <summary>
 /// Tests the <c>ExecuteAsync</c> logic for handlers that either have no
@@ -596,86 +596,5 @@ public class HandlerExecutionTests
                 reports[0].ReportedByKcId == "inspector" &&
                 reports[1].Description == "Minor scratch"),
             _ct);
-    }
-
-    // ── GenerateReport (with mocked repo) ───────────────────────────
-
-    [Fact]
-    public async Task GenerateReport_ReturnsReportSummary()
-    {
-        var process = HandlerTestHelper.CreateProcess(RentalStage.Paid);
-
-        var detailedProcess = new RentalProcessInstance
-        {
-            Id = process.Id,
-            Guid = process.Guid,
-            CurrentStage = RentalStage.Paid,
-            CreatedByKcId = "test",
-            Rental = process.Rental,
-            DamageReports = [new RentalDamageReport
-            {
-                Description = "scratch",
-                ReportedByKcId = "inspector"
-            }],
-            Extensions = []
-        };
-
-        _repo.GetByGuidWithDetailsAsync(process.Guid, _ct).Returns(detailedProcess);
-
-        IRentalActionHandler handler = new GenerateReportHandler(_repo);
-
-        var input = new GenerateReportInput
-        {
-            ActorKcId = "staff",
-            IncludeDamages = true,
-            IncludePayments = true
-        };
-
-        var result = await handler.ExecuteAsync(process, input, _ct);
-
-        result.Success.Should().BeTrue();
-        result.NewStage.Should().BeNull(); // no stage change
-        result.Should().BeOfType<GenerateReportResult>();
-
-        var report = (GenerateReportResult)result;
-        report.Summary.ProcessGuid.Should().Be(process.Guid);
-        report.Summary.CustomerName.Should().Be("Test Customer");
-        report.Summary.DamageCount.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task GenerateReport_ExcludeDamages_ReturnsZeroDamageCount()
-    {
-        var process = HandlerTestHelper.CreateProcess(RentalStage.Paid);
-
-        var detailedProcess = new RentalProcessInstance
-        {
-            Id = process.Id,
-            Guid = process.Guid,
-            CurrentStage = RentalStage.Paid,
-            CreatedByKcId = "test",
-            Rental = process.Rental,
-            DamageReports = [new RentalDamageReport
-            {
-                Description = "scratch",
-                ReportedByKcId = "inspector"
-            }],
-            Extensions = []
-        };
-
-        _repo.GetByGuidWithDetailsAsync(process.Guid, _ct).Returns(detailedProcess);
-
-        IRentalActionHandler handler = new GenerateReportHandler(_repo);
-
-        var input = new GenerateReportInput
-        {
-            ActorKcId = "staff",
-            IncludeDamages = false
-        };
-
-        var result = await handler.ExecuteAsync(process, input, _ct);
-
-        var report = (GenerateReportResult)result;
-        report.Summary.DamageCount.Should().Be(0);
     }
 }

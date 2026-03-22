@@ -10,6 +10,7 @@ namespace LumenForgeServer.Auth.Controller;
 /// </summary>
 [Route("api/v1/auth/roles")]
 [ApiController]
+[Tags("Auth – Roles")]
 public class RoleController : ControllerBase
 {
     /// <summary>
