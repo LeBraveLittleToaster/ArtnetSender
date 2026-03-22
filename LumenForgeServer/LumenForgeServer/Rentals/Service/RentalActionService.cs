@@ -184,7 +184,7 @@ public sealed class RentalActionService(
         var log = new RentalActionLog
         {
             Guid = Guid.NewGuid(),
-            ProcessInstanceId = process.Id,
+            ProcessInstance = process,
             ActionType = actionType,
             PerformedByKcId = input.ActorKcId,
             StageBefore = stageBefore,

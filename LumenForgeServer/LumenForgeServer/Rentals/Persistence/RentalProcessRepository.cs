@@ -60,7 +60,10 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     /// <inheritdoc />
     public Task UpdateAsync(RentalProcessInstance instance, CancellationToken ct)
     {
-        db.RentalProcessInstances.Update(instance);
+        var entry = db.Entry(instance);
+        if (entry.State == EntityState.Detached)
+            db.RentalProcessInstances.Update(instance);
+
         return Task.CompletedTask;
     }
 
