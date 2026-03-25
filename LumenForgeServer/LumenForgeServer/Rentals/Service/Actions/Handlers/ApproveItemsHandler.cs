@@ -14,7 +14,7 @@ public sealed class ApproveItemsInput : ActionInput
 /// from <see cref="RentalStage.ItemsAssigned"/> to
 /// <see cref="RentalStage.ItemsApproved"/>.
 /// </summary>
-public sealed class ApproveItemsHandler : RentalActionHandlerBase<ApproveItemsInput>
+public sealed class ApproveItemsHandler : RentalActionHandlerBase<ApproveItemsInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.ApproveItems;
@@ -23,10 +23,20 @@ public sealed class ApproveItemsHandler : RentalActionHandlerBase<ApproveItemsIn
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ItemsAssigned };
 
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, ApproveItemsInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, ApproveItemsInput input, CancellationToken ct)
     {
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.ApproveItems), RentalStage.ItemsApproved));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.ApproveItems), RentalStage.ItemsApproved));
     }
 }

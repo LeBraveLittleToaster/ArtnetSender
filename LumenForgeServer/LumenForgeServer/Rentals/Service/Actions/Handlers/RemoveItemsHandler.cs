@@ -15,7 +15,7 @@ public sealed class RemoveItemsInput : ActionInput
 /// releasing their <c>StockBinding</c> reservations.
 /// </summary>
 public sealed class RemoveItemsHandler(StockBindingService stockBindingService)
-    : RentalActionHandlerBase<RemoveItemsInput>
+    : RentalActionHandlerBase<RemoveItemsInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RemoveItems;
@@ -24,19 +24,24 @@ public sealed class RemoveItemsHandler(StockBindingService stockBindingService)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ItemsAssigned };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, RemoveItemsInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
     {
-        if (input.StockBindingGuids.Count == 0)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.RemoveItems), "StockBindingGuids",
-                "At least one stock binding GUID is required."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RemoveItems)));
+       
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, RemoveItemsInput input, CancellationToken ct)
+    {
+        if (input.StockBindingGuids.Count == 0)
+            return BlankActionResult.Fail(nameof(RentalActionType.RemoveItems), "StockBindingGuids",
+                "At least one stock binding GUID is required.");
+
+        return BlankActionResult.Ok(nameof(RentalActionType.RemoveItems));
+    }
+
+    /// <inheritdoc />
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RemoveItemsInput input, CancellationToken ct)
     {
         foreach (var bindingGuid in input.StockBindingGuids)
@@ -44,6 +49,6 @@ public sealed class RemoveItemsHandler(StockBindingService stockBindingService)
             await stockBindingService.DeleteStockBinding(bindingGuid, ct);
         }
 
-        return ActionResult.Ok(nameof(RentalActionType.RemoveItems));
+        return BlankActionResult.Ok(nameof(RentalActionType.RemoveItems));
     }
 }

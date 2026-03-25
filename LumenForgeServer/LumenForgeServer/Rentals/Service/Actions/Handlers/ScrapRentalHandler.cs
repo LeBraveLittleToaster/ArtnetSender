@@ -16,7 +16,7 @@ public sealed class ScrapRentalInput : ActionInput
 /// (<see cref="RentalStage.PickedUp"/>). Transitions to
 /// <see cref="RentalStage.Scrapped"/> — a terminal state.
 /// </summary>
-public sealed class ScrapRentalHandler : RentalActionHandlerBase<ScrapRentalInput>
+public sealed class ScrapRentalHandler : RentalActionHandlerBase<ScrapRentalInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.ScrapRental;
@@ -25,8 +25,18 @@ public sealed class ScrapRentalHandler : RentalActionHandlerBase<ScrapRentalInpu
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.PickedUp };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, ScrapRentalInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, ScrapRentalInput input, CancellationToken ct)
     {
         if (process.Rental is not null)
@@ -37,6 +47,6 @@ public sealed class ScrapRentalHandler : RentalActionHandlerBase<ScrapRentalInpu
             process.Rental.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         }
 
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.ScrapRental), RentalStage.Scrapped));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.ScrapRental), RentalStage.Scrapped));
     }
 }

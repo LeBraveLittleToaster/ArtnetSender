@@ -18,7 +18,7 @@ public sealed class GenerateInvoiceInput : ActionInput
 public sealed class GenerateInvoiceResult : ActionResult
 {
     /// <summary>GUID of the generated invoice.</summary>
-    public required Guid InvoiceGuid { get; init; }
+    public Guid InvoiceGuid { get; init; } = Guid.Empty;
 }
 
 /// <summary>
@@ -27,7 +27,7 @@ public sealed class GenerateInvoiceResult : ActionResult
 /// Internal action — integrates with the Billing module.
 /// </summary>
 public sealed class GenerateInvoiceHandler(AppDbContext db)
-    : RentalActionHandlerBase<GenerateInvoiceInput>
+    : RentalActionHandlerBase<GenerateInvoiceInput, GenerateInvoiceResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.GenerateInvoice;
@@ -36,19 +36,32 @@ public sealed class GenerateInvoiceHandler(AppDbContext db)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Returned, RentalStage.Inspected };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, GenerateInvoiceInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, GenerateInvoiceResult result, CancellationToken ct)
     {
-        if (process.Rental is null)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.GenerateInvoice), "Rental",
-                "Process has no linked rental."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.GenerateInvoice)));
+        
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, GenerateInvoiceInput input, CancellationToken ct)
+    {
+        if (process.Rental is null)
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.GenerateInvoice),
+                Errors = new() { ["Rental"] = "Process has no linked rental." }
+            };
+
+        return new BlankActionResult
+        {
+            Success = true,
+            ActionName = nameof(RentalActionType.GenerateInvoice)
+        };
+    }
+
+    /// <inheritdoc />
+    protected override async Task<GenerateInvoiceResult> ExecuteAsync(
         RentalProcessInstance process, GenerateInvoiceInput input, CancellationToken ct)
     {
         var now = SystemClock.Instance.GetCurrentInstant();

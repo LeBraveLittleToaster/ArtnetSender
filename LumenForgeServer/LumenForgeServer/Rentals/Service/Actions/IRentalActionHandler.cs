@@ -38,7 +38,7 @@ public interface IRentalActionHandler
     /// Runs pre-execution validation and context loading.
     /// Return a failed <see cref="ActionResult"/> to abort the action.
     /// </summary>
-    Task<ActionResult> BeforeExecuteAsync(RentalProcessInstance process, ActionInput input, CancellationToken ct);
+    Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, ActionInput input, CancellationToken ct);
 
     /// <summary>
     /// Performs the core business logic of the action.

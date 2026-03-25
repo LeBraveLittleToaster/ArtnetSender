@@ -30,7 +30,7 @@ public sealed class CreateRentalInput : ActionInput
 public sealed class CreateRentalResult : ActionResult
 {
     /// <summary>GUID of the newly created <see cref="RentalProcessInstance"/>.</summary>
-    public required Guid ProcessInstanceGuid { get; init; }
+    public Guid ProcessInstanceGuid { get; init; } = Guid.Empty;
 }
 
 /// <summary>
@@ -39,7 +39,7 @@ public sealed class CreateRentalResult : ActionResult
 /// workflow — after execution the process is in <see cref="RentalStage.Requested"/>.
 /// </summary>
 public sealed class CreateRentalHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<CreateRentalInput>
+    : RentalActionHandlerBase<CreateRentalInput, CreateRentalResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.CreateRental;
@@ -48,19 +48,32 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.None };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, CreateRentalResult result, CancellationToken ct)
     {
-        if (input.RequestedEnd <= input.RequestedStart)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.CreateRental), "RequestedEnd",
-                "Requested end must be after the requested start."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.CreateRental)));
+        // No post-execution steps 
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
+    {
+        if (input.RequestedEnd <= input.RequestedStart)
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateRental),
+                Errors = new() { ["RequestedEnd"] = "Requested end must be after the requested start." }
+            };
+
+        return new BlankActionResult
+        {
+            Success = true,
+            ActionName = nameof(RentalActionType.CreateRental)
+        };
+    }
+
+    /// <inheritdoc />
+    protected override async Task<CreateRentalResult> ExecuteAsync(
         RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
     {
         var now = SystemClock.Instance.GetCurrentInstant();

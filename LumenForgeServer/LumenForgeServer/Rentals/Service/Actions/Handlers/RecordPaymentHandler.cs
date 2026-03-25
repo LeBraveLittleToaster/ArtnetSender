@@ -29,7 +29,7 @@ public sealed class RecordPaymentInput : ActionInput
 /// Transitions the process to <see cref="RentalStage.Paid"/>.
 /// </summary>
 public sealed class RecordPaymentHandler(AppDbContext db)
-    : RentalActionHandlerBase<RecordPaymentInput>
+    : RentalActionHandlerBase<RecordPaymentInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RecordPayment;
@@ -38,19 +38,24 @@ public sealed class RecordPaymentHandler(AppDbContext db)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Invoiced };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, RecordPaymentInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
     {
-        if (input.Amount <= 0)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.RecordPayment), "Amount",
-                "Payment amount must be greater than zero."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RecordPayment)));
+        
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, RecordPaymentInput input, CancellationToken ct)
+    {
+        if (input.Amount <= 0)
+            return BlankActionResult.Fail(nameof(RentalActionType.RecordPayment), "Amount",
+                "Payment amount must be greater than zero.");
+
+        return BlankActionResult.Ok(nameof(RentalActionType.RecordPayment));
+    }
+
+    /// <inheritdoc />
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RecordPaymentInput input, CancellationToken ct)
     {
         var invoice = await db.Invoices
@@ -81,6 +86,6 @@ public sealed class RecordPaymentHandler(AppDbContext db)
         invoice.PaidAt = now;
         invoice.UpdatedAt = now;
 
-        return ActionResult.Ok(nameof(RentalActionType.RecordPayment), RentalStage.Paid);
+        return BlankActionResult.Ok(nameof(RentalActionType.RecordPayment), RentalStage.Paid);
     }
 }

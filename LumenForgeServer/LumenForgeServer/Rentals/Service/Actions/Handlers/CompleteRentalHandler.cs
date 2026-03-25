@@ -14,7 +14,7 @@ public sealed class CompleteRentalInput : ActionInput
 /// Marks the rental as completed, archiving the process.
 /// Transitions to <see cref="RentalStage.Completed"/> — a terminal state.
 /// </summary>
-public sealed class CompleteRentalHandler : RentalActionHandlerBase<CompleteRentalInput>
+public sealed class CompleteRentalHandler : RentalActionHandlerBase<CompleteRentalInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.CompleteRental;
@@ -23,8 +23,18 @@ public sealed class CompleteRentalHandler : RentalActionHandlerBase<CompleteRent
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Paid };
 
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, CompleteRentalInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, CompleteRentalInput input, CancellationToken ct)
     {
         if (input.Comment is not null && process.Rental is not null)
@@ -35,6 +45,6 @@ public sealed class CompleteRentalHandler : RentalActionHandlerBase<CompleteRent
             process.Rental.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         }
 
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.CompleteRental), RentalStage.Completed));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.CompleteRental), RentalStage.Completed));
     }
 }

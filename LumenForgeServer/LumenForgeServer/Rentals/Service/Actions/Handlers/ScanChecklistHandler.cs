@@ -21,7 +21,7 @@ public sealed class ScanChecklistInput : ActionInput
 /// within the <see cref="RentalStage.ReadyForPickup"/> stage.
 /// </summary>
 public sealed class ScanChecklistHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<ScanChecklistInput>
+    : RentalActionHandlerBase<ScanChecklistInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.ScanChecklist;
@@ -30,8 +30,18 @@ public sealed class ScanChecklistHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ReadyForPickup };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, ScanChecklistInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, ScanChecklistInput input, CancellationToken ct)
     {
         var checklist = await repository.GetChecklistByGuidAsync(input.ChecklistGuid, ct)
@@ -40,7 +50,7 @@ public sealed class ScanChecklistHandler(IRentalProcessRepository repository)
         var item = checklist.Items.FirstOrDefault(i => !i.IsScanned);
 
         if (item is null)
-            return ActionResult.Fail(nameof(RentalActionType.ScanChecklist), "Checklist",
+            return BlankActionResult.Fail(nameof(RentalActionType.ScanChecklist), "Checklist",
                 "All items have already been scanned.");
 
         item.IsScanned = true;
@@ -48,6 +58,6 @@ public sealed class ScanChecklistHandler(IRentalProcessRepository repository)
         item.ScannedByKcId = input.ActorKcId;
         item.ScannedAt = SystemClock.Instance.GetCurrentInstant();
 
-        return ActionResult.Ok(nameof(RentalActionType.ScanChecklist));
+        return BlankActionResult.Ok(nameof(RentalActionType.ScanChecklist));
     }
 }

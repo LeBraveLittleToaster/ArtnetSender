@@ -13,7 +13,7 @@ public sealed class RecordReturnInput : ActionInput
 /// Records that the customer has returned the rental items.
 /// Transitions the process to <see cref="RentalStage.Returned"/>.
 /// </summary>
-public sealed class RecordReturnHandler : RentalActionHandlerBase<RecordReturnInput>
+public sealed class RecordReturnHandler : RentalActionHandlerBase<RecordReturnInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RecordReturn;
@@ -22,8 +22,18 @@ public sealed class RecordReturnHandler : RentalActionHandlerBase<RecordReturnIn
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.PickedUp };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, RecordReturnInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RecordReturnInput input, CancellationToken ct)
     {
         if (input.Notes is not null && process.Rental is not null)
@@ -33,6 +43,6 @@ public sealed class RecordReturnHandler : RentalActionHandlerBase<RecordReturnIn
                 : $"{process.Rental.Notes}\n[Return] {input.Notes}";
         }
 
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RecordReturn), RentalStage.Returned));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.RecordReturn), RentalStage.Returned));
     }
 }

@@ -29,7 +29,7 @@ public sealed class ItemAssignment
 /// to the process. Internal action — no customer interaction.
 /// </summary>
 public sealed class AssignItemsHandler(StockBindingService stockBindingService)
-    : RentalActionHandlerBase<AssignItemsInput>
+    : RentalActionHandlerBase<AssignItemsInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.AssignItems;
@@ -38,23 +38,28 @@ public sealed class AssignItemsHandler(StockBindingService stockBindingService)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Approved, RentalStage.ItemsAssigned };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, AssignItemsInput input, CancellationToken ct)
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
     {
-        if (input.Items.Count == 0)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.AssignItems), "Items",
-                "At least one item assignment is required."));
-
-        if (process.Rental is null)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.AssignItems), "Rental",
-                "Process has no linked rental."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.AssignItems)));
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, AssignItemsInput input, CancellationToken ct)
+    {
+        if (input.Items.Count == 0)
+            return BlankActionResult.Fail(nameof(RentalActionType.AssignItems), "Items",
+                "At least one item assignment is required.");
+
+        if (process.Rental is null)
+            return BlankActionResult.Fail(nameof(RentalActionType.AssignItems), "Rental",
+                "Process has no linked rental.");
+
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
+    /// <inheritdoc />
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, AssignItemsInput input, CancellationToken ct)
     {
         var rental = process.Rental!;
@@ -74,6 +79,6 @@ public sealed class AssignItemsHandler(StockBindingService stockBindingService)
 
         await stockBindingService.CreateStockBindingsForMultipleDevices(deviceGuids, dto, ct);
 
-        return ActionResult.Ok(nameof(RentalActionType.AssignItems), RentalStage.ItemsAssigned);
+        return BlankActionResult.Ok(nameof(RentalActionType.AssignItems), RentalStage.ItemsAssigned);
     }
 }

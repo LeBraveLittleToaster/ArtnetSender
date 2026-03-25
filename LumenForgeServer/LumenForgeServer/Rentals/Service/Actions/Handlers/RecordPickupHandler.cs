@@ -13,7 +13,7 @@ public sealed class RecordPickupInput : ActionInput
 /// Records that the customer has physically picked up the rental items.
 /// Transitions the process to <see cref="RentalStage.PickedUp"/>.
 /// </summary>
-public sealed class RecordPickupHandler : RentalActionHandlerBase<RecordPickupInput>
+public sealed class RecordPickupHandler : RentalActionHandlerBase<RecordPickupInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RecordPickup;
@@ -22,8 +22,18 @@ public sealed class RecordPickupHandler : RentalActionHandlerBase<RecordPickupIn
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ReadyForPickup };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, RecordPickupInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RecordPickupInput input, CancellationToken ct)
     {
         if (input.Notes is not null && process.Rental is not null)
@@ -33,6 +43,6 @@ public sealed class RecordPickupHandler : RentalActionHandlerBase<RecordPickupIn
                 : $"{process.Rental.Notes}\n[Pickup] {input.Notes}";
         }
 
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RecordPickup), RentalStage.PickedUp));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.RecordPickup), RentalStage.PickedUp));
     }
 }

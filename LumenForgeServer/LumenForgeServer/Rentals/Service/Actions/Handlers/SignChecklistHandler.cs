@@ -20,7 +20,7 @@ public sealed class SignChecklistInput : ActionInput
 /// External action — typically triggered after the customer physically signs.
 /// </summary>
 public sealed class SignChecklistHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<SignChecklistInput>
+    : RentalActionHandlerBase<SignChecklistInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.SignChecklist;
@@ -29,20 +29,30 @@ public sealed class SignChecklistHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ReadyForPickup };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, SignChecklistInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, SignChecklistInput input, CancellationToken ct)
     {
         var checklist = await repository.GetChecklistByGuidAsync(input.ChecklistGuid, ct)
             ?? throw new NotFoundException($"Checklist '{input.ChecklistGuid}' not found.");
 
         if (checklist.IsSigned)
-            return ActionResult.Fail(nameof(RentalActionType.SignChecklist), "Checklist",
+            return BlankActionResult.Fail(nameof(RentalActionType.SignChecklist), "Checklist",
                 "Checklist has already been signed.");
 
         var unscanned = checklist.Items.Where(i => !i.IsScanned).ToList();
         if (unscanned.Count > 0)
-            return ActionResult.Fail(nameof(RentalActionType.SignChecklist), "Items",
+            return BlankActionResult.Fail(nameof(RentalActionType.SignChecklist), "Items",
                 $"{unscanned.Count} item(s) have not been scanned yet.");
 
         checklist.IsSigned = true;
@@ -50,6 +60,6 @@ public sealed class SignChecklistHandler(IRentalProcessRepository repository)
         checklist.SignatureData = input.SignatureData;
         checklist.SignedAt = SystemClock.Instance.GetCurrentInstant();
 
-        return ActionResult.Ok(nameof(RentalActionType.SignChecklist));
+        return BlankActionResult.Ok(nameof(RentalActionType.SignChecklist));
     }
 }

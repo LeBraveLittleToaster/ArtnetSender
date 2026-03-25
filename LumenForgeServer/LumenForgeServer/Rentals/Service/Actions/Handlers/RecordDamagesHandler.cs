@@ -30,7 +30,7 @@ public sealed class RecordDamagesInput : ActionInput
 /// Transitions the process to <see cref="RentalStage.Inspected"/>.
 /// </summary>
 public sealed class RecordDamagesHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<RecordDamagesInput>
+    : RentalActionHandlerBase<RecordDamagesInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RecordDamages;
@@ -39,19 +39,24 @@ public sealed class RecordDamagesHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Returned };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, RecordDamagesInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
     {
-        if (input.Damages.Count == 0)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.RecordDamages), "Damages",
-                "At least one damage entry is required."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RecordDamages)));
+        
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, RecordDamagesInput input, CancellationToken ct)
+    {
+        if (input.Damages.Count == 0)
+            return BlankActionResult.Fail(nameof(RentalActionType.RecordDamages), "Damages",
+                "At least one damage entry is required.");
+
+        return BlankActionResult.Ok(nameof(RentalActionType.RecordDamages));
+    }
+
+    /// <inheritdoc />
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RecordDamagesInput input, CancellationToken ct)
     {
         var now = SystemClock.Instance.GetCurrentInstant();
@@ -69,6 +74,6 @@ public sealed class RecordDamagesHandler(IRentalProcessRepository repository)
 
         await repository.AddDamageReportsAsync(reports, ct);
 
-        return ActionResult.Ok(nameof(RentalActionType.RecordDamages), RentalStage.Inspected);
+        return BlankActionResult.Ok(nameof(RentalActionType.RecordDamages), RentalStage.Inspected);
     }
 }

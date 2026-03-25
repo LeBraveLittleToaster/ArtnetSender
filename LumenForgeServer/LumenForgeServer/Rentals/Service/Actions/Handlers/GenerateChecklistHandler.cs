@@ -19,7 +19,7 @@ public sealed class GenerateChecklistInput : ActionInput
 public sealed class GenerateChecklistResult : ActionResult
 {
     /// <summary>GUID of the generated checklist.</summary>
-    public required Guid ChecklistGuid { get; init; }
+    public Guid ChecklistGuid { get; init; } = Guid.Empty;
 }
 
 /// <summary>
@@ -29,7 +29,7 @@ public sealed class GenerateChecklistResult : ActionResult
 public sealed class GenerateChecklistHandler(
     IRentalProcessRepository repository,
     AppDbContext db)
-    : RentalActionHandlerBase<GenerateChecklistInput>
+    : RentalActionHandlerBase<GenerateChecklistInput, GenerateChecklistResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.GenerateChecklist;
@@ -38,19 +38,32 @@ public sealed class GenerateChecklistHandler(
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ItemsApproved };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, GenerateChecklistInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, GenerateChecklistResult result, CancellationToken ct)
     {
-        if (process.Rental is null)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.GenerateChecklist), "Rental",
-                "Process has no linked rental."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.GenerateChecklist)));
+        
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async  Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, GenerateChecklistInput input, CancellationToken ct)
+    {
+        if (process.Rental is null)
+            return new BlankActionResult()
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.GenerateChecklist),
+                Errors = new() { ["Rental"] = "Process has no linked rental." }
+            };
+
+        return new BlankActionResult()
+        {
+            Success = true,
+            ActionName = nameof(RentalActionType.GenerateChecklist)
+        };
+    }
+
+    /// <inheritdoc />
+    protected override async Task<GenerateChecklistResult> ExecuteAsync(
         RentalProcessInstance process, GenerateChecklistInput input, CancellationToken ct)
     {
         var rental = process.Rental!;
@@ -73,7 +86,8 @@ public sealed class GenerateChecklistHandler(
             {
                 Guid = Guid.NewGuid(),
                 StockBindingGuid = b.Guid,
-                DeviceName = b.Device?.DeviceName ?? b.Device?.SerialNumber ?? b.Guid.ToString()
+                DeviceName = b.Device?.DeviceName ?? "Unknown",
+                IsScanned = false
             }).ToList()
         };
 

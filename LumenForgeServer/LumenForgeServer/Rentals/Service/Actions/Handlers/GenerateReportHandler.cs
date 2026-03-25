@@ -17,7 +17,7 @@ public sealed class GenerateReportInput : ActionInput
 public sealed class GenerateReportResult : ActionResult
 {
     /// <summary>Summary data for the report.</summary>
-    public required RentalReportSummary Summary { get; init; }
+    public RentalReportSummary? Summary { get; init; }
 }
 
 /// <summary>Summary data returned by the report generator.</summary>
@@ -36,7 +36,7 @@ public sealed class RentalReportSummary
 /// or <see cref="RentalStage.Scrapped"/>.
 /// </summary>
 public sealed class GenerateReportHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<GenerateReportInput>
+    : RentalActionHandlerBase<GenerateReportInput, GenerateReportResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.GenerateReport;
@@ -45,8 +45,18 @@ public sealed class GenerateReportHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Paid, RentalStage.Completed, RentalStage.Scrapped };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, GenerateReportResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, GenerateReportInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<GenerateReportResult> ExecuteAsync(
         RentalProcessInstance process, GenerateReportInput input, CancellationToken ct)
     {
         var detailed = await repository.GetByGuidWithDetailsAsync(process.Guid, ct);

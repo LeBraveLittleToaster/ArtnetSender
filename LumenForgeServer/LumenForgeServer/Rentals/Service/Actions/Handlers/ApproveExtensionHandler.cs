@@ -20,7 +20,7 @@ public sealed class ApproveExtensionInput : ActionInput
 /// rental period end date accordingly.
 /// </summary>
 public sealed class ApproveExtensionHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<ApproveExtensionInput>
+    : RentalActionHandlerBase<ApproveExtensionInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.ApproveExtension;
@@ -29,15 +29,25 @@ public sealed class ApproveExtensionHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.PickedUp };
 
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, ApproveExtensionInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, ApproveExtensionInput input, CancellationToken ct)
     {
         var extension = await repository.GetExtensionByGuidAsync(input.ExtensionGuid, ct)
             ?? throw new NotFoundException($"Extension '{input.ExtensionGuid}' not found.");
 
         if (extension.IsApproved.HasValue)
-            return ActionResult.Fail(nameof(RentalActionType.ApproveExtension), "Extension",
+            return BlankActionResult.Fail(nameof(RentalActionType.ApproveExtension), "Extension",
                 "Extension has already been reviewed.");
 
         var now = SystemClock.Instance.GetCurrentInstant();
@@ -53,6 +63,6 @@ public sealed class ApproveExtensionHandler(IRentalProcessRepository repository)
             process.Rental.UpdatedAt = now;
         }
 
-        return ActionResult.Ok(nameof(RentalActionType.ApproveExtension));
+        return BlankActionResult.Ok(nameof(RentalActionType.ApproveExtension));
     }
 }

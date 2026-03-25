@@ -4,22 +4,28 @@ using NodaTime;
 namespace LumenForgeServer.Rentals.Service.Actions;
 
 /// <summary>
-/// Outcome of a single action execution. Returned by every
+/// Abstract base for all rental action outcomes. Returned by every
 /// <see cref="IRentalActionHandler"/> lifecycle method and forwarded to the caller
 /// by the <see cref="RentalActionService"/> orchestrator.
 /// </summary>
 /// <remarks>
-/// Handlers may subclass this to attach action-specific data (e.g., a newly
-/// created <see cref="RentalProcessInstance"/> GUID). The orchestrator always
-/// works with the base type so logging and stage transitions stay generic.
+/// <para>
+/// Handlers must subclass this to indicate their specific return contract:
+/// - <see cref="BlankActionResult"/>: Action completes without returning domain data
+/// - Specific subclass: Action returns domain objects (e.g., newly created GUIDs)
+/// </para>
+/// <para>
+/// This enforces type safety—handlers cannot accidentally return the wrong result type,
+/// and the API contract is explicit about what data each endpoint provides.
+/// </para>
 /// </remarks>
-public class ActionResult
+public abstract class ActionResult
 {
     /// <summary>Whether the action completed without errors.</summary>
     public bool Success { get; init; }
 
     /// <summary>Canonical name of the action (e.g. <c>"Rental.Create"</c>).</summary>
-    public required string ActionName { get; init; }
+    public string ActionName { get; init; } = "";
 
     /// <summary>UTC instant the result was produced.</summary>
     public Instant Timestamp { get; init; } = SystemClock.Instance.GetCurrentInstant();
@@ -35,16 +41,24 @@ public class ActionResult
     /// Keys are field names or logical identifiers; values are human-readable messages.
     /// </summary>
     public Dictionary<string, string> Errors { get; init; } = new();
+}
 
+/// <summary>
+/// Result for actions that don't return additional domain data—only success/failure and stage transitions.
+/// Suitable for simple state-machine transitions like ApproveRequest, RecordPickup, etc.
+/// </summary>
+public sealed class BlankActionResult : ActionResult
+{
+    public BlankActionResult() { }
     /// <summary>Creates a successful result that optionally transitions the process to a new stage.</summary>
-    public static ActionResult Ok(string actionName, RentalStage? newStage = null) =>
+    public static BlankActionResult Ok(string actionName, RentalStage? newStage = null) =>
         new() { Success = true, ActionName = actionName, NewStage = newStage };
 
     /// <summary>Creates a failed result carrying the provided error details.</summary>
-    public static ActionResult Fail(string actionName, Dictionary<string, string> errors) =>
+    public static BlankActionResult Fail(string actionName, Dictionary<string, string> errors) =>
         new() { Success = false, ActionName = actionName, Errors = errors };
 
     /// <summary>Creates a failed result with a single error entry.</summary>
-    public static ActionResult Fail(string actionName, string key, string message) =>
+    public static BlankActionResult Fail(string actionName, string key, string message) =>
         Fail(actionName, new Dictionary<string, string> { [key] = message });
 }

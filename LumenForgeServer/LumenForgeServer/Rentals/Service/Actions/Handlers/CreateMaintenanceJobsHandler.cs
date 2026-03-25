@@ -14,14 +14,22 @@ public sealed class CreateMaintenanceJobsInput : ActionInput
     public required List<Guid> DamagedStockBindingGuids { get; init; }
 }
 
+/// <summary>Extended result carrying the GUIDs of created maintenance jobs.</summary>
+public sealed class CreateMaintenanceJobsResult : ActionResult
+{
+    /// <summary>GUIDs of the newly created maintenance jobs.</summary>
+    public Guid[] MaintenanceJobGuids { get; init; } = [];
+}
+
 /// <summary>
 /// Creates maintenance jobs in the Maintenance module for items that were
 /// found damaged during inspection. Internal cross-module action.
+/// Returns the GUIDs of all created maintenance jobs.
 /// </summary>
 public sealed class CreateMaintenanceJobsHandler(
     IRentalProcessRepository processRepository,
     AppDbContext db)
-    : RentalActionHandlerBase<CreateMaintenanceJobsInput>
+    : RentalActionHandlerBase<CreateMaintenanceJobsInput, CreateMaintenanceJobsResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.CreateMaintenanceJobs;
@@ -30,19 +38,32 @@ public sealed class CreateMaintenanceJobsHandler(
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.Returned, RentalStage.Inspected };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, CreateMaintenanceJobsInput input, CancellationToken ct)
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, CreateMaintenanceJobsResult result, CancellationToken ct)
     {
-        if (input.DamagedStockBindingGuids.Count == 0)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.CreateMaintenanceJobs), "DamagedStockBindingGuids",
-                "At least one damaged stock binding GUID is required."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.CreateMaintenanceJobs)));
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, CreateMaintenanceJobsInput input, CancellationToken ct)
+    {
+        if (input.DamagedStockBindingGuids.Count == 0)
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateMaintenanceJobs),
+                Errors = new() { ["DamagedStockBindingGuids"] = "At least one damaged stock binding GUID is required." }
+            };
+
+        return new BlankActionResult
+        {
+            Success = true,
+            ActionName = this.ActionType.ToString(),
+        };
+    }
+
+    /// <inheritdoc />
+    protected override async Task<CreateMaintenanceJobsResult> ExecuteAsync(
         RentalProcessInstance process, CreateMaintenanceJobsInput input, CancellationToken ct)
     {
         var now = SystemClock.Instance.GetCurrentInstant();
@@ -53,14 +74,23 @@ public sealed class CreateMaintenanceJobsHandler(
             .ToListAsync(ct);
 
         if (bindings.Count == 0)
-            return ActionResult.Fail(nameof(RentalActionType.CreateMaintenanceJobs), "DamagedStockBindingGuids",
-                "No matching stock bindings found.");
+            return new CreateMaintenanceJobsResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateMaintenanceJobs),
+                MaintenanceJobGuids = [],
+                Errors = new() { ["DamagedStockBindingGuids"] = "No matching stock bindings found." }
+            };
+
+        var createdJobGuids = new List<Guid>();
 
         foreach (var binding in bindings)
         {
+            var jobGuid = Guid.NewGuid();
+
             var job = new MaintenanceJob
             {
-                Guid = Guid.NewGuid(),
+                Guid = jobGuid,
                 Name = $"Rental damage — {binding.Device?.DeviceName ?? binding.Device?.SerialNumber ?? binding.Guid.ToString()}",
                 Description = $"Maintenance job created from rental process {process.Guid} for damaged item.",
                 Status = MaintenanceStatus.Reported,
@@ -72,8 +102,14 @@ public sealed class CreateMaintenanceJobsHandler(
             };
 
             await db.MaintenanceJobs.AddAsync(job, ct);
+            createdJobGuids.Add(jobGuid);
         }
 
-        return ActionResult.Ok(nameof(RentalActionType.CreateMaintenanceJobs));
+        return new CreateMaintenanceJobsResult
+        {
+            Success = true,
+            ActionName = nameof(RentalActionType.CreateMaintenanceJobs),
+            MaintenanceJobGuids = createdJobGuids.ToArray()
+        };
     }
 }

@@ -20,7 +20,7 @@ public sealed class RejectExtensionInput : ActionInput
 /// The rental period remains unchanged.
 /// </summary>
 public sealed class RejectExtensionHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<RejectExtensionInput>
+    : RentalActionHandlerBase<RejectExtensionInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RejectExtension;
@@ -29,15 +29,25 @@ public sealed class RejectExtensionHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.PickedUp };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, RejectExtensionInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RejectExtensionInput input, CancellationToken ct)
     {
         var extension = await repository.GetExtensionByGuidAsync(input.ExtensionGuid, ct)
             ?? throw new NotFoundException($"Extension '{input.ExtensionGuid}' not found.");
 
         if (extension.IsApproved.HasValue)
-            return ActionResult.Fail(nameof(RentalActionType.RejectExtension), "Extension",
+            return BlankActionResult.Fail(nameof(RentalActionType.RejectExtension), "Extension",
                 "Extension has already been reviewed.");
 
         extension.IsApproved = false;
@@ -45,6 +55,6 @@ public sealed class RejectExtensionHandler(IRentalProcessRepository repository)
         extension.ReviewedByKcId = input.ActorKcId;
         extension.ReviewedAt = SystemClock.Instance.GetCurrentInstant();
 
-        return ActionResult.Ok(nameof(RentalActionType.RejectExtension));
+        return BlankActionResult.Ok(nameof(RentalActionType.RejectExtension));
     }
 }

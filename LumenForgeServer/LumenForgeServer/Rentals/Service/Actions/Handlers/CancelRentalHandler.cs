@@ -15,7 +15,7 @@ public sealed class CancelRentalInput : ActionInput
 /// Transitions to <see cref="RentalStage.Cancelled"/> — a terminal state.
 /// Any existing stock bindings are released.
 /// </summary>
-public sealed class CancelRentalHandler : RentalActionHandlerBase<CancelRentalInput>
+public sealed class CancelRentalHandler : RentalActionHandlerBase<CancelRentalInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.CancelRental;
@@ -31,8 +31,18 @@ public sealed class CancelRentalHandler : RentalActionHandlerBase<CancelRentalIn
             RentalStage.ReadyForPickup
         };
 
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, CancelRentalInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, CancelRentalInput input, CancellationToken ct)
     {
         if (process.Rental is not null)
@@ -43,6 +53,6 @@ public sealed class CancelRentalHandler : RentalActionHandlerBase<CancelRentalIn
             process.Rental.UpdatedAt = SystemClock.Instance.GetCurrentInstant();
         }
 
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.CancelRental), RentalStage.Cancelled));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.CancelRental), RentalStage.Cancelled));
     }
 }

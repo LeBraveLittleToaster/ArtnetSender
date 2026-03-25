@@ -13,7 +13,7 @@ public sealed class RejectItemsInput : ActionInput
 /// Rejects the assigned item list, returning the process to
 /// <see cref="RentalStage.Approved"/> so staff can reassign items.
 /// </summary>
-public sealed class RejectItemsHandler : RentalActionHandlerBase<RejectItemsInput>
+public sealed class RejectItemsHandler : RentalActionHandlerBase<RejectItemsInput, BlankActionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RejectItems;
@@ -22,10 +22,20 @@ public sealed class RejectItemsHandler : RentalActionHandlerBase<RejectItemsInpu
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.ItemsAssigned };
 
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, BlankActionResult result, CancellationToken ct)
+    {
+        
+    }
+
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, RejectItemsInput input, CancellationToken ct)
+    {
+        return BlankActionResult.Ok(this.ActionType.ToString());
+    }
+
     /// <inheritdoc />
-    protected override Task<ActionResult> ExecuteAsync(
+    protected override Task<BlankActionResult> ExecuteAsync(
         RentalProcessInstance process, RejectItemsInput input, CancellationToken ct)
     {
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RejectItems), RentalStage.Approved));
+        return Task.FromResult(BlankActionResult.Ok(nameof(RentalActionType.RejectItems), RentalStage.Approved));
     }
 }

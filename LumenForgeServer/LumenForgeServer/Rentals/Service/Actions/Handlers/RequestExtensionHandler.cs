@@ -18,7 +18,7 @@ public sealed class RequestExtensionInput : ActionInput
 public sealed class RequestExtensionResult : ActionResult
 {
     /// <summary>GUID of the created extension request.</summary>
-    public required Guid ExtensionGuid { get; init; }
+    public Guid? ExtensionGuid { get; init; } = null;
 }
 
 /// <summary>
@@ -27,7 +27,7 @@ public sealed class RequestExtensionResult : ActionResult
 /// External action typically initiated by the customer.
 /// </summary>
 public sealed class RequestExtensionHandler(IRentalProcessRepository repository)
-    : RentalActionHandlerBase<RequestExtensionInput>
+    : RentalActionHandlerBase<RequestExtensionInput, RequestExtensionResult>
 {
     /// <inheritdoc />
     public override RentalActionType ActionType => RentalActionType.RequestExtension;
@@ -36,23 +36,40 @@ public sealed class RequestExtensionHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.PickedUp };
 
-    /// <inheritdoc />
-    protected override Task<ActionResult> BeforeExecuteAsync(
-        RentalProcessInstance process, RequestExtensionInput input, CancellationToken ct)
+    protected override async Task AfterExecuteAsync(RentalProcessInstance process, RequestExtensionResult result, CancellationToken ct)
     {
-        if (process.Rental is null)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.RequestExtension), "Rental",
-                "Process has no linked rental."));
-
-        if (input.NewRequestedEnd <= process.Rental.RequestedEnd)
-            return Task.FromResult(ActionResult.Fail(nameof(RentalActionType.RequestExtension), "NewRequestedEnd",
-                "New end date must be after the current end date."));
-
-        return Task.FromResult(ActionResult.Ok(nameof(RentalActionType.RequestExtension)));
+        
     }
 
     /// <inheritdoc />
-    protected override async Task<ActionResult> ExecuteAsync(
+    protected override async Task<BlankActionResult> BeforeExecuteAsync(
+        RentalProcessInstance process, RequestExtensionInput input, CancellationToken ct)
+    {
+        if (process.Rental is null)
+            return new BlankActionResult()
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.RequestExtension),
+                Errors = new() { ["Rental"] = "Process has no linked rental." }
+            };
+
+        if (input.NewRequestedEnd <= process.Rental.RequestedEnd)
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.RequestExtension),
+                Errors = new() { ["NewRequestedEnd"] = "New end date must be after the current end date." }
+            };
+
+        return new BlankActionResult
+        {
+            Success = true,
+            ActionName = nameof(RentalActionType.RequestExtension)
+        };
+    }
+
+    /// <inheritdoc />
+    protected override async Task<RequestExtensionResult> ExecuteAsync(
         RentalProcessInstance process, RequestExtensionInput input, CancellationToken ct)
     {
         var extension = new RentalExtension
