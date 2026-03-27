@@ -35,7 +35,7 @@ public class RentalActionController(RentalActionService actionService) : Control
     [HttpGet("{processGuid:guid}/available")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [Authorize]
+    [Authorize(Roles = nameof(Permissions.RentalActionRead))]
     public async Task<IActionResult> GetAvailableActions(
         [FromRoute] Guid processGuid, CancellationToken ct)
     {
@@ -54,7 +54,7 @@ public class RentalActionController(RentalActionService actionService) : Control
     [HttpPost("create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Authorize(Roles = nameof(Permissions.RentalActionCall))]
+    [Authorize(Roles = nameof(Permissions.RentalCreate))]
     public async Task<IActionResult> CreateRental(
         [FromBody] CreateRentalDto dto, CancellationToken ct)
     {
