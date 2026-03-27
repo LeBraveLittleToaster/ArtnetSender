@@ -2,6 +2,7 @@ using FluentAssertions;
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service;
@@ -21,6 +22,7 @@ namespace LumenForgeServer.UnitTests.Rentals.Actions;
 public class RentalActionServiceTests
 {
     private readonly IRentalProcessRepository _repo = Substitute.For<IRentalProcessRepository>();
+    private readonly IQuestionRepository _questionRepo = Substitute.For<IQuestionRepository>();
     private readonly IRentalActionRegistry _registry = new RentalActionRegistry();
     private readonly ILogger<RentalActionService> _logger = Substitute.For<ILogger<RentalActionService>>();
     private readonly CancellationToken _ct = CancellationToken.None;
@@ -109,7 +111,7 @@ public class RentalActionServiceTests
         _repo.GetByGuidAsync(process.Guid, _ct).Returns(process);
 
         // CreateRental's BeforeExecute validates dates — end before start should fail
-        var service = CreateService(new CreateRentalHandler(_repo));
+        var service = CreateService(new CreateRentalHandler(_repo, _questionRepo));
 
         var input = new CreateRentalInput
         {
@@ -164,14 +166,22 @@ public class RentalActionServiceTests
     public async Task CreateProcess_CreatesInstanceAndRunsHandler()
     {
         var now = SystemClock.Instance.GetCurrentInstant();
-        var service = CreateService(new CreateRentalHandler(_repo));
+        var service = CreateService(new CreateRentalHandler(_repo, _questionRepo));
+        var questionGuid = Guid.NewGuid();
+
+        _questionRepo.DoesQuestionExistByGuidAsync(Arg.Any<List<Guid>>()).Returns(0);
+        _questionRepo.GetQuestionIdsByGuidAsync(Arg.Any<List<Guid>>()).Returns(new Dictionary<Guid, long>
+        {
+            [questionGuid] = 200
+        });
 
         var input = new CreateRentalInput
         {
             ActorKcId = "customer",
             CustomerName = "Bob",
             RequestedStart = now + Duration.FromDays(1),
-            RequestedEnd = now + Duration.FromDays(5)
+            RequestedEnd = now + Duration.FromDays(5),
+            QASets = [new QASet { Guid = questionGuid.ToString(), Value = "Yes" }]
         };
 
         var result = await service.CreateProcessAsync(input,  _ct);

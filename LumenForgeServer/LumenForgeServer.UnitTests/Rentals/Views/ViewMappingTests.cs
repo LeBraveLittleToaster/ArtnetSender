@@ -36,6 +36,10 @@ public class ViewMappingTests
         view.Notes.Should().Be(rental.Notes);
         view.CreatedAt.Should().Be(rental.CreatedAt);
         view.UpdatedAt.Should().Be(rental.UpdatedAt);
+        view.Answers.Should().HaveCount(1);
+        view.Answers[0].Value.Should().Be("Yes");
+        view.Answers[0].QuestionGuid.Should().Be(rental.Answers[0].Question.Guid);
+        view.Answers[0].QuestionText.Should().Be(rental.Answers[0].Question.QuestionText);
     }
 
     // ── RentalProcessView ───────────────────────────────────────────
@@ -355,7 +359,27 @@ public class ViewMappingTests
         Priority = RentalPriority.NORMAL,
         Notes = "Handle with care",
         CreatedAt = Now,
-        UpdatedAt = Now
+        UpdatedAt = Now,
+        Answers = [CreateAnswer(1)]
+    };
+
+    private static Answer CreateAnswer(long rentalId) => new()
+    {
+        Id = 999,
+        Guid = Guid.NewGuid(),
+        RentalId = rentalId,
+        QuestionId = 77,
+        Question = new Question
+        {
+            Id = 77,
+            Guid = Guid.NewGuid(),
+            QuestionText = "Did everything work?",
+            Category = "Feedback",
+            DisplayOrder = 1,
+            IsActive = true,
+            QuestionDataType =  QuestionDataType.FREETEXT,
+        },
+        Value = "Yes"
     };
 
     private static Checklist CreateChecklist(long processId) => new()

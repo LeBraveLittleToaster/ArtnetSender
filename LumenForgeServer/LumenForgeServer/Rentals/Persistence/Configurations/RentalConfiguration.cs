@@ -26,7 +26,5 @@ public sealed class RentalConfiguration : IEntityTypeConfiguration<Rental>
         builder.HasIndex(x => x.CustomerKcId);
         builder.HasIndex(x => x.CreatedAt);
 
-        // Rental → Invoice relationship is configured from the Invoice side
-        // in InvoiceConfiguration to keep billing ownership in the Billing module.
     }
 }

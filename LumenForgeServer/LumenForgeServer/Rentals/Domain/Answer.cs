@@ -11,6 +11,12 @@ public class Answer
     /// <summary>Public identifier.</summary>
     public Guid Guid { get; set; }
 
+    /// <summary>Foreign key to the rental this answer belongs to.</summary>
+    public long RentalId { get; set; }
+
+    /// <summary>Navigation to the parent rental.</summary>
+    public Rental Rental { get; set; } = null!;
+
     /// <summary>Foreign key to the question being answered.</summary>
     public long QuestionId { get; set; }
 

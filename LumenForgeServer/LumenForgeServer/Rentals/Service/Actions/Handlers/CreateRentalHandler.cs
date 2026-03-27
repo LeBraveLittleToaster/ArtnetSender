@@ -1,4 +1,5 @@
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Persistence;
 using NodaTime;
 
@@ -24,6 +25,8 @@ public sealed class CreateRentalInput : ActionInput
 
     /// <summary>Optional notes from the customer.</summary>
     public string? Notes { get; init; }
+    
+    public List<QASet> QASets { get; init; } = [];
 }
 
 /// <summary>Extended result that carries the newly created process GUID back to the caller.</summary>
@@ -38,7 +41,7 @@ public sealed class CreateRentalResult : ActionResult
 /// <see cref="Rental"/> data aggregate. This is the entry point of every rental
 /// workflow — after execution the process is in <see cref="RentalStage.Requested"/>.
 /// </summary>
-public sealed class CreateRentalHandler(IRentalProcessRepository repository)
+public sealed class CreateRentalHandler(IRentalProcessRepository processRepository, IQuestionRepository questionRepository)
     : RentalActionHandlerBase<CreateRentalInput, CreateRentalResult>
 {
     /// <inheritdoc />
@@ -48,9 +51,10 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.None };
 
-    protected override async Task AfterExecuteAsync(RentalProcessInstance process, CreateRentalResult result, CancellationToken ct)
+    protected override Task AfterExecuteAsync(RentalProcessInstance process, CreateRentalResult result, CancellationToken ct)
     {
-        // No post-execution steps 
+        // No post-execution steps.
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -58,12 +62,55 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
         RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
     {
         if (input.RequestedEnd <= input.RequestedStart)
+        {
             return new BlankActionResult
             {
                 Success = false,
                 ActionName = nameof(RentalActionType.CreateRental),
                 Errors = new() { ["RequestedEnd"] = "Requested end must be after the requested start." }
             };
+        }
+
+        if (input.QASets.Count == 0)
+        {
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateRental),
+                Errors = new() { ["Answers"] = "At least one answer must be provided." }
+            };
+        }
+
+        if (!TryParseQuestionGuids(input.QASets, out var listOfQuestionGuids, out var parseError))
+        {
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateRental),
+                Errors = new() { ["Answers"] = parseError }
+            };
+        }
+
+        listOfQuestionGuids = listOfQuestionGuids.Distinct().ToList();
+        if (listOfQuestionGuids.Count != input.QASets.Count)
+        {
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateRental),
+                Errors = new() { ["DistinctQuestionGuids"] = "Multiple questions with same Guid found!" }
+            };
+        }
+
+        if (await questionRepository.DoesQuestionExistByGuidAsync(listOfQuestionGuids) != 0)
+        {
+            return new BlankActionResult
+            {
+                Success = false,
+                ActionName = nameof(RentalActionType.CreateRental),
+                Errors = new() { ["QuestionDontExist"] = "One or multiple questions do not exist." }
+            };
+        } 
 
         return new BlankActionResult
         {
@@ -77,6 +124,10 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
         RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
     {
         var now = SystemClock.Instance.GetCurrentInstant();
+        if (!TryParseQuestionGuids(input.QASets, out var questionGuids, out var parseError))
+            throw new InvalidOperationException(parseError);
+
+        var questionIdsByGuid = await questionRepository.GetQuestionIdsByGuidAsync(questionGuids);
 
         var rental = new Rental
         {
@@ -89,10 +140,16 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
             RequestedEnd = input.RequestedEnd,
             Notes = input.Notes,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            Answers = input.QASets.Select((qa, index) => new Answer
+            {
+                Guid = Guid.NewGuid(),
+                QuestionId = questionIdsByGuid[questionGuids[index]],
+                Value = qa.Value
+            }).ToList()
         };
 
-        await repository.AddRentalAsync(rental, ct);
+        await processRepository.AddRentalAsync(rental, ct);
 
         process.Rental = rental;
 
@@ -103,5 +160,35 @@ public sealed class CreateRentalHandler(IRentalProcessRepository repository)
             NewStage = RentalStage.Requested,
             ProcessInstanceGuid = process.Guid
         };
+    }
+
+    private static bool TryParseQuestionGuids(
+        IReadOnlyList<QASet> qaSets,
+        out List<Guid> questionGuids,
+        out string parseError)
+    {
+        questionGuids = new List<Guid>(qaSets.Count);
+        parseError = string.Empty;
+
+        for (var i = 0; i < qaSets.Count; i++)
+        {
+            var qa = qaSets[i];
+
+            if (!Guid.TryParse(qa.Guid, out var questionGuid))
+            {
+                parseError = $"Answer at index {i} contains an invalid question GUID.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(qa.Value))
+            {
+                parseError = $"Answer at index {i} must not be empty.";
+                return false;
+            }
+
+            questionGuids.Add(questionGuid);
+        }
+
+        return true;
     }
 }

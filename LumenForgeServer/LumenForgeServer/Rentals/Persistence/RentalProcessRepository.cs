@@ -17,6 +17,8 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     {
         return await db.RentalProcessInstances
             .Include(p => p.Rental)
+            .ThenInclude(r => r!.Answers)
+            .ThenInclude(a => a.Question)
             .FirstOrDefaultAsync(p => p.Guid == processGuid, ct);
     }
 
@@ -25,6 +27,8 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     {
         return await db.RentalProcessInstances
             .Include(p => p.Rental)
+            .ThenInclude(r => r!.Answers)
+            .ThenInclude(a => a.Question)
             .Include(p => p.Checklists).ThenInclude(c => c.Items)
             .Include(p => p.Extensions)
             .Include(p => p.DamageReports)
@@ -37,6 +41,8 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     {
         var query = db.RentalProcessInstances
             .Include(p => p.Rental)
+            .ThenInclude(r => r!.Answers)
+            .ThenInclude(a => a.Question)
             .AsQueryable();
 
         if (includes.HasFlag(RentalProcessInclude.Checklists))

@@ -32,6 +32,12 @@ public sealed record CreateRentalDto : IActionInputDerivable<CreateRentalInput>
     [JsonPropertyName("notes")]
     public string? Notes { get; init; }
 
+    /// <summary>
+    /// Question Guid with the provided answers
+    /// </summary>
+    [JsonPropertyName("answers")]
+    public List<QASet> QASets { get; init; } = [];
+
     /// <summary>Maps this API DTO to the internal action input.</summary>
     public CreateRentalInput ToActionInput() => new()
     {
@@ -40,6 +46,21 @@ public sealed record CreateRentalDto : IActionInputDerivable<CreateRentalInput>
         Purpose = Purpose,
         RequestedStart = RequestedStart,
         RequestedEnd = RequestedEnd,
-        Notes = Notes
+        Notes = Notes,
+        QASets = QASets
     };
+}
+
+public class QASet
+{
+    /// <summary>
+    /// Question GUID
+    /// </summary>
+    [JsonPropertyName("question_guid")] 
+    public required string Guid { get; init; }
+    /// <summary>
+    /// Serialized answer with unspecified datatype
+    /// </summary>
+    [JsonPropertyName("answer")] 
+    public required string Value { get; init; }
 }

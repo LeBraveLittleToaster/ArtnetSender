@@ -20,12 +20,13 @@ public class RentalStageTransitionTests
     public void AllHandlerAllowedStages_AreRegisteredInRegistry()
     {
         var repo = Substitute.For<LumenForgeServer.Rentals.Persistence.IRentalProcessRepository>();
+        var questionRepo = Substitute.For<LumenForgeServer.Rentals.Persistence.IQuestionRepository>();
         var db = HandlerTestHelper.CreateInMemoryDbContext();
         var stockSvc = HandlerTestHelper.CreateStockBindingService();
 
         IRentalActionHandler[] handlers =
         [
-            new CreateRentalHandler(repo),
+            new CreateRentalHandler(repo, questionRepo),
             new ApproveRequestHandler(),
             new RejectRequestHandler(),
             new AssignItemsHandler(stockSvc),

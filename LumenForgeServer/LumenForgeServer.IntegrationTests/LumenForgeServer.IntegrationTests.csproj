@@ -27,9 +27,4 @@
     <ProjectReference Include="..\LumenForgeServer\LumenForgeServer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Rentals\Actions\Handlers\" />
-    <Folder Include="Rentals\Actions\Helpers\" />
-  </ItemGroup>
-
 </Project>

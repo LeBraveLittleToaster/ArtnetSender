@@ -2,6 +2,7 @@ using FluentAssertions;
 using LumenForgeServer.Common;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service.Actions;
@@ -20,6 +21,7 @@ public class HandlerExecutionTests
 {
     private readonly CancellationToken _ct = CancellationToken.None;
     private readonly IRentalProcessRepository _repo = Substitute.For<IRentalProcessRepository>();
+    private readonly IQuestionRepository _questionRepo = Substitute.For<IQuestionRepository>();
 
     // ── ApproveRequest ──────────────────────────────────────────────
 
@@ -247,9 +249,17 @@ public class HandlerExecutionTests
     [Fact]
     public async Task CreateRental_CreatesRentalAndTransitionsToRequested()
     {
-        IRentalActionHandler handler = new CreateRentalHandler(_repo);
+        IRentalActionHandler handler = new CreateRentalHandler(_repo, _questionRepo);
         var process = HandlerTestHelper.CreateProcess(RentalStage.None, withRental: false);
         var now = SystemClock.Instance.GetCurrentInstant();
+        var questionGuid1 = Guid.NewGuid();
+        var questionGuid2 = Guid.NewGuid();
+
+        _questionRepo.GetQuestionIdsByGuidAsync(Arg.Any<List<Guid>>()).Returns(new Dictionary<Guid, long>
+        {
+            [questionGuid1] = 101,
+            [questionGuid2] = 102
+        });
 
         var input = new CreateRentalInput
         {
@@ -259,7 +269,12 @@ public class HandlerExecutionTests
             Purpose = "Conference equipment",
             RequestedStart = now + Duration.FromDays(1),
             RequestedEnd = now + Duration.FromDays(5),
-            Notes = "Handle with care"
+            Notes = "Handle with care",
+            QASets =
+            [
+                new QASet { Guid = questionGuid1.ToString(), Value = "A1" },
+                new QASet { Guid = questionGuid2.ToString(), Value = "A2" }
+            ]
         };
 
         var result = await handler.ExecuteAsync(process, input, _ct);
@@ -273,6 +288,11 @@ public class HandlerExecutionTests
         process.Rental!.CustomerKcId.Should().Be("customer-kc-id");
         process.Rental.CustomerName.Should().Be("Jane Doe");
         process.Rental.Notes.Should().Be("Handle with care");
+        process.Rental.Answers.Should().HaveCount(2);
+        process.Rental.Answers[0].QuestionId.Should().Be(101);
+        process.Rental.Answers[0].Value.Should().Be("A1");
+        process.Rental.Answers[1].QuestionId.Should().Be(102);
+        process.Rental.Answers[1].Value.Should().Be("A2");
 
         await _repo.Received(1).AddRentalAsync(Arg.Any<Rental>(), _ct);
     }

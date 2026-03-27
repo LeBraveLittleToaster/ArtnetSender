@@ -19,9 +19,5 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Property(x => x.QuestionText).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.Category).HasMaxLength(256);
 
-        builder.HasMany<Answer>()
-            .WithOne(a => a.Question)
-            .HasForeignKey(a => a.QuestionId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

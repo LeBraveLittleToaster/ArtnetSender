@@ -1,21 +1,22 @@
-QuestionText;Category;DisplayOrder;IsActive
-Does the venue have a fixed rigging grid?;Venue;0;true
-Are there weight restrictions for ceiling-mounted equipment?;Venue;1;true
-Is a site visit required before the event?;Venue;2;true
-What is the ceiling height of the main performance area?;Venue;3;true
-What is the approximate audience size?;Event;10;true
-Will the event be filmed or live-streamed?;Event;11;true
-Is the event indoors or outdoors?;Event;12;true
-Are there multiple stages or performance areas?;Event;13;true
-Does the event run across multiple days?;Event;14;true
-Is a DMX lighting console provided on-site?;Technical;20;true
-What power supply is available (single-phase / three-phase)?;Technical;21;true
-Is a dedicated dimmer rack required?;Technical;22;true
-Do you need follow spots for performers?;Technical;23;true
-Are wireless lighting control systems acceptable?;Technical;24;true
-Is haze or fog machine use permitted at the venue?;Technical;25;true
-Do you require a lighting technician during the event?;Service;30;true
-Is pre-event rigging and de-rigging included in the booking window?;Service;31;true
-Do you need a lighting design consultation beforehand?;Service;32;true
-Legacy: Is a follow-spot operator required? (deprecated);Service;99;false
-Legacy: Does the client supply their own cables? (deprecated);Technical;98;false
+questions
+QuestionText;Category;DisplayOrder;IsActive;QuestionDataType
+Does the venue have a fixed rigging grid?;Venue;0;TRUE;YES_NO
+Are there weight restrictions for ceiling-mounted equipment?;Venue;1;TRUE;YES_NO
+Is a site visit required before the event?;Venue;2;TRUE;YES_NO
+What is the ceiling height of the main performance area?;Venue;3;TRUE;FREETEXT
+What is the approximate audience size?;Event;10;TRUE;NUMBER_INT
+Will the event be filmed or live-streamed?;Event;11;TRUE;YES_NO
+Is the event indoors or outdoors?;Event;12;TRUE;YES_NO
+Are there multiple stages or performance areas?;Event;13;TRUE;NUMBER_INT
+Does the event run across multiple days?;Event;14;TRUE;YES_NO
+Is a DMX lighting console provided on-site?;Technical;20;TRUE;YES_NO
+What power supply is available (single-phase / three-phase)?;Technical;21;TRUE;FREETEXT
+Is a dedicated dimmer rack required?;Technical;22;TRUE;YES_NO
+Do you need follow spots for performers?;Technical;23;TRUE;YES_NO
+Are wireless lighting control systems acceptable?;Technical;24;TRUE;YES_NO
+Is haze or fog machine use permitted at the venue?;Technical;25;TRUE;FREETEXT
+Do you require a lighting technician during the event?;Service;30;TRUE;YES_NO
+Is pre-event rigging and de-rigging included in the booking window?;Service;31;TRUE;FREETEXT
+Do you need a lighting design consultation beforehand?;Service;32;TRUE;YES_NO
+Legacy: Is a follow-spot operator required? (deprecated);Service;99;FALSE;YES_NO
+Legacy: Does the client supply their own cables? (deprecated);Technical;98;FALSE;YES_NO

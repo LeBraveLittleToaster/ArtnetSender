@@ -18,16 +18,25 @@ public class QuestionSeeder(AppDbContext db) : IDataSeeder
 
         foreach (var row in SeedDataLoader.Load("questions.csv"))
         {
-            if (row.Length < 4) continue;
+            if (row.Length < 5) continue;
 
-            db.Questions.Add(new Question
+            try
             {
-                Guid         = Guid.NewGuid(),
-                QuestionText = row[0].Trim(),
-                Category     = row[1].Trim(),
-                DisplayOrder = int.Parse(row[2].Trim()),
-                IsActive     = bool.Parse(row[3].Trim()),
-            });
+                QuestionDataType.TryParse(row[4].Trim(), out QuestionDataType questionDataType);
+                db.Questions.Add(new Question
+                {
+                    Guid         = Guid.NewGuid(),
+                    QuestionText = row[0].Trim(),
+                    Category     = row[1].Trim(),
+                    DisplayOrder = int.Parse(row[2].Trim()),
+                    IsActive     = bool.Parse(row[3].Trim()),
+                    QuestionDataType = questionDataType 
+                });
+            }catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
         }
 
         await db.SaveChangesAsync(ct);

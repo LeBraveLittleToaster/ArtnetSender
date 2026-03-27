@@ -22,4 +22,9 @@ public class Question
 
     /// <summary>Whether the question is currently active.</summary>
     public bool IsActive { get; set; } = true;
+
+    public required QuestionDataType QuestionDataType { get; set; } = QuestionDataType.FREETEXT;
+
+    /// <summary>Answers submitted for this question across rentals.</summary>
+    public List<Answer> Answers { get; set; } = [];
 }

@@ -3,6 +3,7 @@ using LumenForgeServer.Common;
 using LumenForgeServer.Common.Database;
 using LumenForgeServer.Inventory.Service;
 using LumenForgeServer.Rentals.Domain;
+using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.UnitTests.Rentals.Actions.Helpers;
 using LumenForgeServer.Rentals.Service.Actions;
@@ -20,13 +21,14 @@ public class HandlerValidationTests
 {
     private readonly CancellationToken _ct = CancellationToken.None;
     private readonly IRentalProcessRepository _repo = Substitute.For<IRentalProcessRepository>();
+    private readonly IQuestionRepository _questionRepo = Substitute.For<IQuestionRepository>();
 
     // ── CreateRental ────────────────────────────────────────────────
 
     [Fact]
     public async Task CreateRental_EndBeforeStart_Fails()
     {
-        IRentalActionHandler handler = new CreateRentalHandler(_repo);
+        IRentalActionHandler handler = new CreateRentalHandler(_repo, _questionRepo);
         var process = HandlerTestHelper.CreateProcess(RentalStage.None);
         var now = SystemClock.Instance.GetCurrentInstant();
 
@@ -46,15 +48,19 @@ public class HandlerValidationTests
     [Fact]
     public async Task CreateRental_ValidDates_Passes()
     {
-        IRentalActionHandler handler = new CreateRentalHandler(_repo);
+        IRentalActionHandler handler = new CreateRentalHandler(_repo, _questionRepo);
         var process = HandlerTestHelper.CreateProcess(RentalStage.None);
         var now = SystemClock.Instance.GetCurrentInstant();
+        var questionGuid = Guid.NewGuid();
+
+        _questionRepo.DoesQuestionExistByGuidAsync(Arg.Any<List<Guid>>()).Returns(0);
 
         var input = new CreateRentalInput
         {
             ActorKcId = "actor",
             RequestedStart = now + Duration.FromDays(1),
-            RequestedEnd = now + Duration.FromDays(5)
+            RequestedEnd = now + Duration.FromDays(5),
+            QASets = [new QASet { Guid = questionGuid.ToString(), Value = "Valid answer" }]
         };
 
         var result = await handler.BeforeExecuteAsync(process, input, _ct);

@@ -26,7 +26,12 @@ public class DtoMappingTests
             Purpose = "Conference",
             RequestedStart = now + Duration.FromDays(1),
             RequestedEnd = now + Duration.FromDays(5),
-            Notes = "Handle with care"
+            Notes = "Handle with care",
+            QASets =
+            [
+                new QASet { Guid = Guid.NewGuid().ToString(), Value = "Yes" },
+                new QASet { Guid = Guid.NewGuid().ToString(), Value = "No" }
+            ]
         };
 
         var input = dto.ToActionInput();
@@ -38,6 +43,9 @@ public class DtoMappingTests
         input.RequestedStart.Should().Be(dto.RequestedStart);
         input.RequestedEnd.Should().Be(dto.RequestedEnd);
         input.Notes.Should().Be("Handle with care");
+        input.QASets.Should().HaveCount(2);
+        input.QASets[0].Guid.Should().Be(dto.QASets[0].Guid);
+        input.QASets[0].Value.Should().Be(dto.QASets[0].Value);
     }
 
     [Fact]
@@ -56,6 +64,7 @@ public class DtoMappingTests
         input.CustomerEmail.Should().BeNull();
         input.Purpose.Should().BeNull();
         input.Notes.Should().BeNull();
+        input.QASets.Should().BeEmpty();
     }
 
     // ── ApproveRequestDto ───────────────────────────────────────────

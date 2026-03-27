@@ -19,6 +19,7 @@ public class HandlerMetadataTests
     private static IRentalActionHandler Handler<T>(T handler) where T : IRentalActionHandler => handler;
 
     private static readonly IRentalProcessRepository Repo = Substitute.For<IRentalProcessRepository>();
+    private static readonly IQuestionRepository QuestionRepo = Substitute.For<IQuestionRepository>();
     private static readonly global::LumenForgeServer.Common.Database.AppDbContext Db = HandlerTestHelper.CreateInMemoryDbContext();
     private static readonly global::LumenForgeServer.Inventory.Service.StockBindingService StockSvc = HandlerTestHelper.CreateStockBindingService();
 
@@ -33,7 +34,7 @@ public class HandlerMetadataTests
 
     public static TheoryData<IRentalActionHandler, RentalActionType> ActionTypeData() => new()
     {
-        { new CreateRentalHandler(Repo), RentalActionType.CreateRental },
+        { new CreateRentalHandler(Repo, QuestionRepo), RentalActionType.CreateRental },
         { new ApproveRequestHandler(), RentalActionType.ApproveRequest },
         { new RejectRequestHandler(), RentalActionType.RejectRequest },
         { new AssignItemsHandler(StockSvc), RentalActionType.AssignItems },
@@ -70,7 +71,7 @@ public class HandlerMetadataTests
 
     public static TheoryData<IRentalActionHandler, HashSet<RentalStage>> AllowedStagesData() => new()
     {
-        { new CreateRentalHandler(Repo), new HashSet<RentalStage> { RentalStage.None } },
+        { new CreateRentalHandler(Repo, QuestionRepo), new HashSet<RentalStage> { RentalStage.None } },
         { new ApproveRequestHandler(), new HashSet<RentalStage> { RentalStage.Requested } },
         { new RejectRequestHandler(), new HashSet<RentalStage> { RentalStage.Requested } },
         { new AssignItemsHandler(StockSvc), new HashSet<RentalStage> { RentalStage.Approved, RentalStage.ItemsAssigned } },

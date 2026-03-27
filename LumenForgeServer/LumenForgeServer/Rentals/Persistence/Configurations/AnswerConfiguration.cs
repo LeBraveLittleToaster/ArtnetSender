@@ -18,6 +18,19 @@ public sealed class AnswerConfiguration : IEntityTypeConfiguration<Answer>
 
         builder.Property(x => x.Value).HasMaxLength(4000).IsRequired();
 
+        builder.HasIndex(x => x.RentalId);
         builder.HasIndex(x => x.QuestionId);
+        
+        builder.HasOne(a => a.Rental)
+            .WithMany(r => r.Answers)
+            .HasForeignKey(a => a.RentalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(a => a.Question)
+            .WithMany(q => q.Answers)
+            .HasForeignKey(a => a.QuestionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(a => new { a.RentalId, a.QuestionId }).IsUnique();
     }
 }

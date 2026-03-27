@@ -43,6 +43,9 @@ public sealed record RentalView
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 
+    [JsonPropertyName("answers")]
+    public IReadOnlyList<AnswerView> Answers { get; init; } = [];
+
     public static RentalView FromEntity(Rental rental) => new()
     {
         Uuid = rental.Uuid,
@@ -55,6 +58,7 @@ public sealed record RentalView
         Priority = rental.Priority,
         Notes = rental.Notes,
         CreatedAt = rental.CreatedAt,
-        UpdatedAt = rental.UpdatedAt
+        UpdatedAt = rental.UpdatedAt,
+        Answers = rental.Answers.Select(AnswerView.FromEntity).ToList()
     };
 }

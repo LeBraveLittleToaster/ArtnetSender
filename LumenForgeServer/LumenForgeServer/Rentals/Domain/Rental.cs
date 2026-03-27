@@ -40,7 +40,7 @@ public class Rental
 
     /// <summary>Optional free-text notes attached by the customer or staff.</summary>
     public string? Notes { get; set; }
-
+    
     /// <summary>Instant the rental was created.</summary>
     public Instant CreatedAt { get; set; }
 
@@ -51,6 +51,8 @@ public class Rental
 
     /// <summary>The process instance driving this rental's workflow.</summary>
     public RentalProcessInstance? ProcessInstance { get; set; }
+    
+    public List<Answer> Answers { get; set; } = [];
 
     /// <summary>Invoices generated for this rental.</summary>
     public List<Invoice> Invoices { get; set; } = [];

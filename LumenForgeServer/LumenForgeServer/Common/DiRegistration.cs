@@ -68,6 +68,7 @@ public static class DiRegistration
         builder.Services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
         builder.Services.AddScoped<ICatalogueRepository, CatalogueRepository>();
         builder.Services.AddScoped<IRentalProcessRepository, RentalProcessRepository>();
+        builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
     }
 
     /// <summary>
@@ -85,6 +86,7 @@ public static class DiRegistration
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<MaintenanceService>();
         builder.Services.AddScoped<StockBindingService>();
+        builder.Services.AddScoped<QuestionService>();
 
         // Rental action framework
         builder.Services.AddSingleton<IRentalActionRegistry, RentalActionRegistry>();
