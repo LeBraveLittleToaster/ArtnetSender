@@ -81,6 +81,27 @@ public sealed class KcClient
         await RequestAndAttachAdminTokenAsync(_kcAndAppOptions, ct);
     }
 
+    public async Task LogoutUserFromAllSessionsAsync(string realm, string userKcId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(realm))
+            throw new ArgumentException("Realm must be provided.", nameof(realm));
+
+        if (string.IsNullOrWhiteSpace(userKcId))
+            throw new ArgumentException("User Keycloak id must be provided.", nameof(userKcId));
+
+        var response = await AdminClient.PostAsync(
+            $"/admin/realms/{Uri.EscapeDataString(realm)}/users/{Uri.EscapeDataString(userKcId)}/logout",
+            content: null,
+            ct);
+
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var body = await response.Content.ReadAsStringAsync(ct);
+        throw new InvalidOperationException(
+            $"Failed to logout user '{userKcId}' in realm '{realm}': Http {(int)response.StatusCode} {body}");
+    }
+
     public bool IsTokenExpired(Duration? skew = null)
     {
         if (AccessToken is null) return true;

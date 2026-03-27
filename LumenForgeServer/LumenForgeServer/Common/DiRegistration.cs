@@ -25,6 +25,7 @@ using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
 using Microsoft.AspNetCore.Routing;
+using LumenForgeServer.Auth;
 
 namespace LumenForgeServer.Common;
 
@@ -87,6 +88,7 @@ public static class DiRegistration
         builder.Services.AddScoped<MaintenanceService>();
         builder.Services.AddScoped<StockBindingService>();
         builder.Services.AddScoped<QuestionService>();
+        builder.Services.AddScoped<AuthCacheService>();
 
         // Rental action framework
         builder.Services.AddSingleton<IRentalActionRegistry, RentalActionRegistry>();
@@ -234,8 +236,7 @@ public static class DiRegistration
                         var keycloakUserId = ctx.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                         if (keycloakUserId is null) return;
 
-                        var jti = ctx.Principal?.FindFirst("jti")?.Value ?? "no-jti";
-                        var cacheKey = $"app-roles:{keycloakUserId}:{jti}";
+                        var cacheKey = AuthUtils.GetUserRoleCacheKeyForUserKc(keycloakUserId);
 
                         var cache = ctx.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
                         if (!cache.TryGetValue(cacheKey, out string[]? appRoleNames) || appRoleNames is null)

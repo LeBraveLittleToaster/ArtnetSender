@@ -122,6 +122,23 @@ public class KcService
             $"Failed to delete user '{username}' (id: {userId}): Http {(int)deleteResponse.StatusCode} {deleteBody}");
     }
 
+    public async Task LogoutUserFromKeycloakByUserKcId(string userKcId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(userKcId))
+            throw new ArgumentException("User Keycloak id must be provided.", nameof(userKcId));
+
+        await EnsureInitializedAsync();
+
+        try
+        {
+            await _kcClient!.LogoutUserFromAllSessionsAsync(_kcAndAppOptions.KcRealm, userKcId, ct);
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new KeycloakException(e.Message);
+        }
+    }
+
     public async Task<int> DeleteUsersFromKeycloakByUsernamePrefix(string usernamePrefix, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(usernamePrefix))

@@ -5,14 +5,17 @@ using LumenForgeServer.Auth.Factory;
 using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace LumenForgeServer.Auth.Service;
 
 /// <summary>
 /// Application service for user-related auth operations.
 /// </summary>
-public class UserService(IAuthRepository authRepository)
+public class UserService(IAuthRepository authRepository, IMemoryCache cache)
 {
+   
+
     /// <summary>
     /// Retrieves a user by Keycloak subject identifier.
     /// </summary>

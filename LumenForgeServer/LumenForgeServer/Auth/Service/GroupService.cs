@@ -5,6 +5,7 @@ using LumenForgeServer.Auth.Factory;
 using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using NodaTime;
 
 namespace LumenForgeServer.Auth.Service;
@@ -12,7 +13,7 @@ namespace LumenForgeServer.Auth.Service;
 /// <summary>
 /// Application service for group-related auth operations.
 /// </summary>
-public class GroupService(IAuthRepository authRepository)
+public class GroupService(IAuthRepository authRepository, AuthCacheService cacheService)
 {
 
     /// <summary>
@@ -142,6 +143,7 @@ public class GroupService(IAuthRepository authRepository)
         {
             await authRepository.AssignUserToGroupAsync(assigneeKcId, userKcId, groupGuid, ct);
             await authRepository.SaveChangesAsync(ct);
+            await cacheService.RemoveUserRolesFromCacheAndLogoutByUserKcId(userKcId, ct);
         }
         catch (DbUpdateException e)
         {
@@ -179,6 +181,7 @@ public class GroupService(IAuthRepository authRepository)
 
         await authRepository.RemoveUserFromGroupAsync(group, user, ct);
         await authRepository.SaveChangesAsync(ct);
+        await cacheService.RemoveUserRolesFromCacheAndLogoutByUserKcId(userKcId, ct);
     }
 
     /// <summary>
@@ -207,6 +210,7 @@ public class GroupService(IAuthRepository authRepository)
             await authRepository.RemoveAllRolesFromGroupAsync(group, ct);
             await authRepository.AssignRolesToGroupAsync(group, roles, ct);
             await authRepository.SaveChangesAsync(ct);
+            // TODO: Maybe remove all users in the group from userRoleCache
         }
         catch (DbUpdateException e)
         {

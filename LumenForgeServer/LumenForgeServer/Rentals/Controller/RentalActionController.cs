@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Rentals.Dto.Command;
+using LumenForgeServer.Rentals.Dto.View;
 using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ActionResult = LumenForgeServer.Rentals.Service.Actions.ActionResult;
 
 namespace LumenForgeServer.Rentals.Controller;
 
@@ -61,7 +61,7 @@ public class RentalActionController(RentalActionService actionService) : Control
         var input = dto.ToActionInput();
         SetActor(input);
         var result = await actionService.CreateProcessAsync(input, ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        return StatusCode(StatusCodes.Status201Created, ActionResultView.FromActionResult(result));
     }
 
     // ── Request approval ────────────────────────────────────────────
@@ -327,11 +327,12 @@ public class RentalActionController(RentalActionService actionService) : Control
     // ── Helpers ─────────────────────────────────────────────────────
 
     /// <summary>Shorthand that sets the actor from the token and delegates to the orchestrator.</summary>
-    private async Task<ActionResult> ExecuteAsync(
+    private async Task<ActionResultView> ExecuteAsync(
         Guid processGuid, RentalActionType actionType, ActionInput input, CancellationToken ct)
     {
         SetActor(input);
-        return await actionService.ExecuteActionAsync(processGuid, actionType, input, ct);
+        var result = await actionService.ExecuteActionAsync(processGuid, actionType, input, ct);
+        return ActionResultView.FromActionResult(result);
     }
 
     /// <summary>
