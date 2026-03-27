@@ -41,12 +41,34 @@ public class DeviceRelationService(IInventoryRepository repository)
         var childId = await repository.TryGetDeviceIdByGuidAsync(dto.ChildDeviceGuid, ct)
             ?? throw new NotFoundException($"Child device '{dto.ChildDeviceGuid}' not found.");
 
+        var parentDevice = await repository.GetDeviceByGuidAsync(dto.ParentDeviceGuid, ct)
+            ?? throw new NotFoundException($"Parent device not found.");
+
+        if (dto.ContainedAmount > parentDevice.StockAmount)
+        {
+            throw new ValidationException("Validation failed.", new Dictionary<string, string[]>
+            {
+                [nameof(dto.ContainedAmount)] = [$"Parent device only has {parentDevice.StockAmount} units in stock, cannot contain {dto.ContainedAmount} units."]
+            });
+        }
+
         var existing = await repository.GetActiveDeviceRelationAsync(parentId, childId, ct);
         if (existing is not null)
         {
             throw new ValidationException("Validation failed.", new Dictionary<string, string[]>
             {
                 ["DeviceRelation"] = ["A relation between those devices already exists."]
+            });
+        }
+
+        var existingRelations = await repository.GetDeviceRelationsByParentDeviceIdAsync(parentId, ct);
+        var totalContainedAmount = existingRelations.Sum(r => r.ContainedAmount) + dto.ContainedAmount;
+
+        if (totalContainedAmount > parentDevice.StockAmount)
+        {
+            throw new ValidationException("Validation failed.", new Dictionary<string, string[]>
+            {
+                [nameof(dto.ContainedAmount)] = [$"Total contained amount ({totalContainedAmount}) exceeds parent device stock ({parentDevice.StockAmount}). Current relations contain {existingRelations.Sum(r => r.ContainedAmount)} units."]
             });
         }
 

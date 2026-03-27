@@ -45,6 +45,7 @@ public sealed record DeviceView
     [JsonPropertyName("stock_amount")]
     public long StockAmount { get; init; }
 
+
     /// <summary>Current maintenance status GUID.</summary>
     [JsonPropertyName("maintenance_status_uuid")]
     public Guid MaintenanceStatusUuid { get; init; }
@@ -68,6 +69,14 @@ public sealed record DeviceView
     /// <summary>Categories this device belongs to.</summary>
     [JsonPropertyName("categories")]
     public IReadOnlyList<CategoryView> Categories { get; init; } = [];
+
+    /// <summary>Relations where this device acts as a container/parent.</summary>
+    [JsonPropertyName("child_device_relations")]
+    public IReadOnlyList<DeviceRelationView> ChildDeviceRelations { get; init; } = [];
+
+    /// <summary>Relations where this device is contained in another device.</summary>
+    [JsonPropertyName("parent_device_relations")]
+    public IReadOnlyList<DeviceRelationView> ParentDeviceRelations { get; init; } = [];
 
     /// <summary>Timestamp when the device was created.</summary>
     [JsonPropertyName("created_at")]
@@ -94,6 +103,15 @@ public sealed record DeviceView
             .OrderBy(sb => sb.Start)
             .ToArray();
 
+        var childDeviceRelations = device.ChildDeviceRelations
+            .Select(DeviceRelationView.FromEntity)
+            .ToArray();
+
+        var parentDeviceRelations = device.ParentDeviceRelations
+            .Select(DeviceRelationView.FromEntity)
+            .ToArray();
+
+
         return new DeviceView
         {
             Guid = device.Guid,
@@ -111,6 +129,8 @@ public sealed record DeviceView
             StockBindings = stockBindings,
             Parameters = parameters,
             Categories = categories,
+            ChildDeviceRelations = childDeviceRelations,
+            ParentDeviceRelations = parentDeviceRelations,
             CreatedAt = device.CreatedAt,
             UpdatedAt = device.UpdatedAt
         };

@@ -15,4 +15,3 @@ public class StockBinding
     public Instant Start { get; set; }
     public Instant End { get; set; }
 }
-

@@ -1,3 +1,4 @@
+using LumenForgeServer.Inventory.Domain;
 using LumenForgeServer.Inventory.Dto.Create;
 using LumenForgeServer.Inventory.Service;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,8 @@ public class DeviceSeeder(DeviceService deviceService, AppDbContext db, ILogger<
                 Name         = name,
                 Description  = description,
                 SerialNumber = serial,
+                StockAmount = 2,
+                StockUnitType = StockUnitType.UNIT,
             }, ct);
         }
     }
