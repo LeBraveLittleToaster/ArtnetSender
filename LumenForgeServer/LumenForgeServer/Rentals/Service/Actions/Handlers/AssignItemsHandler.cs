@@ -20,7 +20,7 @@ public sealed class ItemAssignment
     public required Guid DeviceGuid { get; init; }
 
     /// <summary>Number of units to reserve.</summary>
-    public required int Quantity { get; init; }
+    public required long Quantity { get; init; }
 }
 
 /// <summary>
@@ -51,6 +51,10 @@ public sealed class AssignItemsHandler(StockBindingService stockBindingService)
             return BlankActionResult.Fail(nameof(RentalActionType.AssignItems), "Items",
                 "At least one item assignment is required.");
 
+        if (input.Items.Any(i => i.Quantity <= 0))
+            return BlankActionResult.Fail(nameof(RentalActionType.AssignItems), "Items",
+                "Every assignment quantity must be greater than zero.");
+
         if (process.Rental is null)
             return BlankActionResult.Fail(nameof(RentalActionType.AssignItems), "Rental",
                 "Process has no linked rental.");
@@ -66,18 +70,23 @@ public sealed class AssignItemsHandler(StockBindingService stockBindingService)
         var startStr = InstantPattern.General.Format(rental.RequestedStart);
         var endStr = InstantPattern.General.Format(rental.RequestedEnd);
 
-        var deviceGuids = input.Items
-            .SelectMany(a => Enumerable.Repeat(a.DeviceGuid, a.Quantity))
-            .ToList();
-
         var dto = new CreateStockBindingDto
         {
             BindingType = BindingType.RENTAL,
             Start = startStr,
-            End = endStr
+            End = endStr,
+            OwnerProcessGuid = process.Guid
         };
 
-        await stockBindingService.CreateStockBindingsForMultipleDevices(deviceGuids, dto, ct);
+        var assignments = input.Items
+            .Select(i => new StockBindingAssignment
+            {
+                DeviceGuid = i.DeviceGuid,
+                ReservedAmount = i.Quantity
+            })
+            .ToList();
+
+        await stockBindingService.CreateStockBindingsForAssignments(assignments, dto, ct);
 
         return BlankActionResult.Ok(nameof(RentalActionType.AssignItems), RentalStage.ItemsAssigned);
     }

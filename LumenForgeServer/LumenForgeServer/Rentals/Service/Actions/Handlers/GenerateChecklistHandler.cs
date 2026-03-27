@@ -66,14 +66,12 @@ public sealed class GenerateChecklistHandler(
     protected override async Task<GenerateChecklistResult> ExecuteAsync(
         RentalProcessInstance process, GenerateChecklistInput input, CancellationToken ct)
     {
-        var rental = process.Rental!;
         var now = SystemClock.Instance.GetCurrentInstant();
 
         var bindings = await db.StockBindings
             .Include(sb => sb.Device)
             .Where(sb => sb.BindingType == BindingType.RENTAL
-                && sb.Start == rental.RequestedStart
-                && sb.End == rental.RequestedEnd)
+                && sb.OwnerProcessGuid == process.Guid)
             .ToListAsync(ct);
 
         var checklist = new Checklist

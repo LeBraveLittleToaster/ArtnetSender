@@ -17,6 +17,14 @@ public sealed record StockBindingView
     [JsonPropertyName("binding_type")]
     public BindingType BindingType { get; init; }
 
+    /// <summary>Reserved amount in the device stock unit.</summary>
+    [JsonPropertyName("reserved_amount")]
+    public long ReservedAmount { get; init; }
+
+    /// <summary>Owning rental process GUID when the binding belongs to a rental workflow.</summary>
+    [JsonPropertyName("owner_process_guid")]
+    public Guid? OwnerProcessGuid { get; init; }
+
     /// <summary>Start of the reservation period.</summary>
     [JsonPropertyName("start")]
     public Instant Start { get; init; }
@@ -35,6 +43,8 @@ public sealed record StockBindingView
         {
             Guid = stockBinding.Guid,
             BindingType = stockBinding.BindingType,
+            ReservedAmount = stockBinding.ReservedAmount,
+            OwnerProcessGuid = stockBinding.OwnerProcessGuid,
             Start = stockBinding.Start,
             End = stockBinding.End,
             CreatedAt = stockBinding.CreatedAt

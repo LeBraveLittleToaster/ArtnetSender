@@ -84,6 +84,7 @@ public static class DiRegistration
         builder.Services.AddScoped<CategoryService>();
         builder.Services.AddScoped<VendorService>();
         builder.Services.AddScoped<DeviceService>();
+        builder.Services.AddScoped<DeviceRelationService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<MaintenanceService>();
         builder.Services.AddScoped<StockBindingService>();

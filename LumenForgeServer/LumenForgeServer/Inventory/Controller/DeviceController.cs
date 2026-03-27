@@ -169,6 +169,5 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
     {
         await deviceService.RemoveDeviceParameter(deviceGuid, parameterKey, ct);
         return NoContent();
-    }
-
+    }   
 }

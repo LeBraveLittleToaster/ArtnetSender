@@ -16,8 +16,10 @@ public sealed class StockConfiguration : IEntityTypeConfiguration<StockBinding>
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.Guid).IsUnique();
         builder.HasIndex(x => x.DeviceId);
+        builder.HasIndex(x => x.OwnerProcessGuid);
 
-        builder.Property(x => x.BindingType).HasPrecision(18, 3);
+        builder.Property(x => x.BindingType).IsRequired();
+        builder.Property(x => x.ReservedAmount).IsRequired();
         builder.Property(x => x.Start).IsRequired();
         builder.Property(x => x.End).IsRequired();
     }

@@ -29,4 +29,17 @@ public record CreateStockBindingDto
     [Required]
     [JsonPropertyName("end")]
     public required string End { get; set; }
+
+    /// <summary>
+    /// Reserved amount in the device's unit space.
+    /// </summary>
+    [Range(1, long.MaxValue)]
+    [JsonPropertyName("reserved_amount")]
+    public long ReservedAmount { get; set; } = 1;
+
+    /// <summary>
+    /// Optional rental process owner GUID for scoping reservations.
+    /// </summary>
+    [JsonPropertyName("owner_process_guid")]
+    public Guid? OwnerProcessGuid { get; set; }
 }

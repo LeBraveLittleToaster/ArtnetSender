@@ -185,6 +185,49 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
         }
     }
 
+    public Task AddDeviceRelationAsync(DeviceRelation relation, CancellationToken ct)
+        => db.DeviceRelations.AddAsync(relation, ct).AsTask();
+
+    public Task AddDeviceRelationAuditLogAsync(DeviceRelationAuditLog auditLog, CancellationToken ct)
+        => db.DeviceRelationAuditLogs.AddAsync(auditLog, ct).AsTask();
+
+    public Task<DeviceRelation?> GetDeviceRelationByGuidAsync(Guid relationGuid, CancellationToken ct)
+        => db.DeviceRelations
+            .Include(r => r.ParentDevice)
+            .Include(r => r.ChildDevice)
+            .SingleOrDefaultAsync(r => r.Guid == relationGuid, ct);
+
+    public Task<DeviceRelation?> GetActiveDeviceRelationAsync(long parentDeviceId, long childDeviceId, CancellationToken ct)
+        => db.DeviceRelations.SingleOrDefaultAsync(r =>
+            r.ParentDeviceId == parentDeviceId &&
+            r.ChildDeviceId == childDeviceId, ct);
+
+    public Task<IReadOnlyList<DeviceRelation>> GetDeviceRelationsByParentDeviceIdAsync(long parentDeviceId, CancellationToken ct)
+    {
+        return db.DeviceRelations
+            .Include(r => r.ParentDevice)
+            .Include(r => r.ChildDevice)
+            .Where(r => r.ParentDeviceId == parentDeviceId)
+            .OrderBy(r => r.ChildDevice.DeviceName)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<DeviceRelation>)t.Result, ct);
+    }
+
+    public Task<IReadOnlyList<long>> GetActiveChildDeviceIdsAsync(long parentDeviceId, CancellationToken ct)
+    {
+        return db.DeviceRelations
+            .Where(r => r.ParentDeviceId == parentDeviceId)
+            .Select(r => r.ChildDeviceId)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<long>)t.Result, ct);
+    }
+
+    public Task DeleteDeviceRelationAsync(DeviceRelation relation, CancellationToken ct)
+    {
+        db.DeviceRelations.Remove(relation);
+        return Task.CompletedTask;
+    }
+
     public Task SaveChangesAsync(CancellationToken ct)
         => db.SaveChangesAsync(ct);
 
@@ -216,6 +259,26 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
             .ContinueWith(t => (IReadOnlyList<StockBinding>)t.Result, ct);
     }
 
+    public Task<IReadOnlyList<StockBinding>> GetStockBindingsByOwnerProcessGuidAsync(Guid ownerProcessGuid, BindingType bindingType, CancellationToken ct)
+    {
+        return db.StockBindings
+            .Include(sb => sb.Device)
+            .Where(sb => sb.OwnerProcessGuid == ownerProcessGuid && sb.BindingType == bindingType)
+            .OrderBy(sb => sb.Start)
+            .ToListAsync(ct)
+            .ContinueWith(t => (IReadOnlyList<StockBinding>)t.Result, ct);
+    }
+
+    public async Task<long> GetOverlappingReservedAmountAsync(long deviceId, NodaTime.Instant start, NodaTime.Instant end, BindingType bindingType, CancellationToken ct)
+    {
+        return await db.StockBindings
+            .Where(sb => sb.DeviceId == deviceId &&
+                         sb.BindingType == bindingType &&
+                         sb.Start < end &&
+                         sb.End > start)
+            .SumAsync(sb => (long?)sb.ReservedAmount, ct) ?? 0L;
+    }
+
     public Task DeleteStockBindingAsync(StockBinding stockBinding, CancellationToken ct)
     {
         db.StockBindings.Remove(stockBinding);
@@ -240,6 +303,10 @@ public sealed class InventoryRepository(AppDbContext db) : IInventoryRepository
             .Include(d => d.Parameters)
             .Include(d => d.DeviceCategories)
             .ThenInclude(dc => dc.Category)
+            .Include(d => d.ChildDeviceRelations)
+            .ThenInclude(r => r.ChildDevice)
+            .Include(d => d.ParentDeviceRelations)
+            .ThenInclude(r => r.ParentDevice)
             .AsSplitQuery();
     }
 }

@@ -13,7 +13,7 @@ public sealed record ItemAssignmentDto
 
     /// <summary>Number of units to reserve.</summary>
     [JsonPropertyName("quantity")]
-    public required int Quantity { get; init; }
+    public required long Quantity { get; init; }
 }
 
 /// <summary>API request DTO for assigning inventory items to a rental.</summary>

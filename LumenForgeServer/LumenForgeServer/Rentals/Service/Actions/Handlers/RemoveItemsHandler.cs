@@ -46,7 +46,7 @@ public sealed class RemoveItemsHandler(StockBindingService stockBindingService)
     {
         foreach (var bindingGuid in input.StockBindingGuids)
         {
-            await stockBindingService.DeleteStockBinding(bindingGuid, ct);
+            await stockBindingService.DeleteStockBindingForOwner(bindingGuid, process.Guid, ct);
         }
 
         return BlankActionResult.Ok(nameof(RentalActionType.RemoveItems));

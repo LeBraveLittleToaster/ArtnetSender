@@ -17,7 +17,9 @@ public static class  ModelBuilderExtensions
     {
         builder.ApplyConfigurationsFromAssembly(
             typeof(AppDbContext).Assembly,
-            type => type.Namespace?.Contains(".Persistence.Configurations", StringComparison.Ordinal) == true);
+            type =>
+                type.Namespace?.Contains(".Persistence.Configurations", StringComparison.Ordinal) == true ||
+                type.Namespace?.Contains(".Persistance.Configurations", StringComparison.Ordinal) == true);
     }
 
     

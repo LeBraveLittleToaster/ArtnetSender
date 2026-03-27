@@ -31,11 +31,21 @@ public interface IInventoryRepository
     Task ReplaceDeviceCategoriesAsync(long deviceId, IReadOnlyCollection<long> categoryIds, CancellationToken ct);
     Task<long?> TryGetDeviceIdByGuidAsync(Guid deviceGuid, CancellationToken ct);
 
+    Task AddDeviceRelationAsync(DeviceRelation relation, CancellationToken ct);
+    Task AddDeviceRelationAuditLogAsync(DeviceRelationAuditLog auditLog, CancellationToken ct);
+    Task<DeviceRelation?> GetDeviceRelationByGuidAsync(Guid relationGuid, CancellationToken ct);
+    Task<DeviceRelation?> GetActiveDeviceRelationAsync(long parentDeviceId, long childDeviceId, CancellationToken ct);
+    Task<IReadOnlyList<DeviceRelation>> GetDeviceRelationsByParentDeviceIdAsync(long parentDeviceId, CancellationToken ct);
+    Task<IReadOnlyList<long>> GetActiveChildDeviceIdsAsync(long parentDeviceId, CancellationToken ct);
+    Task DeleteDeviceRelationAsync(DeviceRelation relation, CancellationToken ct);
+
     Task AddStockBindingAsync(StockBinding stockBinding, CancellationToken ct);
     Task AddStockBindingsAsync(IReadOnlyCollection<StockBinding> stockBindings, CancellationToken ct);
     Task<StockBinding?> GetStockBindingByGuidAsync(Guid bindingGuid, CancellationToken ct);
     Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceGuidAsync(Guid deviceGuid, CancellationToken ct);
     Task<IReadOnlyList<StockBinding>> GetStockBindingsByDeviceIdAsync(long deviceId, CancellationToken ct);
+    Task<IReadOnlyList<StockBinding>> GetStockBindingsByOwnerProcessGuidAsync(Guid ownerProcessGuid, BindingType bindingType, CancellationToken ct);
+    Task<long> GetOverlappingReservedAmountAsync(long deviceId, NodaTime.Instant start, NodaTime.Instant end, BindingType bindingType, CancellationToken ct);
     Task DeleteStockBindingAsync(StockBinding stockBinding, CancellationToken ct);
     Task<bool> HasConflictingBindingsAsync(long deviceId, NodaTime.Instant start, NodaTime.Instant end, BindingType bindingType, CancellationToken ct);
 

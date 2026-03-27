@@ -87,4 +87,12 @@ public class Device
     /// Category links for the device.
     /// </summary>
     public List<DeviceCategory> DeviceCategories { get; set; } = new();
+    /// <summary>
+    /// Relations where this device acts as container/parent.
+    /// </summary>
+    public List<DeviceRelation> ChildDeviceRelations { get; set; } = new();
+    /// <summary>
+    /// Relations where this device is contained in another device.
+    /// </summary>
+    public List<DeviceRelation> ParentDeviceRelations { get; set; } = new();
 }

@@ -10,6 +10,15 @@ using NodaTime.Text;
 namespace LumenForgeServer.Inventory.Service;
 
 /// <summary>
+/// Assignment request used for batch stock-binding creation.
+/// </summary>
+public sealed class StockBindingAssignment
+{
+    public required Guid DeviceGuid { get; init; }
+    public required long ReservedAmount { get; init; }
+}
+
+/// <summary>
 /// Application service for stock binding operations.
 /// </summary>
 public class StockBindingService(IInventoryRepository repository)
@@ -28,13 +37,15 @@ public class StockBindingService(IInventoryRepository repository)
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
             ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
 
+        ValidateReservedAmount(dto.ReservedAmount);
         var (start, end) = ParseAndValidateTimeframe(dto.Start, dto.End);
 
-        // Check for conflicting bindings
-        var hasConflict = await repository.HasConflictingBindingsAsync(device.Id, start, end, dto.BindingType, ct);
-        if (hasConflict)
+        var overlappingReservedAmount = await repository.GetOverlappingReservedAmountAsync(device.Id, start, end, dto.BindingType, ct);
+        if (overlappingReservedAmount + dto.ReservedAmount > device.StockAmount)
         {
-            throw new ValidationException($"Device has conflicting {dto.BindingType} bindings during the specified timeframe.", new Dictionary<string, string[]>());
+            throw new ValidationException(
+                $"Device '{deviceGuid}' has insufficient stock for {dto.BindingType} in the specified timeframe.",
+                new Dictionary<string, string[]>());
         }
 
         var binding = new StockBinding
@@ -42,6 +53,8 @@ public class StockBindingService(IInventoryRepository repository)
             Guid = Guid.NewGuid(),
             DeviceId = device.Id,
             BindingType = dto.BindingType,
+            OwnerProcessGuid = dto.OwnerProcessGuid,
+            ReservedAmount = dto.ReservedAmount,
             Start = start,
             End = end,
             CreatedAt = SystemClock.Instance.GetCurrentInstant()
@@ -51,6 +64,69 @@ public class StockBindingService(IInventoryRepository repository)
         await repository.SaveChangesAsync(ct);
 
         return StockBindingView.FromEntity(binding);
+    }
+
+    /// <summary>
+    /// Creates multiple stock bindings from explicit item assignments.
+    /// </summary>
+    /// <param name="assignments">The item assignments detailing device GUIDs and quantities.</param>
+    /// <param name="dto">The binding details including type, start, and end times.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Collection of created stock binding views.</returns>
+    /// <exception cref="NotFoundException">Thrown when any device cannot be found.</exception>
+    /// <exception cref="ValidationException">Thrown when binding parameters are invalid or conflict with existing bindings.</exception>
+    public async Task<IReadOnlyList<StockBindingView>> CreateStockBindingsForAssignments(
+        IReadOnlyCollection<StockBindingAssignment> assignments,
+        CreateStockBindingDto dto,
+        CancellationToken ct)
+    {
+        if (assignments.Count == 0)
+        {
+            throw new ValidationException("At least one item assignment must be provided.", new Dictionary<string, string[]>());
+        }
+
+        var (start, end) = ParseAndValidateTimeframe(dto.Start, dto.End);
+        var bindings = new List<StockBinding>();
+        var createdAt = SystemClock.Instance.GetCurrentInstant();
+        var pendingAmountByDeviceId = new Dictionary<long, long>();
+
+        foreach (var assignment in assignments)
+        {
+            ValidateReservedAmount(assignment.ReservedAmount);
+
+            var device = await repository.GetDeviceByGuidAsync(assignment.DeviceGuid, ct)
+                ?? throw new NotFoundException($"Device '{assignment.DeviceGuid}' not found.");
+
+            var overlappingReservedAmount = await repository.GetOverlappingReservedAmountAsync(device.Id, start, end, dto.BindingType, ct);
+            var pendingAmount = pendingAmountByDeviceId.TryGetValue(device.Id, out var buffered) ? buffered : 0L;
+            if (overlappingReservedAmount + pendingAmount + assignment.ReservedAmount > device.StockAmount)
+            {
+                throw new ValidationException(
+                    $"Device '{assignment.DeviceGuid}' has insufficient stock for {dto.BindingType} in the specified timeframe.",
+                    new Dictionary<string, string[]>());
+            }
+
+            pendingAmountByDeviceId[device.Id] = pendingAmount + assignment.ReservedAmount;
+
+            var binding = new StockBinding
+            {
+                Guid = Guid.NewGuid(),
+                DeviceId = device.Id,
+                BindingType = dto.BindingType,
+                OwnerProcessGuid = dto.OwnerProcessGuid,
+                ReservedAmount = assignment.ReservedAmount,
+                Start = start,
+                End = end,
+                CreatedAt = createdAt
+            };
+
+            bindings.Add(binding);
+        }
+
+        await repository.AddStockBindingsAsync(bindings, ct);
+        await repository.SaveChangesAsync(ct);
+
+        return bindings.Select(StockBindingView.FromEntity).ToList();
     }
 
     /// <summary>
@@ -67,44 +143,15 @@ public class StockBindingService(IInventoryRepository repository)
         CreateStockBindingDto dto,
         CancellationToken ct)
     {
-        if (deviceGuids.Count == 0)
-        {
-            throw new ValidationException("At least one device GUID must be provided.", new Dictionary<string, string[]>());
-        }
-
-        var (start, end) = ParseAndValidateTimeframe(dto.Start, dto.End);
-        var bindings = new List<StockBinding>();
-        var createdAt = SystemClock.Instance.GetCurrentInstant();
-
-        foreach (var deviceGuid in deviceGuids)
-        {
-            var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
-                ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
-
-            // Check for conflicting bindings
-            var hasConflict = await repository.HasConflictingBindingsAsync(device.Id, start, end, dto.BindingType, ct);
-            if (hasConflict)
+        var assignments = deviceGuids
+            .Select(g => new StockBindingAssignment
             {
-                throw new ValidationException($"Device '{deviceGuid}' has conflicting {dto.BindingType} bindings during the specified timeframe.", new Dictionary<string, string[]>());
-            }
+                DeviceGuid = g,
+                ReservedAmount = dto.ReservedAmount
+            })
+            .ToList();
 
-            var binding = new StockBinding
-            {
-                Guid = Guid.NewGuid(),
-                DeviceId = device.Id,
-                BindingType = dto.BindingType,
-                Start = start,
-                End = end,
-                CreatedAt = createdAt
-            };
-
-            bindings.Add(binding);
-        }
-
-        await repository.AddStockBindingsAsync(bindings, ct);
-        await repository.SaveChangesAsync(ct);
-
-        return bindings.Select(StockBindingView.FromEntity).ToList();
+        return await CreateStockBindingsForAssignments(assignments, dto, ct);
     }
 
     /// <summary>
@@ -124,24 +171,40 @@ public class StockBindingService(IInventoryRepository repository)
     }
 
     /// <summary>
-    /// Checks if a device has available timeframes that don't conflict with existing bindings.
+    /// Retrieves stock bindings for a specific rental process owner.
+    /// </summary>
+    /// <param name="ownerProcessGuid">The GUID of the owner process.</param>
+    /// <param name="bindingType">The type of binding to filter by.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Collection of stock binding views for the owner process.</returns>
+    public async Task<IReadOnlyList<StockBindingView>> GetStockBindingsForOwnerProcess(Guid ownerProcessGuid, BindingType bindingType, CancellationToken ct)
+    {
+        var bindings = await repository.GetStockBindingsByOwnerProcessGuidAsync(ownerProcessGuid, bindingType, ct);
+        return bindings.Select(StockBindingView.FromEntity).ToList();
+    }
+
+    /// <summary>
+    /// Checks if a device has available quantity in a timeframe.
     /// </summary>
     /// <param name="deviceGuid">The GUID of the device.</param>
     /// <param name="start">The start of the timeframe to check.</param>
     /// <param name="end">The end of the timeframe to check.</param>
     /// <param name="bindingType">The type of binding to check for conflicts.</param>
+    /// <param name="amount">The amount to check for availability.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True if the timeframe is available, false if there are conflicts.</returns>
     /// <exception cref="NotFoundException">Thrown when the device cannot be found.</exception>
-    public async Task<bool> IsTimeframeAvailable(Guid deviceGuid, string start, string end, BindingType bindingType, CancellationToken ct)
+    public async Task<bool> IsTimeframeAvailable(Guid deviceGuid, string start, string end, BindingType bindingType, long amount, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
             ?? throw new NotFoundException($"Device '{deviceGuid}' not found.");
 
+        ValidateReservedAmount(amount);
+
         var (startInstant, endInstant) = ParseAndValidateTimeframe(start, end);
 
-        var hasConflict = await repository.HasConflictingBindingsAsync(device.Id, startInstant, endInstant, bindingType, ct);
-        return !hasConflict;
+        var overlappingReservedAmount = await repository.GetOverlappingReservedAmountAsync(device.Id, startInstant, endInstant, bindingType, ct);
+        return overlappingReservedAmount + amount <= device.StockAmount;
     }
 
     /// <summary>
@@ -157,6 +220,38 @@ public class StockBindingService(IInventoryRepository repository)
 
         await repository.DeleteStockBindingAsync(binding, ct);
         await repository.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Deletes a stock binding only when it belongs to the provided process owner.
+    /// </summary>
+    /// <param name="bindingGuid">The GUID of the binding to delete.</param>
+    /// <param name="ownerProcessGuid">The GUID of the owner process.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="NotFoundException">Thrown when the binding cannot be found.</exception>
+    /// <exception cref="ValidationException">Thrown when the binding does not belong to the specified owner.</exception>
+    public async Task DeleteStockBindingForOwner(Guid bindingGuid, Guid ownerProcessGuid, CancellationToken ct)
+    {
+        var binding = await repository.GetStockBindingByGuidAsync(bindingGuid, ct)
+            ?? throw new NotFoundException($"Stock binding '{bindingGuid}' not found.");
+
+        if (binding.OwnerProcessGuid != ownerProcessGuid)
+        {
+            throw new ValidationException(
+                $"Stock binding '{bindingGuid}' does not belong to process '{ownerProcessGuid}'.",
+                new Dictionary<string, string[]>());
+        }
+
+        await repository.DeleteStockBindingAsync(binding, ct);
+        await repository.SaveChangesAsync(ct);
+    }
+
+    private static void ValidateReservedAmount(long amount)
+    {
+        if (amount <= 0)
+        {
+            throw new ValidationException("Reserved amount must be greater than zero.", new Dictionary<string, string[]>());
+        }
     }
 
     /// <summary>

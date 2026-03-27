@@ -69,6 +69,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// Join table linking devices to categories.
     /// </summary>
     public DbSet<DeviceCategory> DeviceCategories => Set<DeviceCategory>();
+    /// <summary>
+    /// Device composition relations (device-in-device).
+    /// </summary>
+    public DbSet<DeviceRelation> DeviceRelations => Set<DeviceRelation>();
+    /// <summary>
+    /// Audit trail for device composition relation changes.
+    /// </summary>
+    public DbSet<DeviceRelationAuditLog> DeviceRelationAuditLogs => Set<DeviceRelationAuditLog>();
 
     // Billing
     /// <summary>
