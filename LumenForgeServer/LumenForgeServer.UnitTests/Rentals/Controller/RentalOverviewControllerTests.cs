@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using LumenForgeServer.Auth.Domain;
 using FluentAssertions;
 using LumenForgeServer.Auth.Domain.Session;
 using LumenForgeServer.Common.Exceptions;
@@ -6,6 +8,8 @@ using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Query;
 using LumenForgeServer.Rentals.Dto.View;
 using LumenForgeServer.Rentals.Persistence;
+using LumenForgeServer.Rentals.Service;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
 using NSubstitute;
@@ -22,8 +26,25 @@ public class RentalOverviewControllerTests
     private readonly IKeycloakUser _keycloakUser = Substitute.For<IKeycloakUser>();
     private readonly CancellationToken _ct = CancellationToken.None;
 
-    private RentalOverviewController CreateController()
-        => new(_repo, _keycloakUser);
+    private RentalOverviewController CreateController(bool fullAccess = true, string? callerKcId = "caller-kc-id")
+    {
+        _keycloakUser.UserId.Returns(callerKcId);
+
+        var claims = fullAccess
+            ? new List<Claim> { new(ClaimTypes.Role, nameof(Permissions.RentalRead)) }
+            : new List<Claim>();
+
+        var controller = new RentalOverviewController(new RentalOverViewService(_repo), _keycloakUser);
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"))
+            }
+        };
+
+        return controller;
+    }
 
     private static readonly Instant Now = SystemClock.Instance.GetCurrentInstant();
 
@@ -54,17 +75,16 @@ public class RentalOverviewControllerTests
         result.Should().BeOfType<OkObjectResult>();
     }
 
-    // ── ListMyProcesses ─────────────────────────────────────────────
+    // ── ListProcesses access scope ──────────────────────────────────
 
     [Fact]
-    public async Task ListMyProcesses_ScopesToCallerKcId()
+    public async Task ListProcesses_WithoutFullAccess_ScopesToCallerKcId()
     {
-        _keycloakUser.UserId.Returns("caller-kc-id");
         _repo.ListAsync(Arg.Any<RentalListQueryDto>(), _ct)
             .Returns((new List<RentalProcessInstance>(), 0));
 
-        var controller = CreateController();
-        await controller.ListMyProcesses(new RentalListQueryDto(), _ct);
+        var controller = CreateController(fullAccess: false, callerKcId: "caller-kc-id");
+        await controller.ListProcesses(new RentalListQueryDto(), _ct);
 
         await _repo.Received(1).ListAsync(
             Arg.Is<RentalListQueryDto>(q => q.OwnerKcId == "caller-kc-id"),
@@ -72,13 +92,26 @@ public class RentalOverviewControllerTests
     }
 
     [Fact]
-    public async Task ListMyProcesses_NoUserId_ThrowsUnauthorized()
+    public async Task ListProcesses_WithFullAccess_DoesNotForceOwnerScope()
     {
-        _keycloakUser.UserId.Returns((string?)null);
+        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), _ct)
+            .Returns((new List<RentalProcessInstance>(), 0));
 
-        var controller = CreateController();
+        var controller = CreateController(fullAccess: true, callerKcId: null);
+        var query = new RentalListQueryDto { OwnerKcId = "explicit-owner" };
+        await controller.ListProcesses(query, _ct);
 
-        var act = () => controller.ListMyProcesses(new RentalListQueryDto(), _ct);
+        await _repo.Received(1).ListAsync(
+            Arg.Is<RentalListQueryDto>(q => q.OwnerKcId == "explicit-owner"),
+            _ct);
+    }
+
+    [Fact]
+    public async Task ListProcesses_WithoutFullAccessAndNoUserId_ThrowsUnauthorized()
+    {
+        var controller = CreateController(fullAccess: false, callerKcId: null);
+
+        var act = () => controller.ListProcesses(new RentalListQueryDto(), _ct);
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }

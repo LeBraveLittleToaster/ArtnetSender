@@ -6,6 +6,5 @@ public enum Policy
     GroupUpdateReadUser,
     GroupUpdateRoleRead,
     UserAndRoleRead,
-    UserReadOrOwnProfile,
-    RentalReadOrOwnProcesses
+    UserReadOrOwnProfile
 }

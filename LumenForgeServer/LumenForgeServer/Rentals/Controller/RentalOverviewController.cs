@@ -1,13 +1,10 @@
 using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Auth.Domain.Session;
-using LumenForgeServer.Common.Exceptions;
-using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Query;
-using LumenForgeServer.Rentals.Dto.View;
-using LumenForgeServer.Rentals.Persistence;
+using LumenForgeServer.Rentals.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NodaTime;
+using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 
 namespace LumenForgeServer.Rentals.Controller;
@@ -21,18 +18,9 @@ namespace LumenForgeServer.Rentals.Controller;
 [ApiController]
 [Tags("Rentals – Overview")]
 public class RentalOverviewController(
-    IRentalProcessRepository repository,
+    RentalOverViewService rentalOverViewService,
     IKeycloakUser keycloakUser) : ControllerBase
 {
-    // ── Terminal stages used for statistics ──────────────────────────
-
-    private static readonly HashSet<RentalStage> TerminalStages =
-    [
-        RentalStage.Completed,
-        RentalStage.Cancelled,
-        RentalStage.Scrapped
-    ];
-
     // ── List & detail ───────────────────────────────────────────────
 
     /// <summary>
@@ -40,39 +28,22 @@ public class RentalOverviewController(
     /// and stage filtering.
     /// </summary>
     [HttpGet("")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Produces("application/json")]
     public async Task<IActionResult> ListProcesses([FromQuery] RentalListQueryDto query, CancellationToken ct)
     {
-        var (items, total) = await repository.ListAsync(query, ct);
-
-        var views = items.Select(RentalProcessSummaryView.FromEntity).ToList();
-        return Ok(new { list = views, total });
-    }
-
-    /// <summary>
-    /// Lists only the authenticated user's own rental processes.
-    /// Does not require the <c>RentalRead</c> permission — any authenticated
-    /// user may view their own processes.
-    /// </summary>
-    [HttpGet("my")]
-    [Authorize(Policy = nameof(Policy.RentalReadOrOwnProcesses))]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [Produces("application/json")]
-    public async Task<IActionResult> ListMyProcesses([FromQuery] RentalListQueryDto query, CancellationToken ct)
-    {
+        var fullAccess = User.IsInRole(nameof(Permissions.RentalRead));
         var callerKcId = keycloakUser.UserId
-            ?? throw new UnauthorizedAccessException("Unable to resolve caller identity.");
-
-        var scoped = query with { OwnerKcId = callerKcId };
-        var (items, total) = await repository.ListAsync(scoped, ct);
-
-        var views = items.Select(RentalProcessSummaryView.FromEntity).ToList();
-        return Ok(new { list = views, total });
+            ?? User.FindFirstValue("sub")
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var (list, total) = await rentalOverViewService.ListProcessesAsync(
+            query,
+            fullAccess,
+            callerKcId,
+            ct);
+        return Ok(new { list, total });
     }
 
     /// <summary>
@@ -95,15 +66,8 @@ public class RentalOverviewController(
         CancellationToken ct)
     {
         var includes = ParseIncludes(include);
-
-        var process = includes == RentalProcessInclude.None
-            ? await repository.GetByGuidAsync(processGuid, ct)
-            : await repository.GetByGuidWithIncludesAsync(processGuid, includes, ct);
-
-        if (process is null)
-            throw new NotFoundException($"Process instance '{processGuid}' not found.");
-
-        return Ok(RentalProcessView.FromEntity(process, includes));
+        var process = await rentalOverViewService.GetProcessAsync(processGuid, includes, ct);
+        return Ok(process);
     }
 
     /// <summary>
@@ -126,11 +90,8 @@ public class RentalOverviewController(
         [FromQuery, Range(0, int.MaxValue)] int offset = 0,
         CancellationToken ct = default)
     {
-        _ = await repository.GetByGuidAsync(processGuid, ct)
-            ?? throw new NotFoundException($"Process instance '{processGuid}' not found.");
-
-        var (logs, total) = await repository.GetActionLogsByProcessGuidAsync(processGuid, limit, offset, ct);
-        return Ok(new { list = logs.Select(RentalActionLogView.FromEntity).ToList(), total });
+        var (list, total) = await rentalOverViewService.GetProcessHistoryAsync(processGuid, limit, offset, ct);
+        return Ok(new { list, total });
     }
 
     // ── Statistics ───────────────────────────────────────────────────
@@ -144,24 +105,7 @@ public class RentalOverviewController(
     [Produces("application/json")]
     public async Task<IActionResult> GetOverview(CancellationToken ct)
     {
-        var byStage = await repository.CountByStageAsync(ct);
-        var totalProcesses = byStage.Values.Sum();
-        var terminalCount = byStage
-            .Where(kv => TerminalStages.Contains(kv.Key))
-            .Sum(kv => kv.Value);
-
-        var overview = new RentalOverviewDto
-        {
-            TotalProcesses = totalProcesses,
-            ByStage = byStage,
-            ActiveCount = totalProcesses - terminalCount,
-            TerminalCount = terminalCount,
-            TotalDamageReports = await repository.CountDamageReportsAsync(ct),
-            TotalExtensionRequests = await repository.CountExtensionsAsync(ct),
-            PendingExtensions = await repository.CountPendingExtensionsAsync(ct),
-            TotalActionLogs = await repository.CountActionLogsAsync(ct)
-        };
-
+        var overview = await rentalOverViewService.GetOverviewAsync(ct);
         return Ok(overview);
     }
 
@@ -182,20 +126,7 @@ public class RentalOverviewController(
         if (days is < 1 or > 365)
             return BadRequest(new { error = "days must be between 1 and 365." });
 
-        var since = SystemClock.Instance.GetCurrentInstant() - Duration.FromDays(days);
-
-        var activity = new RentalRecentActivityDto
-        {
-            ProcessesCreated = await repository.CountProcessesCreatedSinceAsync(since, ct),
-            ProcessesCompleted = await repository.CountProcessesReachedStageSinceAsync(
-                RentalStage.Completed, since, ct),
-            ProcessesCancelled = await repository.CountProcessesReachedStageSinceAsync(
-                RentalStage.Cancelled, since, ct),
-            ActionsPerformed = await repository.CountActionLogsSinceAsync(since, ct),
-            DamagesReported = await repository.CountDamageReportsSinceAsync(since, ct),
-            WindowDays = days
-        };
-
+        var activity = await rentalOverViewService.GetRecentActivityAsync(days, ct);
         return Ok(activity);
     }
 
@@ -208,16 +139,7 @@ public class RentalOverviewController(
     [Produces("application/json")]
     public async Task<IActionResult> GetByStage(CancellationToken ct)
     {
-        var byStage = await repository.CountByStageAsync(ct);
-
-        var buckets = Enum.GetValues<RentalStage>()
-            .Select(stage => new StageBucketDto
-            {
-                Stage = stage,
-                Count = byStage.GetValueOrDefault(stage, 0)
-            })
-            .ToList();
-
+        var buckets = await rentalOverViewService.GetByStageAsync(ct);
         return Ok(buckets);
     }
 

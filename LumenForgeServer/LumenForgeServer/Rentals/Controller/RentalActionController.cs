@@ -54,7 +54,7 @@ public class RentalActionController(RentalActionService actionService) : Control
     [HttpPost("create")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Authorize(Roles = nameof(Permissions.RentalCreate))]
+    [Authorize]
     public async Task<IActionResult> CreateRental(
         [FromBody] CreateRentalDto dto, CancellationToken ct)
     {

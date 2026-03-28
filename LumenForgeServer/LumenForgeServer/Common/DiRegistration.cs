@@ -89,6 +89,7 @@ public static class DiRegistration
         builder.Services.AddScoped<MaintenanceService>();
         builder.Services.AddScoped<StockBindingService>();
         builder.Services.AddScoped<QuestionService>();
+        builder.Services.AddScoped<RentalOverViewService>();
         builder.Services.AddScoped<AuthCacheService>();
 
         // Rental action framework
@@ -309,8 +310,6 @@ public static class DiRegistration
                 p => p.RequireRole(nameof(Permissions.UserRead), nameof(Permissions.RoleRead)));
             options.AddPolicy(nameof(Policy.UserReadOrOwnProfile), p => p.RequireAssertion(ctx =>
                 ctx.User.IsInRole(nameof(Permissions.UserRead)) || IsOwnProfileAccess(ctx)));
-            options.AddPolicy(nameof(Policy.RentalReadOrOwnProcesses), p => p.RequireAssertion(ctx =>
-                ctx.User.IsInRole(nameof(Permissions.RentalRead)) || IsAuthenticated(ctx)));
         });
     }
 
@@ -331,11 +330,4 @@ public static class DiRegistration
                && string.Equals(routeUserId, callerUserId, StringComparison.Ordinal);
     }
 
-    private static bool IsAuthenticated(AuthorizationHandlerContext ctx)
-    {
-        return ctx.User.Identity?.IsAuthenticated == true
-               && !string.IsNullOrWhiteSpace(
-                   ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                   ?? ctx.User.FindFirstValue("sub"));
-    }
 }
