@@ -20,6 +20,7 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
     /// Resolves a group by group Guid.
     /// </summary>
     /// <param name="guid">Group Guid to look up.</param>
+    /// <param name="withPermissions">Boolean flag controlling the operation behavior.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The group object.</returns>
     /// <exception cref="NotFoundException">Thrown when the group cannot be found.</exception>
@@ -37,6 +38,7 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
     /// <param name="search">Optional search term.</param>
     /// <param name="limit">Maximum number of records to return.</param>
     /// <param name="offset">Number of records to skip.</param>
+    /// <param name="withPermissions">Boolean flag controlling the operation behavior.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of groups.</returns>
     public async Task<(IReadOnlyList<GroupView> groups, long total)> ListGroups(string? search, int limit, int offset, bool withPermissions, CancellationToken ct)
@@ -124,6 +126,14 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
         return GroupView.FromEntity(group);
     }
 
+    /// <summary>
+    /// Executes the delete group by guid operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="parsedGroupGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteGroupByGuid(Guid parsedGroupGuid, CancellationToken ct)
     {
         try
@@ -137,6 +147,16 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
         }
     }
 
+    /// <summary>
+    /// Executes the assign user to group operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="assigneeKcId">Text input used by this operation.</param>
+    /// <param name="userKcId">Text input used by this operation.</param>
+    /// <param name="groupGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task AssignUserToGroup(string? assigneeKcId, string userKcId, Guid groupGuid, CancellationToken ct)
     {
         try
@@ -155,6 +175,8 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
     /// Retrieves users assigned to a group.
     /// </summary>
     /// <param name="groupGuid">Group Guid to look up.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     public async Task<(IReadOnlyList<UserView> users, long total)> GetUsersForGroup(Guid groupGuid, int limit, int offset, CancellationToken ct)

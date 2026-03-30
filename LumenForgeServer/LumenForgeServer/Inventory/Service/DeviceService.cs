@@ -16,6 +16,14 @@ namespace LumenForgeServer.Inventory.Service;
 /// </summary>
 public class DeviceService(IInventoryRepository repository)
 {
+    /// <summary>
+    /// Executes the create device operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceView result.</returns>
     public async Task<DeviceView> CreateDevice(CreateDeviceDto dto, CancellationToken ct)
     {
         EnsureNonEmptyGuid(dto.VendorGuid, nameof(dto.VendorGuid));
@@ -44,6 +52,14 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceView.FromEntity(persisted);
     }
 
+    /// <summary>
+    /// Executes the get device operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceView result.</returns>
     public async Task<DeviceView> GetDevice(Guid deviceGuid, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
@@ -52,12 +68,31 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceView.FromEntity(device);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="search">Text input used by this operation.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(IReadOnlyList<DeviceView> devices, long total)> ListDevices(string? search, int limit, int offset, CancellationToken ct)
     {
         var (devices, total) = await repository.ListDevicesAsync(search, limit, offset, ct);
         return (devices.Select(DeviceView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the update device operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceView result.</returns>
     public async Task<DeviceView> UpdateDevice(Guid deviceGuid, UpdateDeviceDto dto, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
@@ -140,6 +175,14 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceView.FromEntity(updated);
     }
 
+    /// <summary>
+    /// Executes the delete device operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteDevice(Guid deviceGuid, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
@@ -149,6 +192,15 @@ public class DeviceService(IInventoryRepository repository)
         await repository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the set device categories operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceView result.</returns>
     public async Task<DeviceView> SetDeviceCategories(Guid deviceGuid, SetDeviceCategoriesDto dto, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
@@ -174,6 +226,15 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceView.FromEntity(updated);
     }
 
+    /// <summary>
+    /// Executes the upsert device parameter operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceParameterView result.</returns>
     public async Task<DeviceParameterView> UpsertDeviceParameter(Guid deviceGuid, UpsertDeviceParameterDto dto, CancellationToken ct)
     {
         var device = await repository.GetDeviceByGuidAsync(deviceGuid, ct)
@@ -216,6 +277,15 @@ public class DeviceService(IInventoryRepository repository)
         return DeviceParameterView.FromEntity(parameter);
     }
 
+    /// <summary>
+    /// Executes the remove device parameter operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="parameterKey">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task RemoveDeviceParameter(Guid deviceGuid, string parameterKey, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(parameterKey))
@@ -244,6 +314,14 @@ public class DeviceService(IInventoryRepository repository)
     }
 
 
+    /// <summary>
+    /// Executes the resolve category ids operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="categoryGuids">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the IReadOnlyList&lt;long&gt; result.</returns>
     private async Task<IReadOnlyList<long>> ResolveCategoryIds(IReadOnlyCollection<Guid> categoryGuids, CancellationToken ct)
     {
         if (categoryGuids.Any(g => g == Guid.Empty))
@@ -269,6 +347,14 @@ public class DeviceService(IInventoryRepository repository)
         return categoryIds;
     }
 
+    /// <summary>
+    /// Executes the resolve maintenance status id for create operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="maintenanceStatusUuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the long result.</returns>
     private async Task<long> ResolveMaintenanceStatusIdForCreate(Guid? maintenanceStatusUuid, CancellationToken ct)
     {
         if (maintenanceStatusUuid is not null)
@@ -306,6 +392,13 @@ public class DeviceService(IInventoryRepository repository)
         return defaultStatus.Id;
     }
 
+    /// <summary>
+    /// Executes the ensure non empty guid operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="guid">Unique identifier used to target the requested entity.</param>
+    /// <param name="field">Text input used by this operation.</param>
     private static void EnsureNonEmptyGuid(Guid guid, string field)
     {
         if (guid == Guid.Empty)

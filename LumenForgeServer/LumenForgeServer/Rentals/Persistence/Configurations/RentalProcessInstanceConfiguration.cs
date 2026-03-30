@@ -9,6 +9,12 @@ namespace LumenForgeServer.Rentals.Persistence.Configurations;
 /// </summary>
 public sealed class RentalProcessInstanceConfiguration : IEntityTypeConfiguration<RentalProcessInstance>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: may execute database writes or update tracked entity state in the current DbContext.</remarks>
+    /// <param name="builder">Input value used by this operation.</param>
     public void Configure(EntityTypeBuilder<RentalProcessInstance> builder)
     {
         builder.ToTable("rental_process_instance");

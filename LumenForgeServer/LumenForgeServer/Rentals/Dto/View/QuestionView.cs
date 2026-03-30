@@ -26,6 +26,12 @@ public sealed record QuestionView
     [JsonPropertyName("question_data_type")]
     public QuestionDataType QuestionDataType { get; set; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="log">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static QuestionView FromEntity(Question log) => new()
     {
         Guid = log.Guid,

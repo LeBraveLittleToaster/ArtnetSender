@@ -65,12 +65,9 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
     /// <summary>
     /// Creates a user record from a payload.
     /// </summary>
-    /// <param name="lastname"></param>
-    /// <param name="ct">Cancellation token.</param>
     /// <param name="userKcId">Parameter mirror from keycloak user</param>
-    /// <param name="username">Parameter mirror from keycloak user</param>
-    /// <param name="email">Parameter mirror from keycloak user</param>
-    /// <param name="firstname">Parameter mirror from keycloak user</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The created user.</returns>
     /// <exception cref="ValidationException">Thrown when the payload fails validation.</exception>
     /// <exception cref="Microsoft.EntityFrameworkCore.DbUpdateException">Thrown when persistence fails.</exception>
@@ -151,6 +148,8 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
     /// Retrieves groups assigned to a user.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
     public async Task<(IReadOnlyList<GroupView> groups, long total)> GetGroupsForUser(string keycloakId, int limit, int offset, CancellationToken ct)

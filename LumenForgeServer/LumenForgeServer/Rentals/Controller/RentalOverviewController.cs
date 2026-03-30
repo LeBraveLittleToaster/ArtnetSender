@@ -24,6 +24,8 @@ public class RentalOverviewController(
     /// Lists rental processes with optional paging, search, sorting, date-range,
     /// and stage filtering.
     /// </summary>
+    /// <param name="query">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     [HttpGet("")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -74,10 +76,6 @@ public class RentalOverviewController(
     /// Returns the audit log (action history) for a given process with optional paging,
     /// ordered by date descending.
     /// </summary>
-    /// <param name="processGuid">Public GUID of the process.</param>
-    /// <param name="limit">Maximum number of log entries to return (1–200, default 50).</param>
-    /// <param name="offset">Number of entries to skip (default 0).</param>
-    /// <param name="ct">Cancellation token.</param>
     [HttpGet("{processGuid:guid}/history")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -108,6 +106,7 @@ public class RentalOverviewController(
     /// <summary>
     /// Returns a high-level statistical overview of all rental processes.
     /// </summary>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     [HttpGet("overview")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -150,6 +149,7 @@ public class RentalOverviewController(
     /// <summary>
     /// Returns per-stage process counts as a flat list (useful for chart rendering).
     /// </summary>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     [HttpGet("overview/by-stage")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -166,6 +166,13 @@ public class RentalOverviewController(
 
     // ── Helpers ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Executes the parse includes operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: may trigger domain workflows that persist state changes.</remarks>
+    /// <param name="include">Text input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static RentalProcessInclude ParseIncludes(string? include)
     {
         if (string.IsNullOrWhiteSpace(include))

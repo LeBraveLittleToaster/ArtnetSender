@@ -9,6 +9,11 @@ namespace LumenForgeServer.Inventory.Persistance.Configurations;
 /// </summary>
 public sealed class DeviceConfiguration : IEntityTypeConfiguration<Device>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="builder">Input value used by this operation.</param>
     public void Configure(EntityTypeBuilder<Device> builder)
     {
         builder.ToTable("device");

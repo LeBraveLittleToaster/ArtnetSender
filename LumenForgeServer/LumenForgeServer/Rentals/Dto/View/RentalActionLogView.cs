@@ -34,6 +34,12 @@ public sealed record RentalActionLogView
     [JsonPropertyName("performed_at")]
     public Instant PerformedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="log">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalActionLogView FromEntity(RentalActionLog log) => new()
     {
         Guid = log.Guid,

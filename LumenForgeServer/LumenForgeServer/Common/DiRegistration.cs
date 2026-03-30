@@ -24,6 +24,7 @@ using LumenForgeServer.Common.Database.Seeding.Seeders;
 using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
 using LumenForgeServer.Rentals.Service.Actions.Handlers;
+using LumenForgeServer.Rentals.Service.Authorization;
 using Microsoft.AspNetCore.Routing;
 using LumenForgeServer.Auth;
 
@@ -91,6 +92,7 @@ public static class DiRegistration
         builder.Services.AddScoped<QuestionService>();
         builder.Services.AddScoped<RentalOverViewService>();
         builder.Services.AddScoped<RentalAccessService>();
+        builder.Services.AddScoped<IRentalActionAuthorizationService, RentalActionAuthorizationService>();
         builder.Services.AddScoped<AuthCacheService>();
 
         // Rental action framework
@@ -124,6 +126,7 @@ public static class DiRegistration
     /// <summary>
     /// Registers the data seeder pipeline.
     /// </summary>
+    /// <param name="builder">Input value used by this operation.</param>
     public static void RegisterSeeders(WebApplicationBuilder builder)
     {
         builder.Services.AddScoped<DataSeederOrchestrator>();
@@ -274,6 +277,7 @@ public static class DiRegistration
     /// <summary>
     /// Adds role claims from Keycloak "realm_access" into the current identity.
     /// </summary>
+    /// <param name="keys">Text input used by this operation.</param>
     /// <param name="identity">Identity to add roles to.</param>
     /// <exception cref="JsonException">Thrown when the realm_access claim contains invalid JSON.</exception>
     private static bool IsPrivilegedRole(string[] keys, ClaimsIdentity identity)
@@ -292,10 +296,10 @@ public static class DiRegistration
     /// <summary>
     /// Registers authorization policies.
     /// </summary>
-    /// <param name="builder">Application builder that owns the service collection.</param>
     /// <remarks>
     /// Policies can be found under Enum Policy, Roles in the Enum Role in Auth.Domain. 
     /// </remarks>
+    /// <param name="builder">Application builder that owns the service collection.</param>
     public static void AddAuthorization(WebApplicationBuilder builder)
     {
         builder.Services.AddAuthorization(options =>
@@ -314,6 +318,12 @@ public static class DiRegistration
         });
     }
 
+    /// <summary>
+    /// Executes the is own profile access operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="ctx">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static bool IsOwnProfileAccess(AuthorizationHandlerContext ctx)
     {
         if (ctx.Resource is not HttpContext httpContext)

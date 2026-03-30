@@ -213,6 +213,9 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
     /// <remarks>
     /// Expected mobile flow: scan device QR → POST here → binding is created → job view is refreshed.
     /// </remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     [HttpPost("jobs/{jobGuid:Guid}/devices/scan")]
     [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -234,6 +237,10 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
     /// <remarks>
     /// Expected mobile flow: scan device QR → POST here → task view is refreshed.
     /// </remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     [HttpPost("jobs/{jobGuid:Guid}/tasks/{taskGuid:Guid}/devices/scan")]
     [Authorize(Roles = nameof(Permissions.MaintenanceUpdate))]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -302,6 +309,13 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
         return CreatedAtAction(nameof(ListTaskLogs), new { jobGuid, taskGuid }, log);
     }
 
+    /// <summary>
+    /// Executes the parse job includes operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: may trigger domain workflows that persist state changes.</remarks>
+    /// <param name="include">Text input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static MaintenanceJobInclude ParseJobIncludes(string? include)
     {
         if (string.IsNullOrWhiteSpace(include))
@@ -329,6 +343,13 @@ public class MaintenanceController(MaintenanceService maintenanceService) : Cont
         return flags;
     }
 
+    /// <summary>
+    /// Executes the parse task includes operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: may trigger domain workflows that persist state changes.</remarks>
+    /// <param name="include">Text input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static MaintenanceTaskInclude ParseTaskIncludes(string? include)
     {
         if (string.IsNullOrWhiteSpace(include))

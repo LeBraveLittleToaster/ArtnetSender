@@ -43,6 +43,12 @@ public class GroupView
     [JsonPropertyName("permissions")]
     public required List<Permissions> Permissions { get; set; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="tEntity">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static GroupView FromEntity(Group tEntity)
     {
         var permissions = (tEntity.GroupRoles.Count == 0) ?

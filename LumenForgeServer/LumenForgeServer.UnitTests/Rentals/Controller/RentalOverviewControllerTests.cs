@@ -70,7 +70,7 @@ public class RentalOverviewControllerTests
         _repo.ListAsync(Arg.Any<RentalListQueryDto>(), Arg.Any<RentalAccessFilter>(), _ct)
             .Returns(([process], 1));
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.ListProcesses(new RentalListQueryDto(), _ct);
 
         result.Should().BeOfType<OkObjectResult>();
@@ -119,7 +119,7 @@ public class RentalOverviewControllerTests
                 _ct)
             .Returns(process);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetProcess(process.Guid, null, _ct);
 
         result.Should().BeOfType<OkObjectResult>();
@@ -136,7 +136,7 @@ public class RentalOverviewControllerTests
                 _ct)
             .Returns((RentalProcessInstance?)null);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var act = () => controller.GetProcess(guid, null, _ct);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -153,7 +153,7 @@ public class RentalOverviewControllerTests
                 _ct)
             .Returns(process);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         await controller.GetProcess(process.Guid, "checklists", _ct);
 
         await _repo.Received(1).GetByGuidWithIncludesScopedAsync(
@@ -186,7 +186,7 @@ public class RentalOverviewControllerTests
         _repo.GetActionLogsByProcessGuidAsync(process.Guid, 50, 0, _ct)
             .Returns((new List<RentalActionLog>(), 0));
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetProcessHistory(process.Guid, ct: _ct);
 
         result.Should().BeOfType<OkObjectResult>();
@@ -210,7 +210,7 @@ public class RentalOverviewControllerTests
         _repo.CountPendingExtensionsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(2);
         _repo.CountActionLogsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(50);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetOverview(_ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -242,7 +242,7 @@ public class RentalOverviewControllerTests
         _repo.CountActionLogsSinceAsync(Arg.Any<Instant>(), Arg.Any<RentalAccessFilter>(), _ct).Returns(20);
         _repo.CountDamageReportsSinceAsync(Arg.Any<Instant>(), Arg.Any<RentalAccessFilter>(), _ct).Returns(3);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetRecentActivity(days: 14, ct: _ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -262,7 +262,7 @@ public class RentalOverviewControllerTests
         var byStage = new Dictionary<RentalStage, int> { [RentalStage.Requested] = 3 };
         _repo.CountByStageAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(byStage);
 
-        var controller = CreateController([Permissions.RentalRead]);
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetByStage(_ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;

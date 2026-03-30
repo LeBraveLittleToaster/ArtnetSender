@@ -49,16 +49,29 @@ public abstract class ActionResult
 /// </summary>
 public sealed class BlankActionResult : ActionResult
 {
+    /// <summary>
+    /// Executes the blank action result operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     public BlankActionResult() { }
     /// <summary>Creates a successful result that optionally transitions the process to a new stage.</summary>
+    /// <param name="actionName">Text input used by this operation.</param>
+    /// <param name="newStage">Input value used by this operation.</param>
     public static BlankActionResult Ok(string actionName, RentalStage? newStage = null) =>
         new() { Success = true, ActionName = actionName, NewStage = newStage };
 
     /// <summary>Creates a failed result carrying the provided error details.</summary>
+    /// <param name="actionName">Text input used by this operation.</param>
+    /// <param name="errors">Text input used by this operation.</param>
     public static BlankActionResult Fail(string actionName, Dictionary<string, string> errors) =>
         new() { Success = false, ActionName = actionName, Errors = errors };
 
     /// <summary>Creates a failed result with a single error entry.</summary>
+    /// <param name="actionName">Text input used by this operation.</param>
+    /// <param name="key">Text input used by this operation.</param>
+    /// <param name="message">Text input used by this operation.</param>
     public static BlankActionResult Fail(string actionName, string key, string message) =>
         Fail(actionName, new Dictionary<string, string> { [key] = message });
 }

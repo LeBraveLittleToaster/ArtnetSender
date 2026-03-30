@@ -26,6 +26,7 @@ public sealed class UpdateCategoryDto : IValidatableObject
     /// <summary>
     /// Ensures at least one field is provided.
     /// </summary>
+    /// <param name="validationContext">Input value used by this operation.</param>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (Name is null && Description is null)

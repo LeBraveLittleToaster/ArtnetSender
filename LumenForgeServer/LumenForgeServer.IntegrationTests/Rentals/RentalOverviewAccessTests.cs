@@ -24,10 +24,10 @@ public class RentalOverviewAccessTests(AuthFixture fixture)
         var admin = await fixture.GetInitialAdminUserAsync();
         var userA = await fixture.CreateNewUserWithRolesAsync(
             CreateTestUserDto.CreateTestUser(),
-            [Permissions.RentalUserOwn]);
+            [Permissions.RentalUserOwn, Permissions.RentalActionCreateRental]);
         var userB = await fixture.CreateNewUserWithRolesAsync(
             CreateTestUserDto.CreateTestUser(),
-            [Permissions.RentalUserOwn]);
+            [Permissions.RentalUserOwn, Permissions.RentalActionCreateRental]);
 
         var userAProcessGuid = await CreateRentalAsync(userA);
         var userBProcessGuid = await CreateRentalAsync(userB);
@@ -53,7 +53,7 @@ public class RentalOverviewAccessTests(AuthFixture fixture)
         var admin = await fixture.GetInitialAdminUserAsync();
         var userA = await fixture.CreateNewUserWithRolesAsync(
             CreateTestUserDto.CreateTestUser(),
-            [Permissions.RentalGroup]);
+            [Permissions.RentalGroup, Permissions.RentalActionCreateRental]);
         var userB = await fixture.CreateNewUserWithRolesAsync(
             CreateTestUserDto.CreateTestUser(),
             [Permissions.RentalGroup]);

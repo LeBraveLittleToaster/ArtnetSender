@@ -6,6 +6,11 @@ namespace LumenForgeServer.Inventory.Persistance.Configurations;
 
 public sealed class DeviceRelationAuditLogConfiguration : IEntityTypeConfiguration<DeviceRelationAuditLog>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="builder">Input value used by this operation.</param>
     public void Configure(EntityTypeBuilder<DeviceRelationAuditLog> builder)
     {
         builder.ToTable("device_relation_audit_log");

@@ -15,6 +15,12 @@ public sealed record RoleViewDto
     [JsonPropertyName("value")]
     public required int Value { get; init; }
 
+    /// <summary>
+    /// Executes the from role operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="permissions">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RoleViewDto FromRole(Permissions permissions)
     {
         return new RoleViewDto

@@ -16,6 +16,15 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         RentalStage.Scrapped
     ];
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="query">Input value used by this operation.</param>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(List<RentalProcessSummaryView> list, int total)> ListProcessesAsync(
         RentalListQueryDto query,
         RentalAccessFilter accessFilter,
@@ -25,6 +34,16 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         return (items.Select(RentalProcessSummaryView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the get process async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="processGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="includes">Input value used by this operation.</param>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the RentalProcessView result.</returns>
     public async Task<RentalProcessView> GetProcessAsync(
         Guid processGuid,
         RentalProcessInclude includes,
@@ -39,6 +58,17 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         return RentalProcessView.FromEntity(process, includes);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="processGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(List<RentalActionLogView> list, int total)> GetProcessHistoryAsync(
         Guid processGuid,
         int limit,
@@ -57,6 +87,14 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         return (logs.Select(RentalActionLogView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the get overview async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the RentalOverviewDto result.</returns>
     public async Task<RentalOverviewDto> GetOverviewAsync(RentalAccessFilter accessFilter, CancellationToken ct)
     {
         var byStage = await repository.CountByStageAsync(accessFilter, ct);
@@ -78,6 +116,15 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         };
     }
 
+    /// <summary>
+    /// Executes the get recent activity async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="days">Numeric input used by this operation.</param>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the RentalRecentActivityDto result.</returns>
     public async Task<RentalRecentActivityDto> GetRecentActivityAsync(
         int days,
         RentalAccessFilter accessFilter,
@@ -98,6 +145,14 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         };
     }
 
+    /// <summary>
+    /// Executes the get by stage async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="accessFilter">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the List&lt;StageBucketDto&gt; result.</returns>
     public async Task<List<StageBucketDto>> GetByStageAsync(RentalAccessFilter accessFilter, CancellationToken ct)
     {
         var byStage = await repository.CountByStageAsync(accessFilter, ct);

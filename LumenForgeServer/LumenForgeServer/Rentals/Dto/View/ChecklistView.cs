@@ -31,6 +31,12 @@ public sealed record ChecklistView
     [JsonPropertyName("items")]
     public IReadOnlyList<ChecklistItemView> Items { get; init; } = [];
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="checklist">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static ChecklistView FromEntity(Checklist checklist) => new()
     {
         Guid = checklist.Guid,
@@ -69,6 +75,12 @@ public sealed record ChecklistItemView
     [JsonPropertyName("scanned_at")]
     public Instant? ScannedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="item">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static ChecklistItemView FromEntity(ChecklistItem item) => new()
     {
         Guid = item.Guid,

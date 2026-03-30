@@ -5,10 +5,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace LumenForgeServer.Inventory.Persistance.Configurations;
 
 /// <summary>
-/// Entity configuration for <see cref="Stock"/>.
+/// Entity configuration for <see cref="StockBinding"/>.
 /// </summary>
 public sealed class StockConfiguration : IEntityTypeConfiguration<StockBinding>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="builder">Input value used by this operation.</param>
     public void Configure(EntityTypeBuilder<StockBinding> builder)
     {
         builder.ToTable("stock");

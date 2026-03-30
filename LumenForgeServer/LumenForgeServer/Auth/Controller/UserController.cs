@@ -64,9 +64,6 @@ public class UserController(UserService userService, KcService kcService, ILogge
     /// <summary>
     /// Retrieves a user by Keycloak subject identifier.
     /// </summary>
-    /// <param name="include">Includes groupViews with include=groups, groups the user is assigned to.</param>
-    /// <param name="userKcId">Keycloak subject identifier to look up.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the user payload.</returns>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
     /// Thrown when the user cannot be found.
@@ -96,8 +93,6 @@ public class UserController(UserService userService, KcService kcService, ILogge
     /// <summary>
     /// Retrieves groups assigned to a user.
     /// </summary>
-    /// <param name="userKcId">Keycloak subject identifier to look up.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the group list.</returns>
     [HttpGet("{userKcId}/groups")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -118,8 +113,6 @@ public class UserController(UserService userService, KcService kcService, ILogge
     /// <summary>
     /// Deletes a user by Keycloak subject identifier from the local database. User could be still present in keycloak.
     /// </summary>
-    /// <param name="userKcId">Keycloak subject identifier to look up.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the user payload.</returns>
     /// <exception cref="LumenForgeServer.Common.Exceptions.NotFoundException">
     /// Thrown when the user cannot be found.
@@ -141,8 +134,6 @@ public class UserController(UserService userService, KcService kcService, ILogge
     /// <summary>
     /// Retrieves role assignments for the specified user.
     /// </summary>
-    /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the role set.</returns>
     [HttpGet("{keycloakId}/roles")]
     [ProducesResponseType(StatusCodes.Status200OK)]

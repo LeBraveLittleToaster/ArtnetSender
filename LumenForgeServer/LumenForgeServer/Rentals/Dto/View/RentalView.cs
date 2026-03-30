@@ -49,6 +49,12 @@ public sealed record RentalView
     [JsonPropertyName("answers")]
     public IReadOnlyList<AnswerView> Answers { get; init; } = [];
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="rental">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalView FromEntity(Rental rental) => new()
     {
         Uuid = rental.Uuid,

@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using LumenForgeServer.Rentals.Dto.Command;
 using LumenForgeServer.Rentals.Dto.View;
-using LumenForgeServer.Rentals.Persistence;
 using LumenForgeServer.Rentals.Service;
 using LumenForgeServer.Rentals.Service.Actions;
+using LumenForgeServer.Rentals.Service.Authorization;
+using LumenForgeServer.Rentals.Service.Authorization.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,8 +28,7 @@ namespace LumenForgeServer.Rentals.Controller;
 [Tags("Rentals – Actions")]
 public class RentalActionController(
     RentalActionService actionService,
-    RentalAccessService rentalAccessService,
-    IRentalProcessRepository processRepository) : ControllerBase
+    IRentalActionAuthorizationService actionAuthorizationService) : ControllerBase
 {
     // ── Process queries ─────────────────────────────────────────────
 
@@ -43,23 +43,20 @@ public class RentalActionController(
     public async Task<IActionResult> GetAvailableActions(
         [FromRoute] Guid processGuid, CancellationToken ct)
     {
-        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
-        if (!readScope.HasAnyScope)
-            return Forbid();
+        var result = await actionAuthorizationService.GetAvailableActionsAsync(
+            new GetAvailableRentalActionsRequestDto
+            {
+                User = User,
+                ProcessGuid = processGuid
+            },
+            ct);
 
-        var process = await processRepository.GetByGuidAsync(processGuid, ct);
-        if (process is null)
-            return NotFound();
-
-        if (!rentalAccessService.IsProcessInScope(process, readScope))
-            return Forbid();
-
-        var updateScope = await rentalAccessService.BuildUpdateScopeAsync(User, ct);
-        if (!updateScope.HasAnyScope || !rentalAccessService.IsProcessInScope(process, updateScope))
-            return Ok(Array.Empty<RentalActionType>());
-
-        var actions = await actionService.GetAvailableActionsAsync(processGuid, ct);
-        return Ok(actions);
+        return result.Status switch
+        {
+            RentalActionAuthorizationStatus.NotFound => NotFound(),
+            RentalActionAuthorizationStatus.Forbidden => Forbid(),
+            _ => Ok(result.Actions)
+        };
     }
 
     // ── Create ──────────────────────────────────────────────────────
@@ -76,11 +73,18 @@ public class RentalActionController(
     public async Task<IActionResult> CreateRental(
         [FromBody] CreateRentalDto dto, CancellationToken ct)
     {
-        if (!await rentalAccessService.CanCreateRentalAsync(User, dto.GroupGuid, ct))
+        var authorization = await actionAuthorizationService.AuthorizeCreateActionAsync(
+            new AuthorizeCreateRentalActionRequestDto
+            {
+                User = User,
+                GroupGuid = dto.GroupGuid
+            },
+            ct);
+        if (authorization.Status != RentalActionAuthorizationStatus.Allowed)
             return Forbid();
 
         var input = dto.ToActionInput();
-        SetActor(input);
+        input = AddActorToInput(input);
         var result = await actionService.CreateProcessAsync(input, ct);
         return StatusCode(StatusCodes.Status201Created, ActionResultView.FromActionResult(result));
     }
@@ -348,21 +352,27 @@ public class RentalActionController(
     // ── Helpers ─────────────────────────────────────────────────────
 
     /// <summary>Shorthand that sets the actor from the token and delegates to the orchestrator.</summary>
+    /// <param name="processGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="actionType">Input value used by this operation.</param>
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     private async Task<IActionResult> ExecuteAsync(
         Guid processGuid, RentalActionType actionType, ActionInput input, CancellationToken ct)
     {
-        var updateScope = await rentalAccessService.BuildUpdateScopeAsync(User, ct);
-        if (!updateScope.HasAnyScope)
-            return Forbid();
-
-        var process = await processRepository.GetByGuidAsync(processGuid, ct);
-        if (process is null)
+        var authorization = await actionAuthorizationService.AuthorizeActionAsync(
+            new AuthorizeRentalActionRequestDto
+            {
+                User = User,
+                ProcessGuid = processGuid,
+                ActionType = actionType
+            },
+            ct);
+        if (authorization.Status == RentalActionAuthorizationStatus.NotFound)
             return NotFound();
-
-        if (!rentalAccessService.IsProcessInScope(process, updateScope))
+        if (authorization.Status != RentalActionAuthorizationStatus.Allowed)
             return Forbid();
 
-        SetActor(input);
+        AddActorToInput(input);
         var result = await actionService.ExecuteActionAsync(processGuid, actionType, input, ct);
         return Ok(ActionResultView.FromActionResult(result));
     }
@@ -371,10 +381,12 @@ public class RentalActionController(
     /// Populates <see cref="ActionInput.ActorKcId"/> from the authenticated JWT token.
     /// Always overwrites — the value is never accepted from the request body.
     /// </summary>
-    private void SetActor(ActionInput input)
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    private T AddActorToInput<T>(T input) where T : ActionInput
     {
         input.ActorKcId = User.FindFirstValue("sub")
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? throw new UnauthorizedAccessException("Missing subject claim in token.");
+        return input;
     }
 }

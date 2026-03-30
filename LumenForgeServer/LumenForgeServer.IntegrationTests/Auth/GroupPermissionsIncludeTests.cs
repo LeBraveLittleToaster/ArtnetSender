@@ -100,7 +100,7 @@ public class GroupPermissionsIncludeTests(AuthFixture fixture)
     public async Task Repository_GetGroupByGuidWithPermissions_can_be_used_multiple_times()
     {
         var adminBundle = await fixture.GetInitialAdminUserAsync();
-        var roleSet = new[] { Permissions.RentalRead, Permissions.RentalUpdate };
+        var roleSet = new[] { Permissions.RentalReadAll, Permissions.RentalUpdateAll };
 
         var group = await fixture.CreateGroupWithRolesAsync(
             adminBundle.AppClient,
@@ -132,8 +132,8 @@ public class GroupPermissionsIncludeTests(AuthFixture fixture)
 
             groupFromDb2.Should().NotBeNull();
             groupFromDb2!.GroupRoles.Should().HaveCount(2);
-            groupFromDb2.GroupRoles.Select(gr => gr.Permission).Should().Contain(Permissions.RentalRead);
-            groupFromDb2.GroupRoles.Select(gr => gr.Permission).Should().Contain(Permissions.RentalUpdate);
+            groupFromDb2.GroupRoles.Select(gr => gr.Permission).Should().Contain(Permissions.RentalReadAll);
+            groupFromDb2.GroupRoles.Select(gr => gr.Permission).Should().Contain(Permissions.RentalUpdateAll);
         }
     }
 
@@ -193,7 +193,7 @@ public class GroupPermissionsIncludeTests(AuthFixture fixture)
         // Create one group with roles and one without
         var groupWithRoles = await fixture.CreateGroupWithRolesAsync(
             adminBundle.AppClient,
-            new[] { Permissions.RentalRead },
+            new[] { Permissions.RentalReadAll },
             $"WithRoles-{Guid.NewGuid():N}",
             "Group with roles");
 
@@ -235,7 +235,7 @@ public class GroupPermissionsIncludeTests(AuthFixture fixture)
 
         var group2 = await fixture.CreateGroupWithRolesAsync(
             adminBundle.AppClient,
-            new[] { Permissions.RentalRead },
+            new[] { Permissions.RentalReadAll },
             $"NoMatch-{Guid.NewGuid():N}",
             "Different group");
 

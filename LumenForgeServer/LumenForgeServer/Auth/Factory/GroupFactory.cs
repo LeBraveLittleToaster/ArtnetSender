@@ -9,6 +9,12 @@ namespace LumenForgeServer.Auth.Factory;
 /// </summary>
 public static class GroupFactory
 {
+    /// <summary>
+    /// Executes the build group operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <returns>The operation result.</returns>
     public static Group BuildGroup(AddGroupDto dto)
     {
         var dateNow = SystemClock.Instance.GetCurrentInstant();

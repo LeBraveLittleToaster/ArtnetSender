@@ -40,6 +40,13 @@ public record UserView
     [JsonPropertyName("rental_scopes")]
     public RentalScopesView RentalScopes { get; private set; } = RentalScopesView.None;
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="tEntity">Input value used by this operation.</param>
+    /// <param name="effectivePermissions">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static UserView FromEntity(
         KcUserReference tEntity,
         IReadOnlyCollection<Permissions>? effectivePermissions = null)
@@ -59,6 +66,14 @@ public record UserView
         };
     }
 
+    /// <summary>
+    /// Executes the from entity with groups operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="tEntity">Input value used by this operation.</param>
+    /// <param name="tGroups">Input value used by this operation.</param>
+    /// <param name="effectivePermissions">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static UserView FromEntityWithGroups(
         KcUserReference tEntity,
         List<GroupView> tGroups,
@@ -105,19 +120,32 @@ public sealed record RentalScopesView
     [JsonPropertyName("delete")]
     public ScopeLevel Delete { get; init; } = ScopeLevel.None;
 
+    /// <summary>
+    /// Executes the from permissions operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="permissions">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalScopesView FromPermissions(IReadOnlyCollection<Permissions> permissions)
     {
         return new RentalScopesView
         {
-            Read = BuildScopedLevel(permissions, Permissions.RentalRead),
+            Read = BuildScopedLevel(permissions, Permissions.RentalReadAll),
             Create = BuildScopedLevel(permissions, Permissions.RentalCreate),
-            Update = BuildScopedLevel(permissions, Permissions.RentalUpdate),
-            Delete = permissions.Contains(Permissions.RentalDelete)
+            Update = BuildScopedLevel(permissions, Permissions.RentalUpdateAll),
+            Delete = permissions.Contains(Permissions.RentalDeleteAll)
                 ? ScopeLevel.All
                 : ScopeLevel.None
         };
     }
 
+    /// <summary>
+    /// Executes the build scoped level operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="permissions">Input value used by this operation.</param>
+    /// <param name="globalPermission">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static ScopeLevel BuildScopedLevel(IReadOnlyCollection<Permissions> permissions, Permissions globalPermission)
     {
         if (permissions.Contains(globalPermission))

@@ -23,6 +23,12 @@ public abstract record ActionResultView
     [JsonPropertyName("errors")]
     public Dictionary<string, string> Errors { get; init; } = [];
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static ActionResultView FromActionResult(ActionResult result) => result switch
     {
         BlankActionResult blank => BlankActionResultView.FromActionResult(blank),
@@ -38,6 +44,12 @@ public abstract record ActionResultView
 
 public sealed record BlankActionResultView : ActionResultView
 {
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static BlankActionResultView FromActionResult(BlankActionResult result) => new()
     {
         Success = result.Success,
@@ -53,6 +65,12 @@ public sealed record CreateRentalResultView : ActionResultView
     [JsonPropertyName("process_instance_guid")]
     public Guid ProcessInstanceGuid { get; init; }
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static CreateRentalResultView FromActionResult(CreateRentalResult result) => new()
     {
         Success = result.Success,
@@ -69,6 +87,12 @@ public sealed record GenerateChecklistResultView : ActionResultView
     [JsonPropertyName("checklist_guid")]
     public Guid ChecklistGuid { get; init; }
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static GenerateChecklistResultView FromActionResult(GenerateChecklistResult result) => new()
     {
         Success = result.Success,
@@ -85,6 +109,12 @@ public sealed record GenerateInvoiceResultView : ActionResultView
     [JsonPropertyName("invoice_guid")]
     public Guid InvoiceGuid { get; init; }
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static GenerateInvoiceResultView FromActionResult(GenerateInvoiceResult result) => new()
     {
         Success = result.Success,
@@ -101,6 +131,12 @@ public sealed record RequestExtensionResultView : ActionResultView
     [JsonPropertyName("extension_guid")]
     public Guid? ExtensionGuid { get; init; }
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RequestExtensionResultView FromActionResult(RequestExtensionResult result) => new()
     {
         Success = result.Success,
@@ -117,6 +153,12 @@ public sealed record CreateMaintenanceJobsResultView : ActionResultView
     [JsonPropertyName("maintenance_job_guids")]
     public Guid[] MaintenanceJobGuids { get; init; } = [];
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Numeric input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static CreateMaintenanceJobsResultView FromActionResult(CreateMaintenanceJobsResult result) => new()
     {
         Success = result.Success,
@@ -145,6 +187,12 @@ public sealed record RentalReportSummaryView
     [JsonPropertyName("extension_count")]
     public int ExtensionCount { get; init; }
 
+    /// <summary>
+    /// Executes the from summary operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="summary">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalReportSummaryView FromSummary(RentalReportSummary summary) => new()
     {
         ProcessGuid = summary.ProcessGuid,
@@ -160,6 +208,12 @@ public sealed record GenerateReportResultView : ActionResultView
     [JsonPropertyName("summary")]
     public RentalReportSummaryView? Summary { get; init; }
 
+    /// <summary>
+    /// Executes the from action result operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static GenerateReportResultView FromActionResult(GenerateReportResult result) => new()
     {
         Success = result.Success,

@@ -1,5 +1,3 @@
-using LumenForgeServer.Auth.Domain;
-
 namespace LumenForgeServer.Rentals.Service.Actions;
 
 /// <summary>
@@ -77,38 +75,4 @@ public enum RentalActionType
 
     /// <summary>Scrap the rental (total write-off of assigned items).</summary>
     ScrapRental
-}
-
-public static class RentalActionTypeExtensions
-{
-    public static List<Permissions> GetNeededPermissions(this RentalActionType actionType)
-    {
-        return actionType switch
-        {
-            RentalActionType.CreateRental => [],
-            RentalActionType.ApproveRequest => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RejectRequest => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.AssignItems => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RemoveItems => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.ApproveItems => [],
-            RentalActionType.RejectItems => [],
-            RentalActionType.GenerateChecklist => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.ScanChecklist => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.SignChecklist => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RecordPickup => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RecordReturn => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RequestExtension => [],
-            RentalActionType.ApproveExtension => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RejectExtension => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RecordDamages => [],
-            RentalActionType.CreateMaintenanceJobs => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.GenerateInvoice => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.RecordPayment => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.GenerateReport => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.CompleteRental => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            RentalActionType.CancelRental => [],
-            RentalActionType.ScrapRental => [Permissions.RentalActionCall, Permissions.RentalActionUpdate],
-            _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, null)
-        };
-    }
 }

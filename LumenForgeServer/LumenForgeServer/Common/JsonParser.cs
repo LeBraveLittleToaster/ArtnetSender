@@ -11,6 +11,11 @@ namespace LumenForgeServer.Common;
 /// </summary>
 public static class Json
 {
+    /// <summary>
+    /// Executes the get json serializer options operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     public static JsonSerializerOptions GetJsonSerializerOptions()
     {
         var options = new JsonSerializerOptions();

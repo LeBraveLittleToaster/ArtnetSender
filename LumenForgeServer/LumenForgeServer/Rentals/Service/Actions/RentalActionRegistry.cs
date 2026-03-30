@@ -1,4 +1,3 @@
-using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Rentals.Domain;
 
 namespace LumenForgeServer.Rentals.Service.Actions;
@@ -10,6 +9,12 @@ namespace LumenForgeServer.Rentals.Service.Actions;
 /// </summary>
 public sealed class RentalActionRegistry : IRentalActionRegistry
 {
+    /// <summary>
+    /// Executes the new operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     private static readonly Dictionary<RentalStage, IReadOnlySet<RentalActionType>> StageActions = new()
     {
         [RentalStage.None] = new HashSet<RentalActionType>
@@ -100,20 +105,13 @@ public sealed class RentalActionRegistry : IRentalActionRegistry
     };
     
     /// <inheritdoc />
-    public IReadOnlySet<RentalActionType> GetAvailableAllowedActions(RentalStage stage, IReadOnlyList<Permissions> permissions)
-    {
-        if (!StageActions.TryGetValue(stage, out var actions))
-        {
-            return new HashSet<RentalActionType>();
-        }
-
-        return actions
-            .Where(rentalActionType => 
-                rentalActionType.GetNeededPermissions().All(permissions.Contains))
-            .ToHashSet();
-
-    }
-
+    /// <summary>
+    /// Executes the get available actions operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="stage">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage)
     {
         return !StageActions.TryGetValue(stage, out var actions) 

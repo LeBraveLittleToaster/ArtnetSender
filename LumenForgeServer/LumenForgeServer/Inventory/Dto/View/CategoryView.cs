@@ -29,6 +29,12 @@ public sealed record CategoryView
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="category">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static CategoryView FromEntity(Category category)
     {
         return new CategoryView

@@ -78,7 +78,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <summary>
     /// Creates a group record.
     /// </summary>
-    /// <param name="addUserDto">Payload containing the Keycloak subject identifier.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 201 response with the created user payload.</returns>
     [HttpPut("")]
@@ -138,6 +138,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <summary>
     /// Assigns a user to a group. The user then inherits the role privileges of that group
     /// </summary>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
     /// <param name="groupGuid">Group Guid the user is assigned to</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with when assigned successfully.</returns>
@@ -158,6 +159,7 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// Retrieves users assigned to a group.
     /// </summary>
     /// <param name="groupGuid">Group Guid to look up.</param>
+    /// <param name="query">Input value used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A 200 response with the user list.</returns>
     [HttpGet("{groupGuid:Guid}/users")]
@@ -174,9 +176,6 @@ public class GroupController(GroupService groupService) : ControllerBase
     /// <summary>
     /// Removes a user from a group.
     /// </summary>
-    /// <param name="groupGuid">Group Guid to update.</param>
-    /// <param name="userKcId">Keycloak subject identifier to remove.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response when removed successfully.</returns>
     [HttpDelete("{groupGuid:Guid}/users/{userKcId}")]
     [Authorize(Policy = nameof(Policy.GroupUpdateReadUser))]

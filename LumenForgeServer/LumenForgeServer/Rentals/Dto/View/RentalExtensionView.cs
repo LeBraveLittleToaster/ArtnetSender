@@ -39,6 +39,12 @@ public sealed record RentalExtensionView
     [JsonPropertyName("reviewed_at")]
     public Instant? ReviewedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="extension">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalExtensionView FromEntity(RentalExtension extension) => new()
     {
         Guid = extension.Guid,

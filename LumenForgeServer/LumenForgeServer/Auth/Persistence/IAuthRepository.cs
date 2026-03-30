@@ -26,7 +26,7 @@ public interface IAuthRepository
     /// <summary>
     /// Deletes a user by Keycloak subject identifier.
     /// </summary>
-    /// <param name="keycloakId">Keycloak subject identifier to delete.</param>
+    /// <param name="userKcId">Keycloak subject identifier to delete.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="Common.Exceptions.NotFoundException">
     /// Thrown when the user cannot be found.
@@ -44,7 +44,6 @@ public interface IAuthRepository
     /// Attempts to retrieve a user by Keycloak subject identifier including the groups the user assigned to.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
-    /// <param name="includeGroups">Groups the user is assigned to</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The user if found; otherwise <c>null</c>.</returns>
     public Task<KcUserReference?> TryGetUserByKeycloakIdWithGroupsAsync(string keycloakId,
@@ -69,6 +68,8 @@ public interface IAuthRepository
     /// Retrieves groups assigned to a user.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="limit">Maximum number of records to return.</param>
+    /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
     Task<(IReadOnlyList<Group> groups, long total)> GetGroupsForUserAsync(string keycloakId, int limit, int offset, CancellationToken ct);
@@ -141,6 +142,8 @@ public interface IAuthRepository
     /// Retrieves users assigned to a group.
     /// </summary>
     /// <param name="groupGuid">Group Guid to look up.</param>
+    /// <param name="limit">Maximum number of records to return.</param>
+    /// <param name="offset">Number of records to skip.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct);
@@ -159,10 +162,9 @@ public interface IAuthRepository
     /// <param name="ct">Cancellation token.</param>
     Task AssignRolesToGroupAsync(Group group, Permissions[] roles, CancellationToken ct);
     /// <summary>
-    /// Removes a role assignment from a group.
+    /// Removes all role assignments from a group.
     /// </summary>
     /// <param name="group">Group losing the role.</param>
-    /// <param name="role">Role to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     Task RemoveAllRolesFromGroupAsync(Group group, CancellationToken ct);
 

@@ -25,6 +25,12 @@ public sealed record VendorView
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="vendor">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static VendorView FromEntity(Vendor vendor)
     {
         return new VendorView
