@@ -147,6 +147,16 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
         return (groups, total);
     }
 
+    public async Task<HashSet<Guid>> GetGroupGuidsForUserAsync(string keycloakId, CancellationToken ct)
+    {
+        return await _db.GroupUsers
+            .AsNoTracking()
+            .Where(gu => gu.KcUserReference.UserKcId == keycloakId)
+            .Select(gu => gu.Group.Guid)
+            .Distinct()
+            .ToHashSetAsync(ct);
+    }
+
     /// <summary>
     /// Resolves the internal group id for a group Guid.
     /// </summary>

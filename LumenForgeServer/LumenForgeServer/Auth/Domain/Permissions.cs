@@ -58,6 +58,8 @@ public enum Permissions
     RentalRead = 61,
     RentalUpdate = 62,
     RentalDelete = 63,
+    RentalUserOwn = 64,
+    RentalGroup = 65,
 
     // Rental Status (70–79), (70-73) currently not used, actions cannot be dynamically CRUD
     RentalActionCreate = 70,

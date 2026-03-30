@@ -20,6 +20,9 @@ public class Rental
     /// <summary>Keycloak subject id of the customer who owns the rental.</summary>
     public required string CustomerKcId { get; set; }
 
+    /// <summary>Optional owning group GUID for group-owned rentals.</summary>
+    public Guid? GroupGuid { get; set; }
+
     /// <summary>Display name of the customer (denormalized for convenience).</summary>
     public string? CustomerName { get; set; }
 

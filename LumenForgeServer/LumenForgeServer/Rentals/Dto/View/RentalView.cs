@@ -16,6 +16,9 @@ public sealed record RentalView
     [JsonPropertyName("customer_kc_id")]
     public required string CustomerKcId { get; init; }
 
+    [JsonPropertyName("group_guid")]
+    public Guid? GroupGuid { get; init; }
+
     [JsonPropertyName("customer_name")]
     public string? CustomerName { get; init; }
 
@@ -50,6 +53,7 @@ public sealed record RentalView
     {
         Uuid = rental.Uuid,
         CustomerKcId = rental.CustomerKcId,
+        GroupGuid = rental.GroupGuid,
         CustomerName = rental.CustomerName,
         CustomerEmail = rental.CustomerEmail,
         Purpose = rental.Purpose,

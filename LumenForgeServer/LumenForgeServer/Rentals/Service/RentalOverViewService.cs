@@ -18,30 +18,20 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
 
     public async Task<(List<RentalProcessSummaryView> list, int total)> ListProcessesAsync(
         RentalListQueryDto query,
-        bool fullAccess,
-        string? callerKcId,
+        RentalAccessFilter accessFilter,
         CancellationToken ct)
     {
-        var scopedQuery = fullAccess
-            ? query
-            : query with
-            {
-                OwnerKcId = callerKcId
-                    ?? throw new UnauthorizedAccessException("Unable to resolve caller identity.")
-            };
-
-        var (items, total) = await repository.ListAsync(scopedQuery, ct);
+        var (items, total) = await repository.ListAsync(query, accessFilter, ct);
         return (items.Select(RentalProcessSummaryView.FromEntity).ToList(), total);
     }
 
     public async Task<RentalProcessView> GetProcessAsync(
         Guid processGuid,
         RentalProcessInclude includes,
+        RentalAccessFilter accessFilter,
         CancellationToken ct)
     {
-        var process = includes == RentalProcessInclude.None
-            ? await repository.GetByGuidAsync(processGuid, ct)
-            : await repository.GetByGuidWithIncludesAsync(processGuid, includes, ct);
+        var process = await repository.GetByGuidWithIncludesScopedAsync(processGuid, includes, accessFilter, ct);
 
         if (process is null)
             throw new NotFoundException($"Process instance '{processGuid}' not found.");
@@ -53,18 +43,23 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
         Guid processGuid,
         int limit,
         int offset,
+        RentalAccessFilter accessFilter,
         CancellationToken ct)
     {
-        _ = await repository.GetByGuidAsync(processGuid, ct)
+        _ = await repository.GetByGuidWithIncludesScopedAsync(
+                processGuid,
+                RentalProcessInclude.None,
+                accessFilter,
+                ct)
             ?? throw new NotFoundException($"Process instance '{processGuid}' not found.");
 
         var (logs, total) = await repository.GetActionLogsByProcessGuidAsync(processGuid, limit, offset, ct);
         return (logs.Select(RentalActionLogView.FromEntity).ToList(), total);
     }
 
-    public async Task<RentalOverviewDto> GetOverviewAsync(CancellationToken ct)
+    public async Task<RentalOverviewDto> GetOverviewAsync(RentalAccessFilter accessFilter, CancellationToken ct)
     {
-        var byStage = await repository.CountByStageAsync(ct);
+        var byStage = await repository.CountByStageAsync(accessFilter, ct);
         var totalProcesses = byStage.Values.Sum();
         var terminalCount = byStage
             .Where(kv => TerminalStages.Contains(kv.Key))
@@ -76,33 +71,36 @@ public sealed class RentalOverViewService(IRentalProcessRepository repository)
             ByStage = byStage,
             ActiveCount = totalProcesses - terminalCount,
             TerminalCount = terminalCount,
-            TotalDamageReports = await repository.CountDamageReportsAsync(ct),
-            TotalExtensionRequests = await repository.CountExtensionsAsync(ct),
-            PendingExtensions = await repository.CountPendingExtensionsAsync(ct),
-            TotalActionLogs = await repository.CountActionLogsAsync(ct)
+            TotalDamageReports = await repository.CountDamageReportsAsync(accessFilter, ct),
+            TotalExtensionRequests = await repository.CountExtensionsAsync(accessFilter, ct),
+            PendingExtensions = await repository.CountPendingExtensionsAsync(accessFilter, ct),
+            TotalActionLogs = await repository.CountActionLogsAsync(accessFilter, ct)
         };
     }
 
-    public async Task<RentalRecentActivityDto> GetRecentActivityAsync(int days, CancellationToken ct)
+    public async Task<RentalRecentActivityDto> GetRecentActivityAsync(
+        int days,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
     {
         var since = SystemClock.Instance.GetCurrentInstant() - Duration.FromDays(days);
 
         return new RentalRecentActivityDto
         {
-            ProcessesCreated = await repository.CountProcessesCreatedSinceAsync(since, ct),
+            ProcessesCreated = await repository.CountProcessesCreatedSinceAsync(since, accessFilter, ct),
             ProcessesCompleted = await repository.CountProcessesReachedStageSinceAsync(
-                RentalStage.Completed, since, ct),
+                RentalStage.Completed, since, accessFilter, ct),
             ProcessesCancelled = await repository.CountProcessesReachedStageSinceAsync(
-                RentalStage.Cancelled, since, ct),
-            ActionsPerformed = await repository.CountActionLogsSinceAsync(since, ct),
-            DamagesReported = await repository.CountDamageReportsSinceAsync(since, ct),
+                RentalStage.Cancelled, since, accessFilter, ct),
+            ActionsPerformed = await repository.CountActionLogsSinceAsync(since, accessFilter, ct),
+            DamagesReported = await repository.CountDamageReportsSinceAsync(since, accessFilter, ct),
             WindowDays = days
         };
     }
 
-    public async Task<List<StageBucketDto>> GetByStageAsync(CancellationToken ct)
+    public async Task<List<StageBucketDto>> GetByStageAsync(RentalAccessFilter accessFilter, CancellationToken ct)
     {
-        var byStage = await repository.CountByStageAsync(ct);
+        var byStage = await repository.CountByStageAsync(accessFilter, ct);
 
         return Enum.GetValues<RentalStage>()
             .Select(stage => new StageBucketDto

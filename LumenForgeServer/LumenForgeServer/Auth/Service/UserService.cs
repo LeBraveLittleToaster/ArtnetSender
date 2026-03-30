@@ -34,16 +34,18 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
             throw new NotFoundException($"User with Keycloak ID {keycloakId} not found.");
         }
 
+        var effectivePermissions = await authRepository.GetRolesForKcIdAsync(keycloakId, ct);
+
         if (!includeGroups)
         {
-            return UserView.FromEntity(user);
+            return UserView.FromEntity(user, effectivePermissions);
         }
 
         var groups = user.GroupUsers
             .Select(gu => GroupView.FromEntity(gu.Group))
             .ToList();
 
-        return UserView.FromEntityWithGroups(user, groups);
+        return UserView.FromEntityWithGroups(user, groups, effectivePermissions);
     }
 
     /// <summary>
@@ -57,7 +59,7 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
     public async Task<(IReadOnlyList<UserView> users, long total)> ListUsers(string? search, int limit, int offset, CancellationToken ct)
     {
         var users = await authRepository.ListUsersAsync(search, limit, offset, ct);
-        return (users.users.Select(UserView.FromEntity).ToList(), users.total);
+        return (users.users.Select(user => UserView.FromEntity(user)).ToList(), users.total);
     }
 
     /// <summary>

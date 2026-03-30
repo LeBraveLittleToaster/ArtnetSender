@@ -12,6 +12,47 @@ namespace LumenForgeServer.Rentals.Persistence;
 /// </summary>
 public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
 {
+    private IQueryable<RentalProcessInstance> BuildProcessWithIncludesQuery(RentalProcessInclude includes)
+    {
+        var query = db.RentalProcessInstances
+            .Include(p => p.Rental)
+            .ThenInclude(r => r!.Answers)
+            .ThenInclude(a => a.Question)
+            .AsQueryable();
+
+        if (includes.HasFlag(RentalProcessInclude.Checklists))
+            query = query.Include(p => p.Checklists).ThenInclude(c => c.Items);
+
+        if (includes.HasFlag(RentalProcessInclude.Extensions))
+            query = query.Include(p => p.Extensions);
+
+        if (includes.HasFlag(RentalProcessInclude.DamageReports))
+            query = query.Include(p => p.DamageReports);
+
+        return query;
+    }
+
+    private static IQueryable<RentalProcessInstance> ApplyAccessScope(
+        IQueryable<RentalProcessInstance> query,
+        RentalAccessFilter accessFilter)
+    {
+        if (accessFilter.AllowAll)
+            return query;
+
+        var hasOwnerScope = !string.IsNullOrWhiteSpace(accessFilter.OwnerKcId);
+        var ownerKcId = accessFilter.OwnerKcId;
+        var groupGuids = accessFilter.GroupGuids.Distinct().ToArray();
+        var hasGroupScope = groupGuids.Length > 0;
+
+        if (!hasOwnerScope && !hasGroupScope)
+            return query.Where(_ => false);
+
+        return query.Where(p =>
+            p.Rental != null &&
+            ((hasOwnerScope && p.Rental.CustomerKcId == ownerKcId!) ||
+             (hasGroupScope && p.Rental.GroupGuid.HasValue && groupGuids.Contains(p.Rental.GroupGuid.Value))));
+    }
+
     /// <inheritdoc />
     public async Task<RentalProcessInstance?> GetByGuidAsync(Guid processGuid, CancellationToken ct)
     {
@@ -39,21 +80,19 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     public async Task<RentalProcessInstance?> GetByGuidWithIncludesAsync(
         Guid processGuid, RentalProcessInclude includes, CancellationToken ct)
     {
-        var query = db.RentalProcessInstances
-            .Include(p => p.Rental)
-            .ThenInclude(r => r!.Answers)
-            .ThenInclude(a => a.Question)
-            .AsQueryable();
+        var query = BuildProcessWithIncludesQuery(includes);
+        return await query.FirstOrDefaultAsync(p => p.Guid == processGuid, ct);
+    }
 
-        if (includes.HasFlag(RentalProcessInclude.Checklists))
-            query = query.Include(p => p.Checklists).ThenInclude(c => c.Items);
-
-        if (includes.HasFlag(RentalProcessInclude.Extensions))
-            query = query.Include(p => p.Extensions);
-
-        if (includes.HasFlag(RentalProcessInclude.DamageReports))
-            query = query.Include(p => p.DamageReports);
-
+    /// <inheritdoc />
+    public async Task<RentalProcessInstance?> GetByGuidWithIncludesScopedAsync(
+        Guid processGuid,
+        RentalProcessInclude includes,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
+    {
+        var query = BuildProcessWithIncludesQuery(includes);
+        query = ApplyAccessScope(query, accessFilter);
         return await query.FirstOrDefaultAsync(p => p.Guid == processGuid, ct);
     }
 
@@ -128,11 +167,15 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
 
     /// <inheritdoc />
     public async Task<(List<RentalProcessInstance> Items, int Total)> ListAsync(
-        RentalListQueryDto query, CancellationToken ct)
+        RentalListQueryDto query,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
     {
         var q = db.RentalProcessInstances
             .Include(p => p.Rental)
             .AsQueryable();
+
+        q = ApplyAccessScope(q, accessFilter);
 
         if (query.Stages is { Count: > 0 })
             q = q.Where(p => query.Stages.Contains(p.CurrentStage));
@@ -146,7 +189,10 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
         }
 
         if (!string.IsNullOrWhiteSpace(query.OwnerKcId))
-            q = q.Where(p => p.CreatedByKcId == query.OwnerKcId);
+            q = q.Where(p => p.Rental != null && p.Rental.CustomerKcId == query.OwnerKcId);
+
+        if (query.GroupGuid is not null)
+            q = q.Where(p => p.Rental != null && p.Rental.GroupGuid == query.GroupGuid);
 
         if (query.CreatedAfter is not null)
             q = q.Where(p => p.CreatedAt >= query.CreatedAfter.Value);
@@ -181,46 +227,107 @@ public class RentalProcessRepository(AppDbContext db) : IRentalProcessRepository
     }
 
     /// <inheritdoc />
-    public async Task<Dictionary<RentalStage, int>> CountByStageAsync(CancellationToken ct)
+    public async Task<Dictionary<RentalStage, int>> CountByStageAsync(
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
     {
-        return await db.RentalProcessInstances
+        return await ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
             .GroupBy(p => p.CurrentStage)
             .Select(g => new { Stage = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Stage, x => x.Count, ct);
     }
 
     /// <inheritdoc />
-    public async Task<int> CountDamageReportsAsync(CancellationToken ct)
-        => await db.RentalDamageReports.CountAsync(ct);
+    public async Task<int> CountDamageReportsAsync(RentalAccessFilter accessFilter, CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalDamageReports.CountAsync(r => processIds.Contains(r.ProcessInstanceId), ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountExtensionsAsync(CancellationToken ct)
-        => await db.RentalExtensions.CountAsync(ct);
+    public async Task<int> CountExtensionsAsync(RentalAccessFilter accessFilter, CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalExtensions.CountAsync(e => processIds.Contains(e.ProcessInstanceId), ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountPendingExtensionsAsync(CancellationToken ct)
-        => await db.RentalExtensions.CountAsync(e => e.IsApproved == null, ct);
+    public async Task<int> CountPendingExtensionsAsync(RentalAccessFilter accessFilter, CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalExtensions.CountAsync(
+            e => e.IsApproved == null && processIds.Contains(e.ProcessInstanceId),
+            ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountActionLogsAsync(CancellationToken ct)
-        => await db.RentalActionLogs.CountAsync(ct);
+    public async Task<int> CountActionLogsAsync(RentalAccessFilter accessFilter, CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalActionLogs.CountAsync(l => processIds.Contains(l.ProcessInstanceId), ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountProcessesCreatedSinceAsync(Instant since, CancellationToken ct)
-        => await db.RentalProcessInstances.CountAsync(p => p.CreatedAt >= since, ct);
+    public async Task<int> CountProcessesCreatedSinceAsync(
+        Instant since,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
+        => await ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .CountAsync(p => p.CreatedAt >= since, ct);
 
     /// <inheritdoc />
-    public async Task<int> CountActionLogsSinceAsync(Instant since, CancellationToken ct)
-        => await db.RentalActionLogs.CountAsync(l => l.PerformedAt >= since, ct);
+    public async Task<int> CountActionLogsSinceAsync(
+        Instant since,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalActionLogs.CountAsync(
+            l => l.PerformedAt >= since && processIds.Contains(l.ProcessInstanceId),
+            ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountDamageReportsSinceAsync(Instant since, CancellationToken ct)
-        => await db.RentalDamageReports.CountAsync(r => r.ReportedAt >= since, ct);
+    public async Task<int> CountDamageReportsSinceAsync(
+        Instant since,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalDamageReports.CountAsync(
+            r => r.ReportedAt >= since && processIds.Contains(r.ProcessInstanceId),
+            ct);
+    }
 
     /// <inheritdoc />
-    public async Task<int> CountProcessesReachedStageSinceAsync(RentalStage stage, Instant since, CancellationToken ct)
-        => await db.RentalActionLogs.CountAsync(
-            l => l.StageAfter == stage && l.Success && l.PerformedAt >= since, ct);
+    public async Task<int> CountProcessesReachedStageSinceAsync(
+        RentalStage stage,
+        Instant since,
+        RentalAccessFilter accessFilter,
+        CancellationToken ct)
+    {
+        var processIds = ApplyAccessScope(db.RentalProcessInstances.AsQueryable(), accessFilter)
+            .Select(p => p.Id);
+
+        return await db.RentalActionLogs.CountAsync(
+            l => l.StageAfter == stage
+                 && l.Success
+                 && l.PerformedAt >= since
+                 && processIds.Contains(l.ProcessInstanceId),
+            ct);
+    }
 
     /// <inheritdoc />
     public async Task<(List<RentalActionLog> Items, int Total)> GetActionLogsByProcessGuidAsync(

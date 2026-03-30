@@ -96,6 +96,9 @@ public sealed record RentalProcessSummaryView
     [JsonPropertyName("customer_email")]
     public string? CustomerEmail { get; init; }
 
+    [JsonPropertyName("group_guid")]
+    public Guid? GroupGuid { get; init; }
+
     [JsonPropertyName("requested_start")]
     public Instant? RequestedStart { get; init; }
 
@@ -118,6 +121,7 @@ public sealed record RentalProcessSummaryView
         CreatedByKcId = process.CreatedByKcId,
         CustomerName = process.Rental?.CustomerName,
         CustomerEmail = process.Rental?.CustomerEmail,
+        GroupGuid = process.Rental?.GroupGuid,
         RequestedStart = process.Rental?.RequestedStart,
         RequestedEnd = process.Rental?.RequestedEnd,
         Priority = process.Rental?.Priority,

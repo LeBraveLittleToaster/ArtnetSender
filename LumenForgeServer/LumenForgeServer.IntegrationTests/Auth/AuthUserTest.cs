@@ -195,6 +195,61 @@ public class AuthUserTest(AuthFixture fixture)
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    [Fact]
+    public async Task GET_user_returns_effective_permissions_and_rental_scope_for_own_role()
+    {
+        var user = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalUserOwn]);
+
+        var ownKcId = user.GetKcUserId();
+        var resp = await user.AppClient.GetAsync($"/api/v1/auth/users/{ownKcId}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var json = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var permissionsElement = json.RootElement.GetProperty("effective_permissions");
+        var rentalScopesElement = json.RootElement.GetProperty("rental_scopes");
+        var permissions = permissionsElement.Deserialize<List<Permissions>>(Json.GetJsonSerializerOptions());
+        var rentalScopes = rentalScopesElement.Deserialize<RentalScopesView>(Json.GetJsonSerializerOptions());
+
+        permissions.Should().NotBeNull();
+        rentalScopes.Should().NotBeNull();
+        permissions!.Should().Contain(Permissions.RentalUserOwn);
+        rentalScopes!.Read.Should().Be(ScopeLevel.Own);
+        rentalScopes.Create.Should().Be(ScopeLevel.Own);
+        rentalScopes.Update.Should().Be(ScopeLevel.Own);
+        rentalScopes.Delete.Should().Be(ScopeLevel.None);
+    }
+
+    [Fact]
+    public async Task GET_user_returns_combined_group_and_own_rental_scope()
+    {
+        var user = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalUserOwn, Permissions.RentalGroup]);
+
+        var ownKcId = user.GetKcUserId();
+        var resp = await user.AppClient.GetAsync($"/api/v1/auth/users/{ownKcId}");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var json = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var permissionsElement = json.RootElement.GetProperty("effective_permissions");
+        var rentalScopesElement = json.RootElement.GetProperty("rental_scopes");
+        var permissions = permissionsElement.Deserialize<List<Permissions>>(Json.GetJsonSerializerOptions());
+        var rentalScopes = rentalScopesElement.Deserialize<RentalScopesView>(Json.GetJsonSerializerOptions());
+
+        permissions.Should().NotBeNull();
+        rentalScopes.Should().NotBeNull();
+        permissions!.Should().Contain(Permissions.RentalUserOwn);
+        permissions.Should().Contain(Permissions.RentalGroup);
+        rentalScopes!.Read.Should().Be(ScopeLevel.OwnAndGroup);
+        rentalScopes.Create.Should().Be(ScopeLevel.OwnAndGroup);
+        rentalScopes.Update.Should().Be(ScopeLevel.OwnAndGroup);
+        rentalScopes.Delete.Should().Be(ScopeLevel.None);
+    }
+
     private static Task<TestUserBundle> CreateNewUserAsync(AuthFixture fixture)
     {
         var dto = CreateTestUserDto.CreateTestUser();

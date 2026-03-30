@@ -160,7 +160,7 @@ public class GroupService(IAuthRepository authRepository, AuthCacheService cache
     public async Task<(IReadOnlyList<UserView> users, long total)> GetUsersForGroup(Guid groupGuid, int limit, int offset, CancellationToken ct)
     {
         var users = await authRepository.GetUsersForGroupAsync(groupGuid, limit, offset, ct);
-        return (users.users.Select(UserView.FromEntity).ToList(), users.total);
+        return (users.users.Select(user => UserView.FromEntity(user)).ToList(), users.total);
     }
 
     /// <summary>

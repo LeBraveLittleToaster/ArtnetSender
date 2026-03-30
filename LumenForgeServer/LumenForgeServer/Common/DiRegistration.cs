@@ -90,6 +90,7 @@ public static class DiRegistration
         builder.Services.AddScoped<StockBindingService>();
         builder.Services.AddScoped<QuestionService>();
         builder.Services.AddScoped<RentalOverViewService>();
+        builder.Services.AddScoped<RentalAccessService>();
         builder.Services.AddScoped<AuthCacheService>();
 
         // Rental action framework

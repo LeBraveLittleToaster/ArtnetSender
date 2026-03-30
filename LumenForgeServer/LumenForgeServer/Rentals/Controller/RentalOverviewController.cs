@@ -1,10 +1,7 @@
-using LumenForgeServer.Auth.Domain;
-using LumenForgeServer.Auth.Domain.Session;
 using LumenForgeServer.Rentals.Dto.Query;
 using LumenForgeServer.Rentals.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 
 namespace LumenForgeServer.Rentals.Controller;
@@ -19,7 +16,7 @@ namespace LumenForgeServer.Rentals.Controller;
 [Tags("Rentals – Overview")]
 public class RentalOverviewController(
     RentalOverViewService rentalOverViewService,
-    IKeycloakUser keycloakUser) : ControllerBase
+    RentalAccessService rentalAccessService) : ControllerBase
 {
     // ── List & detail ───────────────────────────────────────────────
 
@@ -34,14 +31,13 @@ public class RentalOverviewController(
     [Produces("application/json")]
     public async Task<IActionResult> ListProcesses([FromQuery] RentalListQueryDto query, CancellationToken ct)
     {
-        var fullAccess = User.IsInRole(nameof(Permissions.RentalRead));
-        var callerKcId = keycloakUser.UserId
-            ?? User.FindFirstValue("sub")
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
         var (list, total) = await rentalOverViewService.ListProcessesAsync(
             query,
-            fullAccess,
-            callerKcId,
+            readScope,
             ct);
         return Ok(new { list, total });
     }
@@ -56,7 +52,7 @@ public class RentalOverviewController(
     /// <param name="include">Comma-separated include flags (e.g. <c>checklists,extensions</c>).</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("{processGuid:guid}")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
@@ -66,7 +62,11 @@ public class RentalOverviewController(
         CancellationToken ct)
     {
         var includes = ParseIncludes(include);
-        var process = await rentalOverViewService.GetProcessAsync(processGuid, includes, ct);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
+        var process = await rentalOverViewService.GetProcessAsync(processGuid, includes, readScope, ct);
         return Ok(process);
     }
 
@@ -79,7 +79,7 @@ public class RentalOverviewController(
     /// <param name="offset">Number of entries to skip (default 0).</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("{processGuid:guid}/history")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -90,7 +90,16 @@ public class RentalOverviewController(
         [FromQuery, Range(0, int.MaxValue)] int offset = 0,
         CancellationToken ct = default)
     {
-        var (list, total) = await rentalOverViewService.GetProcessHistoryAsync(processGuid, limit, offset, ct);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
+        var (list, total) = await rentalOverViewService.GetProcessHistoryAsync(
+            processGuid,
+            limit,
+            offset,
+            readScope,
+            ct);
         return Ok(new { list, total });
     }
 
@@ -100,12 +109,16 @@ public class RentalOverviewController(
     /// Returns a high-level statistical overview of all rental processes.
     /// </summary>
     [HttpGet("overview")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public async Task<IActionResult> GetOverview(CancellationToken ct)
     {
-        var overview = await rentalOverViewService.GetOverviewAsync(ct);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
+        var overview = await rentalOverViewService.GetOverviewAsync(readScope, ct);
         return Ok(overview);
     }
 
@@ -116,7 +129,7 @@ public class RentalOverviewController(
     /// <param name="days">Number of days to look back (1–365). Defaults to 7.</param>
     /// <param name="ct">Cancellation token.</param>
     [HttpGet("overview/recent")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [Produces("application/json")]
@@ -126,7 +139,11 @@ public class RentalOverviewController(
         if (days is < 1 or > 365)
             return BadRequest(new { error = "days must be between 1 and 365." });
 
-        var activity = await rentalOverViewService.GetRecentActivityAsync(days, ct);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
+        var activity = await rentalOverViewService.GetRecentActivityAsync(days, readScope, ct);
         return Ok(activity);
     }
 
@@ -134,12 +151,16 @@ public class RentalOverviewController(
     /// Returns per-stage process counts as a flat list (useful for chart rendering).
     /// </summary>
     [HttpGet("overview/by-stage")]
-    [Authorize(Roles = nameof(Permissions.RentalRead))]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public async Task<IActionResult> GetByStage(CancellationToken ct)
     {
-        var buckets = await rentalOverViewService.GetByStageAsync(ct);
+        var readScope = await rentalAccessService.BuildReadScopeAsync(User, ct);
+        if (!readScope.HasAnyScope)
+            return Forbid();
+
+        var buckets = await rentalOverViewService.GetByStageAsync(readScope, ct);
         return Ok(buckets);
     }
 

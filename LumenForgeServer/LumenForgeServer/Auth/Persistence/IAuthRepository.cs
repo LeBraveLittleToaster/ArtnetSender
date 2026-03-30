@@ -73,6 +73,14 @@ public interface IAuthRepository
     /// <returns>Groups assigned to the user.</returns>
     Task<(IReadOnlyList<Group> groups, long total)> GetGroupsForUserAsync(string keycloakId, int limit, int offset, CancellationToken ct);
 
+    /// <summary>
+    /// Retrieves all group GUID memberships for a user.
+    /// </summary>
+    /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Distinct group GUIDs for the user.</returns>
+    Task<HashSet<Guid>> GetGroupGuidsForUserAsync(string keycloakId, CancellationToken ct);
+
 
     /// <summary>
     /// Resolves the group for a group Guid.

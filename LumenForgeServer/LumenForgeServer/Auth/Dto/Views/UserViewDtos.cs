@@ -34,8 +34,17 @@ public record UserView
     /// <summary>User’s last name.</summary>
     [JsonPropertyName("lastName")] public required string LastName { get; set; }
 
-    public static UserView FromEntity(KcUserReference tEntity)
+    [JsonPropertyName("effective_permissions")]
+    public List<Permissions> EffectivePermissions { get; private set; } = [];
+
+    [JsonPropertyName("rental_scopes")]
+    public RentalScopesView RentalScopes { get; private set; } = RentalScopesView.None;
+
+    public static UserView FromEntity(
+        KcUserReference tEntity,
+        IReadOnlyCollection<Permissions>? effectivePermissions = null)
     {
+        var permissions = (effectivePermissions ?? []).Distinct().OrderBy(p => p).ToList();
         return new UserView
         {
             UserKcId = tEntity.UserKcId,
@@ -45,10 +54,17 @@ public record UserView
             Email = tEntity.EmailMirror,
             FirstName = tEntity.FirstNameMirror,
             LastName = tEntity.LastNameMirror,
+            EffectivePermissions = permissions,
+            RentalScopes = RentalScopesView.FromPermissions(permissions)
         };
     }
-    public static UserView FromEntityWithGroups(KcUserReference tEntity, List<GroupView> tGroups)
+
+    public static UserView FromEntityWithGroups(
+        KcUserReference tEntity,
+        List<GroupView> tGroups,
+        IReadOnlyCollection<Permissions>? effectivePermissions = null)
     {
+        var permissions = (effectivePermissions ?? []).Distinct().OrderBy(p => p).ToList();
         return new UserView
         {
             UserKcId = tEntity.UserKcId,
@@ -58,6 +74,64 @@ public record UserView
             Email = tEntity.EmailMirror,
             FirstName = tEntity.FirstNameMirror,
             LastName = tEntity.LastNameMirror,
+            EffectivePermissions = permissions,
+            RentalScopes = RentalScopesView.FromPermissions(permissions)
+        };
+    }
+}
+
+public enum ScopeLevel
+{
+    None,
+    Own,
+    Group,
+    OwnAndGroup,
+    All
+}
+
+public sealed record RentalScopesView
+{
+    public static RentalScopesView None { get; } = new();
+
+    [JsonPropertyName("read")]
+    public ScopeLevel Read { get; init; } = ScopeLevel.None;
+
+    [JsonPropertyName("create")]
+    public ScopeLevel Create { get; init; } = ScopeLevel.None;
+
+    [JsonPropertyName("update")]
+    public ScopeLevel Update { get; init; } = ScopeLevel.None;
+
+    [JsonPropertyName("delete")]
+    public ScopeLevel Delete { get; init; } = ScopeLevel.None;
+
+    public static RentalScopesView FromPermissions(IReadOnlyCollection<Permissions> permissions)
+    {
+        return new RentalScopesView
+        {
+            Read = BuildScopedLevel(permissions, Permissions.RentalRead),
+            Create = BuildScopedLevel(permissions, Permissions.RentalCreate),
+            Update = BuildScopedLevel(permissions, Permissions.RentalUpdate),
+            Delete = permissions.Contains(Permissions.RentalDelete)
+                ? ScopeLevel.All
+                : ScopeLevel.None
+        };
+    }
+
+    private static ScopeLevel BuildScopedLevel(IReadOnlyCollection<Permissions> permissions, Permissions globalPermission)
+    {
+        if (permissions.Contains(globalPermission))
+            return ScopeLevel.All;
+
+        var hasOwn = permissions.Contains(Permissions.RentalUserOwn);
+        var hasGroup = permissions.Contains(Permissions.RentalGroup);
+
+        return (hasOwn, hasGroup) switch
+        {
+            (true, true) => ScopeLevel.OwnAndGroup,
+            (true, false) => ScopeLevel.Own,
+            (false, true) => ScopeLevel.Group,
+            _ => ScopeLevel.None
         };
     }
 }

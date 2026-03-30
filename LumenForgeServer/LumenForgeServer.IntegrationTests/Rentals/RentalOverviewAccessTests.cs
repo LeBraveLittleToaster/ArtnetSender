@@ -19,13 +19,15 @@ namespace LumenForgeServer.IntegrationTests.Rentals;
 public class RentalOverviewAccessTests(AuthFixture fixture)
 {
     [Fact]
-    public async Task Admin_can_read_all_rentals_and_roleless_user_can_create_and_read_own()
+    public async Task Admin_can_read_all_rentals_and_own_scope_user_can_create_and_read_own()
     {
         var admin = await fixture.GetInitialAdminUserAsync();
-        var userA = await fixture.CreateNewUserAsync(CreateTestUserDto.CreateTestUser());
-        var userB = await fixture.CreateNewUserAsync(CreateTestUserDto.CreateTestUser());
-
-        await AssertUserHasNoRolesAsync(admin, userA.GetKcUserId());
+        var userA = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalUserOwn]);
+        var userB = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalUserOwn]);
 
         var userAProcessGuid = await CreateRentalAsync(userA);
         var userBProcessGuid = await CreateRentalAsync(userB);
@@ -45,18 +47,38 @@ public class RentalOverviewAccessTests(AuthFixture fixture)
         adminList.Select(x => x.Guid).Should().Contain(userBProcessGuid);
     }
 
-    private static async Task AssertUserHasNoRolesAsync(TestUserBundle admin, string userKcId)
+    [Fact]
+    public async Task Group_scope_user_can_read_group_owned_rentals_of_shared_membership()
     {
-        var rolesResponse = await admin.AppClient.GetAsync($"/api/v1/auth/users/{userKcId}/roles");
-        rolesResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var admin = await fixture.GetInitialAdminUserAsync();
+        var userA = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalGroup]);
+        var userB = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalGroup]);
+        var userC = await fixture.CreateNewUserWithRolesAsync(
+            CreateTestUserDto.CreateTestUser(),
+            [Permissions.RentalGroup]);
 
-        var rolesJson = await rolesResponse.Content.ReadAsStringAsync();
-        var roles = JsonSerializer.Deserialize<List<Permissions>>(rolesJson, Json.GetJsonSerializerOptions());
-        roles.Should().NotBeNull();
-        roles.Should().BeEmpty();
+        var ownershipGroup = await fixture.CreateGroupAsync(admin.AppClient);
+        await fixture.AssignUserToGroupAsync(admin.AppClient, ownershipGroup.Guid, userA.GetKcUserId());
+        await fixture.AssignUserToGroupAsync(admin.AppClient, ownershipGroup.Guid, userB.GetKcUserId());
+
+        var processGuid = await CreateRentalAsync(userA, ownershipGroup.Guid);
+
+        var userBListResponse = await userB.AppClient.GetAsync("/api/v1/rentals?limit=200&offset=0");
+        userBListResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var userBList = await ReadRentalListAsync(userBListResponse);
+        userBList.Select(x => x.Guid).Should().Contain(processGuid);
+
+        var userCListResponse = await userC.AppClient.GetAsync("/api/v1/rentals?limit=200&offset=0");
+        userCListResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var userCList = await ReadRentalListAsync(userCListResponse);
+        userCList.Select(x => x.Guid).Should().NotContain(processGuid);
     }
 
-    private static async Task<Guid> CreateRentalAsync(TestUserBundle user)
+    private static async Task<Guid> CreateRentalAsync(TestUserBundle user, Guid? groupGuid = null)
     {
         var questionGuid = await GetAnyQuestionGuidAsync(user);
         var now = SystemClock.Instance.GetCurrentInstant();
@@ -67,6 +89,7 @@ public class RentalOverviewAccessTests(AuthFixture fixture)
             {
                 CustomerName = $"Customer-{Guid.NewGuid():N}",
                 CustomerEmail = $"customer-{Guid.NewGuid():N}@example.com",
+                GroupGuid = groupGuid,
                 Purpose = "Integration test rental",
                 RequestedStart = now + Duration.FromDays(1),
                 RequestedEnd = now + Duration.FromDays(3),

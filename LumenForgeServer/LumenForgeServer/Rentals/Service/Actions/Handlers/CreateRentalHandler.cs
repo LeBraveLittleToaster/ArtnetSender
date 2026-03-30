@@ -14,6 +14,9 @@ public sealed class CreateRentalInput : ActionInput
     /// <summary>Contact email for rental communication.</summary>
     public string? CustomerEmail { get; init; }
 
+    /// <summary>Optional owning group GUID for group-owned rentals.</summary>
+    public Guid? GroupGuid { get; init; }
+
     /// <summary>Free-text description of the rental purpose.</summary>
     public string? Purpose { get; init; }
 
@@ -133,6 +136,7 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
         {
             Uuid = Guid.NewGuid(),
             CustomerKcId = input.ActorKcId,
+            GroupGuid = input.GroupGuid,
             CustomerName = input.CustomerName,
             CustomerEmail = input.CustomerEmail,
             Purpose = input.Purpose,

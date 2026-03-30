@@ -16,6 +16,10 @@ public sealed record CreateRentalDto : IActionInputDerivable<CreateRentalInput>
     [JsonPropertyName("customer_email")]
     public string? CustomerEmail { get; init; }
 
+    /// <summary>Optional owning group GUID for group-owned rentals.</summary>
+    [JsonPropertyName("group_guid")]
+    public Guid? GroupGuid { get; init; }
+
     /// <summary>Reason or purpose for the rental.</summary>
     [JsonPropertyName("purpose")]
     public string? Purpose { get; init; }
@@ -43,6 +47,7 @@ public sealed record CreateRentalDto : IActionInputDerivable<CreateRentalInput>
     {
         CustomerName = CustomerName,
         CustomerEmail = CustomerEmail,
+        GroupGuid = GroupGuid,
         Purpose = Purpose,
         RequestedStart = RequestedStart,
         RequestedEnd = RequestedEnd,
