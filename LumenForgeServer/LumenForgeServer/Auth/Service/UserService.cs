@@ -34,16 +34,18 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
             throw new NotFoundException($"User with Keycloak ID {keycloakId} not found.");
         }
 
+        var effectivePermissions = await authRepository.GetRolesForKcIdAsync(keycloakId, ct);
+
         if (!includeGroups)
         {
-            return UserView.FromEntity(user);
+            return UserView.FromEntity(user, effectivePermissions);
         }
 
         var groups = user.GroupUsers
             .Select(gu => GroupView.FromEntity(gu.Group))
             .ToList();
 
-        return UserView.FromEntityWithGroups(user, groups);
+        return UserView.FromEntityWithGroups(user, groups, effectivePermissions);
     }
 
     /// <summary>
@@ -57,18 +59,15 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
     public async Task<(IReadOnlyList<UserView> users, long total)> ListUsers(string? search, int limit, int offset, CancellationToken ct)
     {
         var users = await authRepository.ListUsersAsync(search, limit, offset, ct);
-        return (users.users.Select(UserView.FromEntity).ToList(), users.total);
+        return (users.users.Select(user => UserView.FromEntity(user)).ToList(), users.total);
     }
 
     /// <summary>
     /// Creates a user record from a payload.
     /// </summary>
-    /// <param name="lastname"></param>
-    /// <param name="ct">Cancellation token.</param>
     /// <param name="userKcId">Parameter mirror from keycloak user</param>
-    /// <param name="username">Parameter mirror from keycloak user</param>
-    /// <param name="email">Parameter mirror from keycloak user</param>
-    /// <param name="firstname">Parameter mirror from keycloak user</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>The created user.</returns>
     /// <exception cref="ValidationException">Thrown when the payload fails validation.</exception>
     /// <exception cref="Microsoft.EntityFrameworkCore.DbUpdateException">Thrown when persistence fails.</exception>
@@ -149,6 +148,8 @@ public class UserService(IAuthRepository authRepository, IMemoryCache cache)
     /// Retrieves groups assigned to a user.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
     public async Task<(IReadOnlyList<GroupView> groups, long total)> GetGroupsForUser(string keycloakId, int limit, int offset, CancellationToken ct)

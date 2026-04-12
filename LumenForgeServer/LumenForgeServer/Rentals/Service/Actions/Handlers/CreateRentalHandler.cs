@@ -14,6 +14,9 @@ public sealed class CreateRentalInput : ActionInput
     /// <summary>Contact email for rental communication.</summary>
     public string? CustomerEmail { get; init; }
 
+    /// <summary>Optional owning group GUID for group-owned rentals.</summary>
+    public Guid? GroupGuid { get; init; }
+
     /// <summary>Free-text description of the rental purpose.</summary>
     public string? Purpose { get; init; }
 
@@ -51,6 +54,15 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
     public override IReadOnlySet<RentalStage> AllowedStages { get; } =
         new HashSet<RentalStage> { RentalStage.None };
 
+    /// <summary>
+    /// Executes the after execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     protected override Task AfterExecuteAsync(RentalProcessInstance process, CreateRentalResult result, CancellationToken ct)
     {
         // No post-execution steps.
@@ -58,6 +70,15 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
     }
 
     /// <inheritdoc />
+    /// <summary>
+    /// Executes the before execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the BlankActionResult result.</returns>
     protected override async Task<BlankActionResult> BeforeExecuteAsync(
         RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
     {
@@ -120,6 +141,15 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
     }
 
     /// <inheritdoc />
+    /// <summary>
+    /// Executes the execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the CreateRentalResult result.</returns>
     protected override async Task<CreateRentalResult> ExecuteAsync(
         RentalProcessInstance process, CreateRentalInput input, CancellationToken ct)
     {
@@ -133,6 +163,7 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
         {
             Uuid = Guid.NewGuid(),
             CustomerKcId = input.ActorKcId,
+            GroupGuid = input.GroupGuid,
             CustomerName = input.CustomerName,
             CustomerEmail = input.CustomerEmail,
             Purpose = input.Purpose,
@@ -162,6 +193,15 @@ public sealed class CreateRentalHandler(IRentalProcessRepository processReposito
         };
     }
 
+    /// <summary>
+    /// Executes the try parse question guids operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="qaSets">Input value used by this operation.</param>
+    /// <param name="questionGuids">Unique identifier used to target the requested entity.</param>
+    /// <param name="parseError">Text input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static bool TryParseQuestionGuids(
         IReadOnlyList<QASet> qaSets,
         out List<Guid> questionGuids,

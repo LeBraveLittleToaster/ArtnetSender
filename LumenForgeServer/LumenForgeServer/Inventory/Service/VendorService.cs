@@ -14,6 +14,14 @@ namespace LumenForgeServer.Inventory.Service;
 /// </summary>
 public class VendorService(IInventoryRepository repository)
 {
+    /// <summary>
+    /// Executes the create vendor operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the VendorView result.</returns>
     public async Task<VendorView> CreateVendor(CreateVendorDto dto, CancellationToken ct)
     {
         var vendor = VendorFactory.Create(dto);
@@ -31,6 +39,14 @@ public class VendorService(IInventoryRepository repository)
         return VendorView.FromEntity(vendor);
     }
 
+    /// <summary>
+    /// Executes the get vendor operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="vendorGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the VendorView result.</returns>
     public async Task<VendorView> GetVendor(Guid vendorGuid, CancellationToken ct)
     {
         var vendor = await repository.GetVendorByGuidAsync(vendorGuid, ct)
@@ -39,12 +55,31 @@ public class VendorService(IInventoryRepository repository)
         return VendorView.FromEntity(vendor);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="search">Text input used by this operation.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(IReadOnlyList<VendorView> vendors, long total)> ListVendors(string? search, int limit, int offset, CancellationToken ct)
     {
         var vendors = await repository.ListVendorsAsync(search, limit, offset, ct);
         return (vendors.vendors.Select(VendorView.FromEntity).ToList(), vendors.total);
     }
 
+    /// <summary>
+    /// Executes the update vendor operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="vendorGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the VendorView result.</returns>
     public async Task<VendorView> UpdateVendor(Guid vendorGuid, UpdateVendorDto dto, CancellationToken ct)
     {
         var vendor = await repository.GetVendorByGuidAsync(vendorGuid, ct)
@@ -65,6 +100,14 @@ public class VendorService(IInventoryRepository repository)
         return VendorView.FromEntity(vendor);
     }
 
+    /// <summary>
+    /// Executes the delete vendor operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="vendorGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteVendor(Guid vendorGuid, CancellationToken ct)
     {
         var vendor = await repository.GetVendorByGuidAsync(vendorGuid, ct)

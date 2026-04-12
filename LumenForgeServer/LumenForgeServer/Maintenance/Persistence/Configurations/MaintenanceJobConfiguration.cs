@@ -9,6 +9,12 @@ namespace LumenForgeServer.Maintenance.Persistence.Configurations;
 /// </summary>
 public sealed class MaintenanceJobConfiguration : IEntityTypeConfiguration<MaintenanceJob>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: may execute database writes or update tracked entity state in the current DbContext.</remarks>
+    /// <param name="builder">Numeric input used by this operation.</param>
     public void Configure(EntityTypeBuilder<MaintenanceJob> builder)
     {
         builder.ToTable("maintenance_job");

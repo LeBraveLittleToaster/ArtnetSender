@@ -12,6 +12,11 @@ public sealed class KcClient
 {
     private readonly KcAndAppClientOptions _kcAndAppOptions;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KcClient"/> class.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="kcAndAppOptions">Input value used by this operation.</param>
     private KcClient(KcAndAppClientOptions kcAndAppOptions)
     {
         _kcAndAppOptions = kcAndAppOptions;
@@ -25,6 +30,13 @@ public sealed class KcClient
     private JwtSecurityToken? AccessToken { get; set; }
     private string? AccessTokenString { get; set; }
 
+    /// <summary>
+    /// Executes the generate kc client with access token async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="kcAndAppClientOptions">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the KcClient result.</returns>
     public static async Task<KcClient> GenerateKcClientWithAccessTokenAsync(KcAndAppClientOptions kcAndAppClientOptions, CancellationToken ct)
     {
         var kcClient = new KcClient(kcAndAppClientOptions);
@@ -32,6 +44,13 @@ public sealed class KcClient
         return kcClient;
     }
 
+    /// <summary>
+    /// Executes the request and attach admin token async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="kcAndAppClientOptions">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the bool result.</returns>
     private async Task<bool> RequestAndAttachAdminTokenAsync(KcAndAppClientOptions kcAndAppClientOptions, CancellationToken ct)
     {
         var data = new Dictionary<string, string>
@@ -76,11 +95,25 @@ public sealed class KcClient
         return false;
     }
 
+    /// <summary>
+    /// Executes the refresh token async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task RefreshTokenAsync(CancellationToken ct = default)
     {
         await RequestAndAttachAdminTokenAsync(_kcAndAppOptions, ct);
     }
 
+    /// <summary>
+    /// Executes the logout user from all sessions async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="realm">Text input used by this operation.</param>
+    /// <param name="userKcId">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task LogoutUserFromAllSessionsAsync(string realm, string userKcId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(realm))
@@ -102,6 +135,12 @@ public sealed class KcClient
             $"Failed to logout user '{userKcId}' in realm '{realm}': Http {(int)response.StatusCode} {body}");
     }
 
+    /// <summary>
+    /// Executes the is token expired operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="skew">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public bool IsTokenExpired(Duration? skew = null)
     {
         if (AccessToken is null) return true;

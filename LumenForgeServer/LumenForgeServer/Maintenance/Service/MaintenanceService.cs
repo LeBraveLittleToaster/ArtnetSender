@@ -17,8 +17,23 @@ namespace LumenForgeServer.Maintenance.Service;
 /// </summary>
 public class MaintenanceService(IMaintenanceRepository repository, IInventoryRepository inventoryRepository)
 {
+    /// <summary>
+    /// Executes the duration.from days operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     private static readonly Duration DefaultMaintenanceBindingWindow = Duration.FromDays(3650);
 
+    /// <summary>
+    /// Executes the create job operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="createdByUserKcId">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceJobView result.</returns>
     public async Task<MaintenanceJobView> CreateJob(CreateMaintenanceJobDto dto, string createdByUserKcId, CancellationToken ct)
     {
         if (dto.DeviceGuids.Count == 0)
@@ -81,9 +96,26 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceJobView.FromEntity(persisted);
     }
 
+    /// <summary>
+    /// Executes the get job operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceJobView result.</returns>
     public Task<MaintenanceJobView> GetJob(Guid jobGuid, CancellationToken ct)
         => GetJob(jobGuid, MaintenanceJobInclude.None, ct);
 
+    /// <summary>
+    /// Executes the get job operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="include">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceJobView result.</returns>
     public async Task<MaintenanceJobView> GetJob(Guid jobGuid, MaintenanceJobInclude include, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, include, ct)
@@ -91,9 +123,26 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceJobView.FromEntity(job);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="query">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public Task<(IReadOnlyList<MaintenanceJobView> items, long total)> ListJobs(MaintenanceJobQueryDto query, CancellationToken ct)
         => ListJobs(query, MaintenanceJobInclude.None, ct);
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="query">Numeric input used by this operation.</param>
+    /// <param name="include">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(IReadOnlyList<MaintenanceJobView> items, long total)> ListJobs(
         MaintenanceJobQueryDto query,
         MaintenanceJobInclude include,
@@ -111,6 +160,15 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return (items.Select(MaintenanceJobView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the update job operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceJobView result.</returns>
     public async Task<MaintenanceJobView> UpdateJob(Guid jobGuid, UpdateMaintenanceJobDto dto, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.Devices | MaintenanceJobInclude.Tasks, ct)
@@ -154,6 +212,14 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceJobView.FromEntity(updated);
     }
 
+    /// <summary>
+    /// Executes the delete job operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteJob(Guid jobGuid, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.None, ct)
@@ -168,6 +234,9 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
     /// maintenance stock binding exists for it. Idempotent — scanning the same device twice
     /// is safe and returns the unchanged view.
     /// </summary>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     public async Task<MaintenanceJobView> ScanDeviceForJob(Guid jobGuid, Guid deviceGuid, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.Devices | MaintenanceJobInclude.Tasks, ct)
@@ -199,6 +268,10 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
     /// Adds a QR-scanned device to a maintenance task's affected devices.
     /// Idempotent — scanning the same device twice returns the unchanged view.
     /// </summary>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="deviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
     public async Task<MaintenanceTaskView> ScanDeviceForTask(Guid jobGuid, Guid taskGuid, Guid deviceGuid, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.Devices, ct)
@@ -223,9 +296,30 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceTaskView.FromEntity(updated);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public Task<(IReadOnlyList<MaintenanceTaskView> items, long total)> ListTasks(Guid jobGuid, int limit, int offset, CancellationToken ct)
         => ListTasks(jobGuid, limit, offset, MaintenanceTaskInclude.None, ct);
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="include">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(IReadOnlyList<MaintenanceTaskView> items, long total)> ListTasks(
         Guid jobGuid,
         int limit,
@@ -240,6 +334,15 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return (tasks.Select(MaintenanceTaskView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the create task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceTaskView result.</returns>
     public async Task<MaintenanceTaskView> CreateTask(Guid jobGuid, CreateMaintenanceTaskDto dto, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.None, ct)
@@ -259,6 +362,16 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceTaskView.FromEntity(persisted);
     }
 
+    /// <summary>
+    /// Executes the update task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceTaskView result.</returns>
     public async Task<MaintenanceTaskView> UpdateTask(Guid jobGuid, Guid taskGuid, UpdateMaintenanceTaskDto dto, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.None, ct)
@@ -299,6 +412,15 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceTaskView.FromEntity(updated);
     }
 
+    /// <summary>
+    /// Executes the delete task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteTask(Guid jobGuid, Guid taskGuid, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.None, ct)
@@ -315,6 +437,17 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         await SyncJobResolution(jobGuid, ct);
     }
 
+    /// <summary>
+    /// Executes the task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>The operation result.</returns>
     public async Task<(IReadOnlyList<MaintenanceLogEntryView> items, long total)> ListTaskLogs(Guid jobGuid, Guid taskGuid, int limit, int offset, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.None, ct)
@@ -329,6 +462,16 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return (logs.Select(MaintenanceLogEntryView.FromEntity).ToList(), total);
     }
 
+    /// <summary>
+    /// Executes the add task log operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="taskGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceLogEntryView result.</returns>
     public async Task<MaintenanceLogEntryView> AddTaskLog(Guid jobGuid, Guid taskGuid, CreateMaintenanceLogEntryDto dto, CancellationToken ct)
     {
         var task = await repository.GetTaskByGuidAsync(taskGuid, MaintenanceTaskInclude.None, ct)
@@ -369,6 +512,14 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return MaintenanceLogEntryView.FromEntity(log);
     }
 
+    /// <summary>
+    /// Executes the sync job resolution operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="jobGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task SyncJobResolution(Guid jobGuid, CancellationToken ct)
     {
         var job = await repository.GetJobByGuidAsync(jobGuid, MaintenanceJobInclude.Tasks | MaintenanceJobInclude.Devices, ct)
@@ -399,9 +550,24 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         await repository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the is terminal status operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="status">Numeric input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     private static bool IsTerminalStatus(MaintenanceStatus status)
         => status is MaintenanceStatus.Resolved or MaintenanceStatus.NotResolvable or MaintenanceStatus.NoMaintenanceNeeded;
 
+    /// <summary>
+    /// Executes the resolve devices operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="deviceGuids">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the List&lt;InventoryDevice&gt; result.</returns>
     private async Task<List<InventoryDevice>> ResolveDevices(IEnumerable<Guid> deviceGuids, CancellationToken ct)
     {
         var affectedDevices = new List<InventoryDevice>();
@@ -415,6 +581,16 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         return affectedDevices;
     }
 
+    /// <summary>
+    /// Executes the build task operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="job">Numeric input used by this operation.</param>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="now">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the MaintenanceTask result.</returns>
     private async Task<MaintenanceTask> BuildTask(MaintenanceJob job, CreateMaintenanceTaskDto dto, Instant now, CancellationToken ct)
     {
         return new MaintenanceTask
@@ -431,6 +607,15 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         };
     }
 
+    /// <summary>
+    /// Executes the ensure maintenance bindings exist operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="devices">Input value used by this operation.</param>
+    /// <param name="start">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task EnsureMaintenanceBindingsExist(IEnumerable<InventoryDevice> devices, Instant start, CancellationToken ct)
     {
         foreach (var device in devices)
@@ -454,6 +639,15 @@ public class MaintenanceService(IMaintenanceRepository repository, IInventoryRep
         }
     }
 
+    /// <summary>
+    /// Executes the close active maintenance bindings operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="devices">Input value used by this operation.</param>
+    /// <param name="resolvedAt">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task CloseActiveMaintenanceBindings(IEnumerable<InventoryDevice> devices, Instant resolvedAt, CancellationToken ct)
     {
         foreach (var device in devices)

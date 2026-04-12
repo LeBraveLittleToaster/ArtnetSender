@@ -20,10 +20,19 @@ public class KcAndAppClientOptions
     public string KcTestClientId
     { get; init; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KcAndAppClientOptions"/> class.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
     private KcAndAppClientOptions()
     {
     }
 
+    /// <summary>
+    /// Executes the from environment operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     public static KcAndAppClientOptions FromEnvironment()
     {
         return new KcAndAppClientOptions

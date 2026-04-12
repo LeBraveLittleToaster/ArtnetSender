@@ -11,6 +11,12 @@ public class DeviceSeeder(DeviceService deviceService, AppDbContext db, ILogger<
     public int Order => 30;
     public SeedEnvironment Environment => SeedEnvironment.Dev;
 
+    /// <summary>
+    /// Executes the seed async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SeedAsync(CancellationToken ct)
     {
         var vendorIndex = await db.Vendors

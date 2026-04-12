@@ -45,6 +45,8 @@ public sealed record RentalProcessView
     /// and rental data are returned; nested collections are <c>null</c> and
     /// omitted from the JSON payload.
     /// </summary>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="includes">Input value used by this operation.</param>
     public static RentalProcessView FromEntity(
         RentalProcessInstance process,
         RentalProcessInclude includes = RentalProcessInclude.None)
@@ -72,6 +74,8 @@ public sealed record RentalProcessView
     /// <summary>
     /// Convenience overload preserving backward compatibility with the boolean flag.
     /// </summary>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="includeDetails">Boolean flag controlling the operation behavior.</param>
     public static RentalProcessView FromEntity(RentalProcessInstance process, bool includeDetails) =>
         FromEntity(process, includeDetails ? RentalProcessInclude.All : RentalProcessInclude.None);
 }
@@ -96,6 +100,9 @@ public sealed record RentalProcessSummaryView
     [JsonPropertyName("customer_email")]
     public string? CustomerEmail { get; init; }
 
+    [JsonPropertyName("group_guid")]
+    public Guid? GroupGuid { get; init; }
+
     [JsonPropertyName("requested_start")]
     public Instant? RequestedStart { get; init; }
 
@@ -111,6 +118,12 @@ public sealed record RentalProcessSummaryView
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalProcessSummaryView FromEntity(RentalProcessInstance process) => new()
     {
         Guid = process.Guid,
@@ -118,6 +131,7 @@ public sealed record RentalProcessSummaryView
         CreatedByKcId = process.CreatedByKcId,
         CustomerName = process.Rental?.CustomerName,
         CustomerEmail = process.Rental?.CustomerEmail,
+        GroupGuid = process.Rental?.GroupGuid,
         RequestedStart = process.Rental?.RequestedStart,
         RequestedEnd = process.Rental?.RequestedEnd,
         Priority = process.Rental?.Priority,

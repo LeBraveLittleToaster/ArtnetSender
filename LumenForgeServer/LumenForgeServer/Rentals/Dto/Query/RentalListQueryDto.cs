@@ -45,7 +45,11 @@ public sealed record RentalListQueryDto
     [JsonPropertyName("createdBefore")]
     public Instant? CreatedBefore { get; init; }
 
-    /// <summary>Filter by the Keycloak subject id of the process creator.</summary>
+    /// <summary>Filter by the Keycloak subject id of the rental owner.</summary>
     [JsonPropertyName("ownerKcId")]
     public string? OwnerKcId { get; init; }
+
+    /// <summary>Filter by optional owning group GUID.</summary>
+    [JsonPropertyName("groupGuid")]
+    public Guid? GroupGuid { get; init; }
 }

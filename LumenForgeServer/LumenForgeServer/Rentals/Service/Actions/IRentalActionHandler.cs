@@ -17,7 +17,7 @@ namespace LumenForgeServer.Rentals.Service.Actions;
 /// lifecycle.
 /// </para>
 /// <para>
-/// Implementors should derive from <see cref="RentalActionHandlerBase{TInput}"/>
+/// Implementors should derive from <c>RentalActionHandlerBase&lt;TInput, TOutput&gt;</c>
 /// instead of implementing this interface directly, so that input deserialization
 /// and the lifecycle skeleton are handled automatically.
 /// </para>

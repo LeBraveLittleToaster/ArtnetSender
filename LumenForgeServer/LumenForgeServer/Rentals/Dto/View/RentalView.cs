@@ -16,6 +16,9 @@ public sealed record RentalView
     [JsonPropertyName("customer_kc_id")]
     public required string CustomerKcId { get; init; }
 
+    [JsonPropertyName("group_guid")]
+    public Guid? GroupGuid { get; init; }
+
     [JsonPropertyName("customer_name")]
     public string? CustomerName { get; init; }
 
@@ -46,10 +49,17 @@ public sealed record RentalView
     [JsonPropertyName("answers")]
     public IReadOnlyList<AnswerView> Answers { get; init; } = [];
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="rental">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalView FromEntity(Rental rental) => new()
     {
         Uuid = rental.Uuid,
         CustomerKcId = rental.CustomerKcId,
+        GroupGuid = rental.GroupGuid,
         CustomerName = rental.CustomerName,
         CustomerEmail = rental.CustomerEmail,
         Purpose = rental.Purpose,

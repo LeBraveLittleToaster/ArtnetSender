@@ -11,6 +11,14 @@ namespace LumenForgeServer.Inventory.Controller;
 [Tags("Inventory – Device Relations")]
 public class DeviceRelationController(DeviceRelationService relationService) : ControllerBase
 {
+    /// <summary>
+    /// Executes the create relation operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: may trigger domain workflows that persist state changes.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the IActionResult result.</returns>
     [HttpPut("")]
     [Authorize(Roles = nameof(Permissions.DeviceUpdate))]
     [ProducesResponseType(StatusCodes.Status201Created)]
@@ -22,6 +30,14 @@ public class DeviceRelationController(DeviceRelationService relationService) : C
         return CreatedAtAction(nameof(ListByParentDevice), new { parentDeviceGuid = relation.ParentDeviceGuid }, relation);
     }
 
+    /// <summary>
+    /// Executes the list by parent device operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="parentDeviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the IActionResult result.</returns>
     [HttpGet("by-parent/{parentDeviceGuid:guid}")]
     [Authorize(Roles = nameof(Permissions.DeviceRead))]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -33,6 +49,14 @@ public class DeviceRelationController(DeviceRelationService relationService) : C
         return Ok(new { list = relations, total = relations.Count });
     }
 
+    /// <summary>
+    /// Executes the delete relation operation.
+    /// Core concept: handles the HTTP endpoint contract and delegates business logic to services.
+    /// </summary>
+    /// <remarks>Potential side effects: may trigger domain workflows that persist state changes.</remarks>
+    /// <param name="relationGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the IActionResult result.</returns>
     [HttpDelete("{relationGuid:guid}")]
     [Authorize(Roles = nameof(Permissions.DeviceUpdate))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

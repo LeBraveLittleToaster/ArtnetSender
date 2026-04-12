@@ -31,6 +31,13 @@ public interface IRentalProcessRepository
     Task<RentalProcessInstance?> GetByGuidWithIncludesAsync(
         Guid processGuid, RentalProcessInclude includes, CancellationToken ct);
 
+    /// <summary>
+    /// Loads a process instance by GUID with include flags and caller access scope applied.
+    /// Returns <c>null</c> when either the process does not exist or is out of scope.
+    /// </summary>
+    Task<RentalProcessInstance?> GetByGuidWithIncludesScopedAsync(
+        Guid processGuid, RentalProcessInclude includes, RentalAccessFilter accessFilter, CancellationToken ct);
+
     /// <summary>Persists a newly created <see cref="RentalProcessInstance"/>.</summary>
     Task AddAsync(RentalProcessInstance instance, CancellationToken ct);
 
@@ -69,37 +76,38 @@ public interface IRentalProcessRepository
     /// summary projection.
     /// </summary>
     Task<(List<RentalProcessInstance> Items, int Total)> ListAsync(
-        RentalListQueryDto query, CancellationToken ct);
+        RentalListQueryDto query, RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the count of processes grouped by <see cref="RentalStage"/>.</summary>
-    Task<Dictionary<RentalStage, int>> CountByStageAsync(CancellationToken ct);
+    Task<Dictionary<RentalStage, int>> CountByStageAsync(RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the total number of damage reports.</summary>
-    Task<int> CountDamageReportsAsync(CancellationToken ct);
+    Task<int> CountDamageReportsAsync(RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the total number of extension requests.</summary>
-    Task<int> CountExtensionsAsync(CancellationToken ct);
+    Task<int> CountExtensionsAsync(RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the number of extensions that have not yet been reviewed.</summary>
-    Task<int> CountPendingExtensionsAsync(CancellationToken ct);
+    Task<int> CountPendingExtensionsAsync(RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the total number of action log entries.</summary>
-    Task<int> CountActionLogsAsync(CancellationToken ct);
+    Task<int> CountActionLogsAsync(RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the number of processes created on or after <paramref name="since"/>.</summary>
-    Task<int> CountProcessesCreatedSinceAsync(Instant since, CancellationToken ct);
+    Task<int> CountProcessesCreatedSinceAsync(Instant since, RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the number of action log entries recorded on or after <paramref name="since"/>.</summary>
-    Task<int> CountActionLogsSinceAsync(Instant since, CancellationToken ct);
+    Task<int> CountActionLogsSinceAsync(Instant since, RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns the number of damage reports filed on or after <paramref name="since"/>.</summary>
-    Task<int> CountDamageReportsSinceAsync(Instant since, CancellationToken ct);
+    Task<int> CountDamageReportsSinceAsync(Instant since, RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>
     /// Returns the number of processes that reached a specific stage via an action
     /// recorded on or after <paramref name="since"/>.
     /// </summary>
-    Task<int> CountProcessesReachedStageSinceAsync(RentalStage stage, Instant since, CancellationToken ct);
+    Task<int> CountProcessesReachedStageSinceAsync(
+        RentalStage stage, Instant since, RentalAccessFilter accessFilter, CancellationToken ct);
 
     /// <summary>Returns action log entries for a given process with optional paging, ordered by date descending.</summary>
     Task<(List<RentalActionLog> Items, int Total)> GetActionLogsByProcessGuidAsync(

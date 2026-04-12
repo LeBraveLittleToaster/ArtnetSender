@@ -9,6 +9,14 @@ namespace LumenForgeServer.Inventory.Service;
 
 public class DeviceRelationService(IInventoryRepository repository)
 {
+    /// <summary>
+    /// Executes the create relation operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the DeviceRelationView result.</returns>
     public async Task<DeviceRelationView> CreateRelation(CreateDeviceRelationDto dto, CancellationToken ct)
     {
         if (dto.ParentDeviceGuid == Guid.Empty || dto.ChildDeviceGuid == Guid.Empty)
@@ -113,6 +121,14 @@ public class DeviceRelationService(IInventoryRepository repository)
         return DeviceRelationView.FromEntity(created);
     }
 
+    /// <summary>
+    /// Executes the list relations for parent operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="parentDeviceGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the IReadOnlyList&lt;DeviceRelationView&gt; result.</returns>
     public async Task<IReadOnlyList<DeviceRelationView>> ListRelationsForParent(Guid parentDeviceGuid, CancellationToken ct)
     {
         if (parentDeviceGuid == Guid.Empty)
@@ -130,6 +146,14 @@ public class DeviceRelationService(IInventoryRepository repository)
         return relations.Select(DeviceRelationView.FromEntity).ToList();
     }
 
+    /// <summary>
+    /// Executes the delete relation operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="relationGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteRelation(Guid relationGuid, CancellationToken ct)
     {
         var relation = await repository.GetDeviceRelationByGuidAsync(relationGuid, ct)
@@ -152,6 +176,15 @@ public class DeviceRelationService(IInventoryRepository repository)
         await repository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the has path async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="startDeviceId">Numeric input used by this operation.</param>
+    /// <param name="targetDeviceId">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the bool result.</returns>
     private async Task<bool> HasPathAsync(long startDeviceId, long targetDeviceId, CancellationToken ct)
     {
         var visited = new HashSet<long>();

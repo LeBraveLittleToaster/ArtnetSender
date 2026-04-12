@@ -9,9 +9,27 @@ namespace LumenForgeServer.Auth.Service;
 public class KcService
 {
     private KcClient? _kcClient;
+    /// <summary>
+    /// Executes the kc and app client options.from environment operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     private readonly KcAndAppClientOptions _kcAndAppOptions = KcAndAppClientOptions.FromEnvironment();
+    /// <summary>
+    /// Executes the new operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <returns>The operation result.</returns>
     private readonly SemaphoreSlim _lock = new(1, 1);
 
+    /// <summary>
+    /// Executes the ensure initialized async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task EnsureInitializedAsync()
     {
         await _lock.WaitAsync();
@@ -30,6 +48,14 @@ public class KcService
         }
     }
 
+    /// <summary>
+    /// Executes the add user to keycloak operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="dto">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the string result.</returns>
     public async Task<string> AddUserToKeycloak(AddKcUserDto dto, CancellationToken ct)
     {
         await EnsureInitializedAsync();
@@ -72,6 +98,14 @@ public class KcService
         return userId;
     }
 
+    /// <summary>
+    /// Executes the delete user from keycloak by username operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="username">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteUserFromKeycloakByUsername(string username, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(username))
@@ -122,6 +156,14 @@ public class KcService
             $"Failed to delete user '{username}' (id: {userId}): Http {(int)deleteResponse.StatusCode} {deleteBody}");
     }
 
+    /// <summary>
+    /// Executes the logout user from keycloak by user kc id operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="userKcId">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task LogoutUserFromKeycloakByUserKcId(string userKcId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userKcId))
@@ -139,6 +181,14 @@ public class KcService
         }
     }
 
+    /// <summary>
+    /// Executes the delete users from keycloak by username prefix operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="usernamePrefix">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the int result.</returns>
     public async Task<int> DeleteUsersFromKeycloakByUsernamePrefix(string usernamePrefix, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(usernamePrefix))

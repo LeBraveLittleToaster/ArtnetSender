@@ -28,6 +28,12 @@ public sealed record RentalDamageReportView
     [JsonPropertyName("reported_at")]
     public Instant ReportedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="report">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static RentalDamageReportView FromEntity(RentalDamageReport report) => new()
     {
         Guid = report.Guid,

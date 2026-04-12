@@ -50,6 +50,14 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .SingleOrDefaultAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the try get user by keycloak id with groups async operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: may execute database writes or update tracked entity state in the current DbContext.</remarks>
+    /// <param name="keycloakId">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the KcUserReference? result.</returns>
     public async Task<KcUserReference?> TryGetUserByKeycloakIdWithGroupsAsync(string keycloakId, CancellationToken ct)
     {
         return await _db.Users
@@ -127,6 +135,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// Retrieves groups assigned to a user.
     /// </summary>
     /// <param name="keycloakId">Keycloak subject identifier to look up.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Groups assigned to the user.</returns>
     public async Task<(IReadOnlyList<Group> groups, long total)> GetGroupsForUserAsync(string keycloakId, int limit, int offset, CancellationToken ct)
@@ -148,6 +158,24 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     }
 
     /// <summary>
+    /// Executes the get group guids for user async operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="keycloakId">Text input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the HashSet&lt;Guid&gt; result.</returns>
+    public async Task<HashSet<Guid>> GetGroupGuidsForUserAsync(string keycloakId, CancellationToken ct)
+    {
+        return await _db.GroupUsers
+            .AsNoTracking()
+            .Where(gu => gu.KcUserReference.UserKcId == keycloakId)
+            .Select(gu => gu.Group.Guid)
+            .Distinct()
+            .ToHashSetAsync(ct);
+    }
+
+    /// <summary>
     /// Resolves the internal group id for a group Guid.
     /// </summary>
     /// <param name="groupGuid">Group Guid to look up.</param>
@@ -166,6 +194,14 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             : groupId;
     }
 
+    /// <summary>
+    /// Executes the get group by guid with permissions async operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="groupGuid">Unique identifier used to target the requested entity.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the Group? result.</returns>
     public async Task<Group?> GetGroupByGuidWithPermissionsAsync(Guid groupGuid, CancellationToken ct)
     {
         var group = await _db.Groups
@@ -297,6 +333,8 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
     /// Retrieves users assigned to a group.
     /// </summary>
     /// <param name="groupGuid">Group Guid to look up.</param>
+    /// <param name="limit">Numeric input used by this operation.</param>
+    /// <param name="offset">Numeric input used by this operation.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Users assigned to the group.</returns>
     public async Task<(IReadOnlyList<KcUserReference> users, long total)> GetUsersForGroupAsync(Guid groupGuid, int limit, int offset, CancellationToken ct)
@@ -330,6 +368,15 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .ToListAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the assign roles to group async operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: may execute database writes or update tracked entity state in the current DbContext.</remarks>
+    /// <param name="group">Input value used by this operation.</param>
+    /// <param name="roles">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public Task AssignRolesToGroupAsync(Group group, Permissions[] roles, CancellationToken ct)
     {
         if (group is null) throw new NotFoundException("Group not found");
@@ -431,6 +478,15 @@ public sealed class AuthRepository(AppDbContext _db, ILogger<AuthRepository> _lo
             .AnyAsync(gr => gr.GroupId == groupId && gr.Permission == permissions, ct);
     }
 
+    /// <summary>
+    /// Executes the remove group user async operation.
+    /// Core concept: maps application requests to persistence queries and materializes domain data.
+    /// </summary>
+    /// <remarks>Potential side effects: may execute database writes or update tracked entity state in the current DbContext.</remarks>
+    /// <param name="groupId">Numeric input used by this operation.</param>
+    /// <param name="userId">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task RemoveGroupUserAsync(long groupId, long userId, CancellationToken ct)
     {
         var groupUser = await _db.GroupUsers

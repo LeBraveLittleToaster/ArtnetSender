@@ -246,6 +246,12 @@ public class StockBindingService(IInventoryRepository repository)
         await repository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Executes the validate reserved amount operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="amount">Numeric input used by this operation.</param>
     private static void ValidateReservedAmount(long amount)
     {
         if (amount <= 0)
@@ -257,8 +263,8 @@ public class StockBindingService(IInventoryRepository repository)
     /// <summary>
     /// Parses and validates a timeframe, ensuring start is before end.
     /// </summary>
-    /// <param name="startStr">ISO-8601 formatted start time string.</param>
-    /// <param name="endStr">ISO-8601 formatted end time string.</param>
+    /// <param name="startStr">Text input used by this operation.</param>
+    /// <param name="endStr">Text input used by this operation.</param>
     /// <returns>Tuple of parsed Instant values.</returns>
     /// <exception cref="ValidationException">Thrown when parsing fails or start is not before end.</exception>
     private static (Instant start, Instant end) ParseAndValidateTimeframe(string startStr, string endStr)

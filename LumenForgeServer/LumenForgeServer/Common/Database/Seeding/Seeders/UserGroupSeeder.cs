@@ -14,6 +14,12 @@ public class UserGroupSeeder(UserService userService, GroupService groupService,
     public int Order => 60;
     public SeedEnvironment Environment => SeedEnvironment.Dev;
 
+    /// <summary>
+    /// Executes the seed async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SeedAsync(CancellationToken ct)
     {
         await kcService.DeleteUsersFromKeycloakByUsernamePrefix("test", ct);
@@ -25,6 +31,12 @@ public class UserGroupSeeder(UserService userService, GroupService groupService,
         await CreateTestUsersAndGroups(25, 7, ct);
     }
 
+    /// <summary>
+    /// Executes the create admin group operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the GroupView result.</returns>
     private async Task<GroupView> CreateAdminGroup(CancellationToken ct)
         => await groupService.AddGroup(new AddGroupDto
         {
@@ -33,6 +45,12 @@ public class UserGroupSeeder(UserService userService, GroupService groupService,
             Roles       = Enum.GetValues<Permissions>(),
         }, ct);
 
+    /// <summary>
+    /// Executes the create initial admin user operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the string result.</returns>
     private async Task<string> CreateInitialAdminUser(CancellationToken ct)
     {
         var dto = new AddKcUserDto
@@ -59,6 +77,14 @@ public class UserGroupSeeder(UserService userService, GroupService groupService,
         return kcUserId;
     }
 
+    /// <summary>
+    /// Executes the create test users and groups operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="userCount">Numeric input used by this operation.</param>
+    /// <param name="groupCount">Numeric input used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task CreateTestUsersAndGroups(int userCount, int groupCount, CancellationToken ct)
     {
         var defaultGroup = await groupService.AddGroup(new AddGroupDto

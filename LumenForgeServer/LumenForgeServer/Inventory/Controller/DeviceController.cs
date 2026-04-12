@@ -153,9 +153,6 @@ public class DeviceController(DeviceService deviceService) : ControllerBase
     /// <summary>
     /// Removes a parameter from a device by its key name.
     /// </summary>
-    /// <param name="deviceGuid">Device that owns the parameter.</param>
-    /// <param name="parameterKey">Key of the parameter to remove.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A 204 response when removed successfully.</returns>
     [HttpDelete("{deviceGuid:Guid}/parameters/{parameterKey}")]
     [Authorize(Roles = nameof(Permissions.DeviceUpdate))]

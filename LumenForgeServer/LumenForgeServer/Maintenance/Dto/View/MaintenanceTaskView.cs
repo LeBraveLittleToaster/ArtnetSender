@@ -45,6 +45,12 @@ public sealed record MaintenanceTaskView
     [JsonPropertyName("resolved_at")]
     public Instant? ResolvedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="e">Numeric input used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static MaintenanceTaskView FromEntity(MaintenanceTask e) => new()
     {
         Guid = e.Guid,

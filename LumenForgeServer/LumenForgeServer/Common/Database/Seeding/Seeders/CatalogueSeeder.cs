@@ -10,6 +10,9 @@ public class CatalogueSeeder(CatalogueService catalogueService, AppDbContext db)
     public int Order => 40;
     public SeedEnvironment Environment => SeedEnvironment.Dev;
 
+    /// <summary>
+    /// Seed definitions mapped to devices by index order.
+    /// </summary>
     private static readonly (int DeviceIndex, string Name, string Description, string? PhotoUrl, bool IsPublished, int SortOrder)[] CatalogueDefs =
     [
         (0, "LED Strip Controller",       "Control any addressable RGB strip from a single compact unit. Supports Wi-Fi and direct DMX input.",             "https://placehold.co/600x400", true,  0),
@@ -22,6 +25,12 @@ public class CatalogueSeeder(CatalogueService catalogueService, AppDbContext db)
         (7, "Pixel Bar Controller (Beta)","Artnet pixel bar driver currently in beta testing. Not yet available for booking.",                               null,                           false, 7),
     ];
 
+    /// <summary>
+    /// Executes the seed async operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SeedAsync(CancellationToken ct)
     {
         var devices = await db.Devices

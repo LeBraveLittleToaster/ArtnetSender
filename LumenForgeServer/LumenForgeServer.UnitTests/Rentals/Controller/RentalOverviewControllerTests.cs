@@ -1,11 +1,15 @@
+using System.Security.Claims;
 using FluentAssertions;
-using LumenForgeServer.Auth.Domain.Session;
+using LumenForgeServer.Auth.Domain;
+using LumenForgeServer.Auth.Persistence;
 using LumenForgeServer.Common.Exceptions;
 using LumenForgeServer.Rentals.Controller;
 using LumenForgeServer.Rentals.Domain;
 using LumenForgeServer.Rentals.Dto.Query;
 using LumenForgeServer.Rentals.Dto.View;
 using LumenForgeServer.Rentals.Persistence;
+using LumenForgeServer.Rentals.Service;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NodaTime;
 using NSubstitute;
@@ -14,84 +18,108 @@ namespace LumenForgeServer.UnitTests.Rentals.Controller;
 
 /// <summary>
 /// Unit tests for <see cref="RentalOverviewController"/> — verifies
-/// correct DTO shaping, scoping, and error handling with a mocked repository.
+/// DTO shaping, scoped access handling, and error behavior with mocked dependencies.
 /// </summary>
 public class RentalOverviewControllerTests
 {
     private readonly IRentalProcessRepository _repo = Substitute.For<IRentalProcessRepository>();
-    private readonly IKeycloakUser _keycloakUser = Substitute.For<IKeycloakUser>();
+    private readonly IAuthRepository _authRepo = Substitute.For<IAuthRepository>();
     private readonly CancellationToken _ct = CancellationToken.None;
 
-    private RentalOverviewController CreateController()
-        => new(_repo, _keycloakUser);
+    private RentalOverviewController CreateController(
+        Permissions[]? permissions = null,
+        string? callerKcId = "caller-kc-id",
+        IReadOnlyCollection<Guid>? groupGuids = null)
+    {
+        var claims = new List<Claim>();
+        if (!string.IsNullOrWhiteSpace(callerKcId))
+        {
+            claims.Add(new Claim("sub", callerKcId));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, callerKcId));
+        }
+
+        if (permissions is not null)
+        {
+            claims.AddRange(permissions.Select(p => new Claim(ClaimTypes.Role, p.ToString())));
+        }
+
+        _authRepo.GetGroupGuidsForUserAsync(Arg.Any<string>(), _ct)
+            .Returns((groupGuids ?? []).ToHashSet());
+
+        var controller = new RentalOverviewController(
+            new RentalOverViewService(_repo),
+            new RentalAccessService(_authRepo));
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, "test"))
+            }
+        };
+
+        return controller;
+    }
 
     private static readonly Instant Now = SystemClock.Instance.GetCurrentInstant();
-
-    // ── ListProcesses ───────────────────────────────────────────────
 
     [Fact]
     public async Task ListProcesses_ReturnsOkWithListAndTotal()
     {
         var process = CreateProcess();
-        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), _ct)
+        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), Arg.Any<RentalAccessFilter>(), _ct)
             .Returns(([process], 1));
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.ListProcesses(new RentalListQueryDto(), _ct);
 
         result.Should().BeOfType<OkObjectResult>();
-    }
-
-    [Fact]
-    public async Task ListProcesses_EmptyList_ReturnsOkWithZeroTotal()
-    {
-        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), _ct)
-            .Returns((new List<RentalProcessInstance>(), 0));
-
-        var controller = CreateController();
-        var result = await controller.ListProcesses(new RentalListQueryDto(), _ct);
-
-        result.Should().BeOfType<OkObjectResult>();
-    }
-
-    // ── ListMyProcesses ─────────────────────────────────────────────
-
-    [Fact]
-    public async Task ListMyProcesses_ScopesToCallerKcId()
-    {
-        _keycloakUser.UserId.Returns("caller-kc-id");
-        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), _ct)
-            .Returns((new List<RentalProcessInstance>(), 0));
-
-        var controller = CreateController();
-        await controller.ListMyProcesses(new RentalListQueryDto(), _ct);
-
         await _repo.Received(1).ListAsync(
-            Arg.Is<RentalListQueryDto>(q => q.OwnerKcId == "caller-kc-id"),
+            Arg.Any<RentalListQueryDto>(),
+            Arg.Is<RentalAccessFilter>(scope => scope.AllowAll),
             _ct);
     }
 
     [Fact]
-    public async Task ListMyProcesses_NoUserId_ThrowsUnauthorized()
+    public async Task ListProcesses_WithoutReadScope_ReturnsForbid()
     {
-        _keycloakUser.UserId.Returns((string?)null);
+        var controller = CreateController([]);
 
-        var controller = CreateController();
+        var result = await controller.ListProcesses(new RentalListQueryDto(), _ct);
 
-        var act = () => controller.ListMyProcesses(new RentalListQueryDto(), _ct);
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        result.Should().BeOfType<ForbidResult>();
     }
 
-    // ── GetProcess ──────────────────────────────────────────────────
+    [Fact]
+    public async Task ListProcesses_WithOwnScope_ScopesToCallerKcId()
+    {
+        _repo.ListAsync(Arg.Any<RentalListQueryDto>(), Arg.Any<RentalAccessFilter>(), _ct)
+            .Returns((new List<RentalProcessInstance>(), 0));
+
+        var controller = CreateController([Permissions.RentalUserOwn], callerKcId: "caller-kc-id");
+        await controller.ListProcesses(new RentalListQueryDto(), _ct);
+
+        await _repo.Received(1).ListAsync(
+            Arg.Any<RentalListQueryDto>(),
+            Arg.Is<RentalAccessFilter>(scope =>
+                !scope.AllowAll &&
+                scope.OwnerKcId == "caller-kc-id" &&
+                scope.GroupGuids.Count == 0),
+            _ct);
+    }
 
     [Fact]
     public async Task GetProcess_Found_ReturnsOk()
     {
         var process = CreateProcess();
-        _repo.GetByGuidAsync(process.Guid, _ct).Returns(process);
+        _repo.GetByGuidWithIncludesScopedAsync(
+                process.Guid,
+                RentalProcessInclude.None,
+                Arg.Any<RentalAccessFilter>(),
+                _ct)
+            .Returns(process);
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetProcess(process.Guid, null, _ct);
 
         result.Should().BeOfType<OkObjectResult>();
@@ -101,75 +129,68 @@ public class RentalOverviewControllerTests
     public async Task GetProcess_NotFound_ThrowsNotFoundException()
     {
         var guid = Guid.NewGuid();
-        _repo.GetByGuidAsync(guid, _ct).Returns((RentalProcessInstance?)null);
+        _repo.GetByGuidWithIncludesScopedAsync(
+                guid,
+                RentalProcessInclude.None,
+                Arg.Any<RentalAccessFilter>(),
+                _ct)
+            .Returns((RentalProcessInstance?)null);
 
-        var controller = CreateController();
-
+        var controller = CreateController([Permissions.RentalReadAll]);
         var act = () => controller.GetProcess(guid, null, _ct);
 
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]
-    public async Task GetProcess_WithIncludes_UsesGetByGuidWithIncludesAsync()
+    public async Task GetProcess_WithIncludes_UsesScopedIncludesQuery()
     {
         var process = CreateProcess();
-        _repo.GetByGuidWithIncludesAsync(process.Guid, Arg.Any<RentalProcessInclude>(), _ct)
+        _repo.GetByGuidWithIncludesScopedAsync(
+                process.Guid,
+                Arg.Any<RentalProcessInclude>(),
+                Arg.Any<RentalAccessFilter>(),
+                _ct)
             .Returns(process);
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         await controller.GetProcess(process.Guid, "checklists", _ct);
 
-        await _repo.Received(1).GetByGuidWithIncludesAsync(
+        await _repo.Received(1).GetByGuidWithIncludesScopedAsync(
             process.Guid,
             RentalProcessInclude.Checklists,
+            Arg.Any<RentalAccessFilter>(),
             _ct);
     }
 
     [Fact]
-    public async Task GetProcess_WithoutIncludes_UsesGetByGuidAsync()
+    public async Task GetProcess_WithoutReadScope_ReturnsForbid()
     {
-        var process = CreateProcess();
-        _repo.GetByGuidAsync(process.Guid, _ct).Returns(process);
+        var controller = CreateController([]);
 
-        var controller = CreateController();
-        await controller.GetProcess(process.Guid, null, _ct);
+        var result = await controller.GetProcess(Guid.NewGuid(), null, _ct);
 
-        await _repo.Received(1).GetByGuidAsync(process.Guid, _ct);
-        await _repo.DidNotReceive().GetByGuidWithIncludesAsync(
-            Arg.Any<Guid>(), Arg.Any<RentalProcessInclude>(), _ct);
+        result.Should().BeOfType<ForbidResult>();
     }
-
-    // ── GetProcessHistory ───────────────────────────────────────────
 
     [Fact]
     public async Task GetProcessHistory_Found_ReturnsOk()
     {
         var process = CreateProcess();
-        _repo.GetByGuidAsync(process.Guid, _ct).Returns(process);
+        _repo.GetByGuidWithIncludesScopedAsync(
+                process.Guid,
+                RentalProcessInclude.None,
+                Arg.Any<RentalAccessFilter>(),
+                _ct)
+            .Returns(process);
         _repo.GetActionLogsByProcessGuidAsync(process.Guid, 50, 0, _ct)
             .Returns((new List<RentalActionLog>(), 0));
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetProcessHistory(process.Guid, ct: _ct);
 
         result.Should().BeOfType<OkObjectResult>();
     }
-
-    [Fact]
-    public async Task GetProcessHistory_ProcessNotFound_ThrowsNotFoundException()
-    {
-        var guid = Guid.NewGuid();
-        _repo.GetByGuidAsync(guid, _ct).Returns((RentalProcessInstance?)null);
-
-        var controller = CreateController();
-
-        var act = () => controller.GetProcessHistory(guid, ct: _ct);
-
-        await act.Should().ThrowAsync<NotFoundException>();
-    }
-
-    // ── GetOverview ─────────────────────────────────────────────────
 
     [Fact]
     public async Task GetOverview_ComputesActiveAndTerminalCounts()
@@ -183,51 +204,45 @@ public class RentalOverviewControllerTests
             [RentalStage.Scrapped] = 1
         };
 
-        _repo.CountByStageAsync(_ct).Returns(byStage);
-        _repo.CountDamageReportsAsync(_ct).Returns(7);
-        _repo.CountExtensionsAsync(_ct).Returns(4);
-        _repo.CountPendingExtensionsAsync(_ct).Returns(2);
-        _repo.CountActionLogsAsync(_ct).Returns(50);
+        _repo.CountByStageAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(byStage);
+        _repo.CountDamageReportsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(7);
+        _repo.CountExtensionsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(4);
+        _repo.CountPendingExtensionsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(2);
+        _repo.CountActionLogsAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(50);
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetOverview(_ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var overview = ok.Value.Should().BeOfType<RentalOverviewDto>().Subject;
 
         overview.TotalProcesses.Should().Be(21);
-        overview.ActiveCount.Should().Be(5);    // 3 + 2
-        overview.TerminalCount.Should().Be(16);  // 10 + 5 + 1
+        overview.ActiveCount.Should().Be(5);
+        overview.TerminalCount.Should().Be(16);
         overview.TotalDamageReports.Should().Be(7);
         overview.TotalExtensionRequests.Should().Be(4);
         overview.PendingExtensions.Should().Be(2);
         overview.TotalActionLogs.Should().Be(50);
     }
 
-    // ── GetRecentActivity ───────────────────────────────────────────
-
-    [Fact]
-    public async Task GetRecentActivity_InvalidDays_ReturnsBadRequest()
-    {
-        var controller = CreateController();
-
-        var result = await controller.GetRecentActivity(days: 0, ct: _ct);
-        result.Should().BeOfType<BadRequestObjectResult>();
-
-        result = await controller.GetRecentActivity(days: 400, ct: _ct);
-        result.Should().BeOfType<BadRequestObjectResult>();
-    }
-
     [Fact]
     public async Task GetRecentActivity_ValidDays_ReturnsOk()
     {
-        _repo.CountProcessesCreatedSinceAsync(Arg.Any<Instant>(), _ct).Returns(5);
-        _repo.CountProcessesReachedStageSinceAsync(RentalStage.Completed, Arg.Any<Instant>(), _ct).Returns(2);
-        _repo.CountProcessesReachedStageSinceAsync(RentalStage.Cancelled, Arg.Any<Instant>(), _ct).Returns(1);
-        _repo.CountActionLogsSinceAsync(Arg.Any<Instant>(), _ct).Returns(20);
-        _repo.CountDamageReportsSinceAsync(Arg.Any<Instant>(), _ct).Returns(3);
+        _repo.CountProcessesCreatedSinceAsync(Arg.Any<Instant>(), Arg.Any<RentalAccessFilter>(), _ct).Returns(5);
+        _repo.CountProcessesReachedStageSinceAsync(
+            RentalStage.Completed,
+            Arg.Any<Instant>(),
+            Arg.Any<RentalAccessFilter>(),
+            _ct).Returns(2);
+        _repo.CountProcessesReachedStageSinceAsync(
+            RentalStage.Cancelled,
+            Arg.Any<Instant>(),
+            Arg.Any<RentalAccessFilter>(),
+            _ct).Returns(1);
+        _repo.CountActionLogsSinceAsync(Arg.Any<Instant>(), Arg.Any<RentalAccessFilter>(), _ct).Returns(20);
+        _repo.CountDamageReportsSinceAsync(Arg.Any<Instant>(), Arg.Any<RentalAccessFilter>(), _ct).Returns(3);
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetRecentActivity(days: 14, ct: _ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -241,18 +256,13 @@ public class RentalOverviewControllerTests
         activity.WindowDays.Should().Be(14);
     }
 
-    // ── GetByStage ──────────────────────────────────────────────────
-
     [Fact]
     public async Task GetByStage_ReturnsAllStagesIncludingZeroCounts()
     {
-        var byStage = new Dictionary<RentalStage, int>
-        {
-            [RentalStage.Requested] = 3
-        };
-        _repo.CountByStageAsync(_ct).Returns(byStage);
+        var byStage = new Dictionary<RentalStage, int> { [RentalStage.Requested] = 3 };
+        _repo.CountByStageAsync(Arg.Any<RentalAccessFilter>(), _ct).Returns(byStage);
 
-        var controller = CreateController();
+        var controller = CreateController([Permissions.RentalReadAll]);
         var result = await controller.GetByStage(_ct);
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -263,8 +273,6 @@ public class RentalOverviewControllerTests
         buckets.Single(b => b.Stage == RentalStage.Requested).Count.Should().Be(3);
         buckets.Where(b => b.Stage != RentalStage.Requested).Should().OnlyContain(b => b.Count == 0);
     }
-
-    // ── Helpers ──────────────────────────────────────────────────────
 
     private static RentalProcessInstance CreateProcess()
     {

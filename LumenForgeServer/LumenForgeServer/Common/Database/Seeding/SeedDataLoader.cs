@@ -9,6 +9,9 @@ namespace LumenForgeServer.Common.Database.Seeding;
 /// </summary>
 internal static class SeedDataLoader
 {
+    /// <summary>
+    /// Assembly containing embedded seed resources.
+    /// </summary>
     private static readonly Assembly Assembly = typeof(SeedDataLoader).Assembly;
     private const string ResourcePrefix = "LumenForgeServer.Common.Database.Seeding.Data.";
 
@@ -16,6 +19,7 @@ internal static class SeedDataLoader
     /// Returns all data rows from the embedded CSV file <paramref name="fileName"/>.
     /// Each row is a string array of field values, split on <c>;</c>.
     /// </summary>
+    /// <param name="fileName">Text input used by this operation.</param>
     /// <exception cref="InvalidOperationException">Thrown when the embedded resource cannot be found.</exception>
     internal static IReadOnlyList<string[]> Load(string fileName)
     {

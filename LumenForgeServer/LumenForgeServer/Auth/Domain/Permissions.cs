@@ -55,17 +55,36 @@ public enum Permissions
 
     // Rental (60–69)
     RentalCreate = 60,
-    RentalRead = 61,
-    RentalUpdate = 62,
-    RentalDelete = 63,
+    RentalReadAll = 61,
+    RentalUpdateAll = 62,
+    RentalDeleteAll = 63,
+    RentalUserOwn = 64,
+    RentalGroup = 65,
 
-    // Rental Status (70–79), (70-73) currently not used, actions cannot be dynamically CRUD
-    RentalActionCreate = 70,
-    RentalActionRead = 71,
-    RentalActionUpdate = 72,
-    RentalActionDelete = 73,
-    
-    RentalActionCall = 74,
+    // Rental Action (500–549)
+    RentalActionCreateRental = 500,
+    RentalActionApproveRequest = 501,
+    RentalActionRejectRequest = 502,
+    RentalActionAssignItems = 503,
+    RentalActionRemoveItems = 504,
+    RentalActionApproveItems = 505,
+    RentalActionRejectItems = 506,
+    RentalActionGenerateChecklist = 507,
+    RentalActionScanChecklist = 508,
+    RentalActionSignChecklist = 509,
+    RentalActionRecordPickup = 510,
+    RentalActionRecordReturn = 511,
+    RentalActionRequestExtension = 512,
+    RentalActionApproveExtension = 513,
+    RentalActionRejectExtension = 514,
+    RentalActionRecordDamages = 515,
+    RentalActionCreateMaintenanceJobs = 516,
+    RentalActionGenerateInvoice = 517,
+    RentalActionRecordPayment = 518,
+    RentalActionGenerateReport = 519,
+    RentalActionCompleteRental = 520,
+    RentalActionCancelRental = 521,
+    RentalActionScrapRental = 522,
 
     // =========================
     // Billing

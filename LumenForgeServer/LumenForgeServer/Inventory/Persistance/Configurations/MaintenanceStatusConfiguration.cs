@@ -9,6 +9,11 @@ namespace LumenForgeServer.Inventory.Persistance.Configurations;
 /// </summary>
 public sealed class MaintenanceStatusConfiguration : IEntityTypeConfiguration<MaintenanceStatus>
 {
+    /// <summary>
+    /// Executes the configure operation.
+    /// </summary>
+    /// <remarks>Potential side effects: may modify state as part of this operation.</remarks>
+    /// <param name="builder">Numeric input used by this operation.</param>
     public void Configure(EntityTypeBuilder<MaintenanceStatus> builder)
     {
         builder.ToTable("maintenance_status");

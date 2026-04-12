@@ -1,4 +1,3 @@
-using LumenForgeServer.Auth.Domain;
 using LumenForgeServer.Rentals.Domain;
 
 namespace LumenForgeServer.Rentals.Service.Actions;
@@ -15,14 +14,8 @@ namespace LumenForgeServer.Rentals.Service.Actions;
 public interface IRentalActionRegistry
 {
     /// <summary>
-    /// Returns the action types that are valid when the process is in
-    /// <paramref name="stage"/>.
+    /// Returns the action types that are stage-valid when the process is in
+    /// <paramref name="stage"/>. No permission or ownership checks are applied here.
     /// </summary>
     IReadOnlySet<RentalActionType> GetAvailableActions(RentalStage stage);
-    
-    /// <summary>
-    /// Returns the action types that are valid when the process is in
-    /// <paramref name="stage"/>.
-    /// </summary>
-    IReadOnlySet<RentalActionType> GetAvailableAllowedActions(RentalStage stage, IReadOnlyList<Permissions> permissions);
 }

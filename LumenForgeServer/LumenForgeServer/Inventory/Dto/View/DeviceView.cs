@@ -86,6 +86,12 @@ public sealed record DeviceView
     [JsonPropertyName("updated_at")]
     public Instant UpdatedAt { get; init; }
 
+    /// <summary>
+    /// Executes the from entity operation.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="device">Input value used by this operation.</param>
+    /// <returns>The operation result.</returns>
     public static DeviceView FromEntity(Device device)
     {
         var categories = device.DeviceCategories

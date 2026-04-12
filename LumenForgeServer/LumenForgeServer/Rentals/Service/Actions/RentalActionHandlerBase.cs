@@ -6,7 +6,7 @@ namespace LumenForgeServer.Rentals.Service.Actions;
 /// Generic base class that concrete action handlers should extend.
 /// Bridges the strongly-typed <typeparamref name="TInput"/> with action-specific
 /// <typeparamref name="TOutput"/> (a subclass of <see cref="ActionResult"/>) and
-/// the non-generic <see cref="IRentalActionHandler{TOutput}"/> interface consumed 
+/// the non-generic <see cref="IRentalActionHandler"/> interface consumed 
 /// by the orchestrator.
 /// </summary>
 /// <typeparam name="TInput">
@@ -22,7 +22,7 @@ namespace LumenForgeServer.Rentals.Service.Actions;
 /// <para>
 /// Subclasses override <see cref="BeforeExecuteAsync"/>, <see cref="ExecuteAsync"/>,
 /// and optionally <see cref="AfterExecuteAsync"/> with typed inputs and outputs.
-/// The base class implements the <see cref="IRentalActionHandler{TOutput}"/> interface 
+/// The base class implements the <see cref="IRentalActionHandler"/> interface 
 /// by casting the <see cref="ActionInput"/> to <typeparamref name="TInput"/>.
 /// </para>
 /// <para>
@@ -41,9 +41,36 @@ public abstract class RentalActionHandlerBase<TInput, TOutput> : IRentalActionHa
     /// <inheritdoc />
     public abstract IReadOnlySet<RentalStage> AllowedStages { get; }
 
+    /// <summary>
+    /// Executes the before execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: read-only operation with no intended state mutation.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the BlankActionResult result.</returns>
     protected abstract Task<BlankActionResult> BeforeExecuteAsync(RentalProcessInstance process, TInput input, CancellationToken ct);
     
+    /// <summary>
+    /// Executes the execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="input">Request payload containing the input data required for the operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that resolves to the TOutput result.</returns>
     protected abstract Task<TOutput> ExecuteAsync(RentalProcessInstance process, TInput input, CancellationToken ct);
+    /// <summary>
+    /// Executes the after execute async operation.
+    /// Core concept: applies domain rules and coordinates repository/service calls for this use case.
+    /// </summary>
+    /// <remarks>Potential side effects: may persist state changes, emit workflow logs, or call external dependencies.</remarks>
+    /// <param name="process">Input value used by this operation.</param>
+    /// <param name="result">Input value used by this operation.</param>
+    /// <param name="ct">Cancellation token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     protected abstract Task AfterExecuteAsync(RentalProcessInstance process, TOutput result, CancellationToken ct);
     
     
